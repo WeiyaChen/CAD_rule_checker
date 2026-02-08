@@ -1,0 +1,52 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex: <http://example.org/cad-checker/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+# 定义针对 "Apartment" 类的检查形状 (Shape)
+ex:EssentialSpacesShape
+    a sh:NodeShape ;
+    sh:targetClass ex:Apartment ; # 目标：检查所有类型为 Apartment 的节点
+    sh:message "【严重违规 3.1.1】 户型基本功能空间不全。" ;
+
+    # 1. 检查卧室 (Bedroom)
+    sh:property [
+        sh:path ex:hasSpace ;                # 沿着 hasSpace 关系去找
+        sh:qualifiedValueShape [             # 对找到的对象进行筛选
+            sh:class ex:Bedroom ;            # 对象必须是 Bedroom 类
+        ] ;
+        sh:qualifiedMinCount 1 ;             # 筛选出来的数量至少为 1
+        sh:message "缺失空间：卧室 (Bedroom)" ;
+    ] ;
+
+    # 2. 检查起居室 (LivingRoom)
+    sh:property [
+        sh:path ex:hasSpace ;
+        sh:qualifiedValueShape [ sh:class ex:LivingRoom ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "缺失空间：起居室 (LivingRoom)" ;
+    ] ;
+
+    # 3. 检查厨房 (Kitchen)
+    sh:property [
+        sh:path ex:hasSpace ;
+        sh:qualifiedValueShape [ sh:class ex:Kitchen ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "缺失空间：厨房 (Kitchen)" ;
+    ] ;
+
+    # 4. 检查卫生间 (Bathroom)
+    sh:property [
+        sh:path ex:hasSpace ;
+        sh:qualifiedValueShape [ sh:class ex:Bathroom ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "缺失空间：卫生间 (Bathroom)" ;
+    ] ;
+
+    # 5. 检查玄关 (Entryway)
+    sh:property [
+        sh:path ex:hasSpace ;
+        sh:qualifiedValueShape [ sh:class ex:Entryway ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "缺失空间：玄关 (Entryway)" ;
+    ] .

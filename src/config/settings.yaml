@@ -1,0 +1,9 @@
+# 这里只写相对路径，不要写绝对路径
+data:
+  root_dir: "data"
+  raw_pickle_dir: "data/raw/pickle"
+  raw_svg_dir: "data/raw/svg"
+  processed_svg_dir: "data/processed/svg"
+
+model:
+  save_dir: "models/checkpoints"
