@@ -131,6 +131,25 @@ class BotGraphGenerator:
                     if r_poly.contains(p_center):
                         topology["containment"][r_id].append(comp.uid)
 
+        # 2 计算隐式连接，如玄关和客厅
+        room_ids = list(self.room_polys.keys())
+
+        for i in range(len(room_ids)):
+            for j in range(i + 1, len(room_ids)):
+                id_a, id_b = room_ids[i], room_ids[j]
+
+                # 已经通过门连接了
+                if id_b in topology["adjacency"][id_a]:
+                    continue
+
+                poly_a = self.room_polys[id_a]
+                poly_b = self.room_polys[id_b]
+
+                if not poly_a.intersects(poly_b):
+                    continue
+
+                topology["adjacency"][id_a].add(id_b)
+                topology["adjacency"][id_b].add(id_a)
         return topology
 
     def generate(self):
@@ -187,4 +206,19 @@ class BotGraphGenerator:
             "@context": self.context,
             "@graph": self.graph
         }
+
+        # 创建一个 Apartment 根节点
+        apartment_node = {
+            "@id": "inst:Apartment_01",
+            "@type": "bot:Zone",  # 或者 bot:Building
+            "rdfs:label": "ResidentialUnit",
+            "bot:containsZone": []  # 用来装所有房间
+        }
+
+        # 把所有房间的 ID 加进去
+        for r_id in self.rooms:
+            apartment_node["bot:containsZone"].append({"@id": r_id})
+
+        # 加入到 graph 列表
+        final_json_ld["@graph"].append(apartment_node)
         return final_json_ld

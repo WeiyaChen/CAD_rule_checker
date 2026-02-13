@@ -1,50 +1,67 @@
-import os
+import json
 from rdflib import Graph
 from pyshacl import validate
-# 导入同目录下的生成器
-from .rdf_generator import FloorPlanRDFGenerator
-from ..config import config
+from src.config.config import settings
 
 
-class ComplianceChecker:
-    def __init__(self, rule_file_name="phase1_basic.ttl"):
-        self.rule_path = os.path.join(config.PROJECT_ROOT, "rules", rule_file_name)
-        self.output_dir = os.path.join(config.PROJECT_ROOT, "output")
+class SimpleRuleChecker:
+    def __init__(self, jsonld_path):
+        self.data_graph = Graph()
+        try:
+            self.data_graph.parse(jsonld_path, format="json-ld")
+            print(f"✅ 成功加载数据图谱: {jsonld_path} (包含 {len(self.data_graph)} 个三元组)")
+        except Exception as e:
+            print(f"❌ 加载 JSON-LD 失败: {e}")
 
-        # 确保输出目录存在
-        os.makedirs(self.output_dir, exist_ok=True)
+    def _get_shacl_shapes(self):
+        """
+        定义简单的 SHACL 规则 (Turtle 格式)
+        包含三类验证：
+        1. 数据完整性 (Data Integrity): 必须有 ID, Type
+        2. 几何合规 (Geometry): 面积必须 > 0
+        3. 拓扑合规 (Topology): 房间必须有门 (或连接)
+        """
+        return settings.rules_dir / 'phase1_basic.ttl'
 
-    def run_check(self, rooms_data, project_name="my_project"):
-        print(f"--- 开始检查: {project_name} ---")
 
-        # 1. 生成数据
-        generator = FloorPlanRDFGenerator()
-        data_graph = generator.generate_phase1_data(rooms_data, project_name)
+    def run_validation(self):
+        """执行 SHACL 验证并打印报告"""
+        print("\n🚀 开始执行 SHACL 规则验证...")
 
-        # 保存中间结果 (方便调试)
-        output_ttl = os.path.join(self.output_dir, f"{project_name}_data.ttl")
-        generator.save_to_file(output_ttl)
-
-        # 2. 加载规则
-        if not os.path.exists(self.rule_path):
-            print(f"❌ 错误：找不到规则文件 {self.rule_path}")
-            return False
-
+        # 加载规则图
         shacl_graph = Graph()
-        shacl_graph.parse(self.rule_path, format="turtle")
+        rule_path = self._get_shacl_shapes()
+        with open(rule_path, 'r', encoding='utf-8') as f:
+            shacl_content = f.read()
 
-        # 3. 验证
-        conforms, _, report_text = validate(
-            data_graph,
+        shacl_graph.parse(data=shacl_content, format="turtle")
+
+        # 执行验证
+        conforms, report_graph, report_text = validate(
+            self.data_graph,
             shacl_graph=shacl_graph,
             inference='rdfs',
-            serialize_report_graph=True
+            abort_on_first=False,
+            meta_shacl=False,
+            debug=False
         )
 
         if conforms:
-            print("✅ 检查通过！")
+            print("🎉 恭喜！数据完全合规，未发现违规项。")
         else:
-            print("❌ 发现违规项：")
-            print(report_text)
+            print("⚠️ 发现违规项！验证报告如下：")
+            print("=" * 60)
+            print(report_text)  # 打印详细的文本报告
+            print("=" * 60)
 
-        return conforms
+            # 你也可以把报告保存为文件
+            with open("output/validation_report.txt", "w", encoding="utf-8") as f:
+                f.write(report_text)
+                print("📄 报告已保存至 output/validation_report.txt")
+
+
+# --- 测试代码 ---
+if __name__ == "__main__":
+    # 假设你的 JSON-LD 文件路径是这个
+    checker = SimpleRuleChecker(settings.output_jsonld_dir / "floorplan.jsonld")
+    checker.run_validation()

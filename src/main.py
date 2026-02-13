@@ -1,6 +1,6 @@
 import os
 
-from src.compliance.checker import ComplianceChecker
+from src.compliance.checker import SimpleRuleChecker
 from src.config.config import settings
 from src.config.labels import get_color
 from src.io.extractor import ElementExtractor
@@ -29,7 +29,6 @@ if __name__ == "__main__":
     # 3.ttl文件构建
     print(">>> 阶段 3: 正在进行合规检查...")
     # 实例化检查器，指向第一阶段的规则
-    checker = ComplianceChecker(rule_file_name="phase1_basic.ttl")
+    checker = SimpleRuleChecker(settings.output_jsonld_dir / "floorplan.jsonld")
+    checker.run_validation()
 
-    # 传入识图结果
-    checker.run_check(result)

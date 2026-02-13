@@ -4,48 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6a481996-81c9-4eae-9aef-a8142b48ae8e" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/LNKD.tech Editor.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/cad_rule_checker.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/raw/pickle/apartment.pkl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/raw/svg/apartment.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/rules/phase1_basic.ttl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/compliance/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/compliance/checker.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/compliance/rdf_generator.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/config/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/config/config.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/config/labels.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/config/settings.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/core/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/core/elements.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/core/spatial.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/io/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/io/dxf_to_svg.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/io/extractor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/io/svg_loader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/io/svg_modifier.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/io/svg_parser.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/analyzer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/bot_builder.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/builder.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/generate_virtual_wall.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/graph.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/patching.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/topology/preprocessing.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/graph_viz.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/utils/visualize.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
+    <list default="true" id="6a481996-81c9-4eae-9aef-a8142b48ae8e" name="更改" comment="项目初始化">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/raw/svg/apartment.svg" beforeDir="false" afterPath="$PROJECT_DIR$/data/raw/svg/apartment.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rules/phase1_basic.ttl" beforeDir="false" afterPath="$PROJECT_DIR$/rules/phase1_basic.ttl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/compliance/checker.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/compliance/checker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/config/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/config/settings.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/settings.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/topology/bot_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/topology/bot_builder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/topology/builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/topology/builder.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,6 +47,7 @@
     "Python.IP.executor": "Run",
     "Python.app.executor": "Run",
     "Python.builder.executor": "Run",
+    "Python.checker.executor": "Run",
     "Python.create_room.executor": "Run",
     "Python.create_virtual_wall.executor": "Run",
     "Python.dxf_to_svg (1).executor": "Run",
@@ -128,6 +97,28 @@
     </key>
   </component>
   <component name="RunManager" selected="Python.main">
+    <configuration name="checker" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="cad_rule_checker" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/compliance" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/compliance/checker.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="generate_virtual_wall" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="cad_rule_checker" />
       <option name="ENV_FILES" value="" />
@@ -216,42 +207,20 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="segmentation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="cad_rule_checker" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/topology" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/topology/segmentation.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <list>
+      <item itemvalue="Python.checker" />
       <item itemvalue="Python.graph" />
       <item itemvalue="Python.main" />
       <item itemvalue="Python.generate_virtual_wall" />
       <item itemvalue="Python.seal_gap" />
-      <item itemvalue="Python.segmentation" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.main" />
+        <item itemvalue="Python.checker" />
         <item itemvalue="Python.graph" />
         <item itemvalue="Python.generate_virtual_wall" />
         <item itemvalue="Python.seal_gap" />
-        <item itemvalue="Python.segmentation" />
       </list>
     </recent_temporary>
   </component>
@@ -271,6 +240,15 @@
       <option name="presentableId" value="Default" />
       <updated>1758715891732</updated>
     </task>
+    <task id="LOCAL-00001" summary="项目初始化">
+      <option name="closed" value="true" />
+      <created>1770539362900</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1770539362900</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -295,5 +273,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="项目初始化" />
+    <option name="LAST_COMMIT_MESSAGE" value="项目初始化" />
   </component>
 </project>

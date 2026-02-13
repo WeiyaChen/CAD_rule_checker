@@ -1,52 +1,67 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix ex: <http://example.org/cad-checker/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix bot: <https://w3id.org/bot#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex: <http://mythesis.org/rules/> .
 
-# 定义针对 "Apartment" 类的检查形状 (Shape)
-ex:EssentialSpacesShape
+# 定义一个针对“公寓整体”的验证形状
+ex:FunctionalSpaceCheck
     a sh:NodeShape ;
-    sh:targetClass ex:Apartment ; # 目标：检查所有类型为 Apartment 的节点
-    sh:message "【严重违规 3.1.1】 户型基本功能空间不全。" ;
+    # 1. 锁定目标：所有类型为 bot:Zone 且作为根节点的公寓
+    # (这里简单起见，假设你的根节点是 bot:Zone)
+    sh:targetClass bot:Zone ;
 
-    # 1. 检查卧室 (Bedroom)
+    # ============================================
+    # 规则 A: 必须有卧室 (Bedroom)
+    # ============================================
     sh:property [
-        sh:path ex:hasSpace ;                # 沿着 hasSpace 关系去找
-        sh:qualifiedValueShape [             # 对找到的对象进行筛选
-            sh:class ex:Bedroom ;            # 对象必须是 Bedroom 类
+        sh:path bot:containsZone ;  # 检查路径：公寓包含的区域
+        sh:qualifiedValueShape [    # 限定条件：该区域必须...
+            sh:path rdfs:label ;    # ...在 label 属性上...
+            sh:pattern "Bedroom" ;  # ...包含 "Bedroom" 字符串
+            sh:flags "i" ;          # (忽略大小写)
         ] ;
-        sh:qualifiedMinCount 1 ;             # 筛选出来的数量至少为 1
-        sh:message "缺失空间：卧室 (Bedroom)" ;
+        sh:qualifiedMinCount 1 ;    # 满足上述条件的区域至少要有 1 个
+        sh:message "❌ 违反规范 3.1.1：缺少【卧室】功能空间。" ;
     ] ;
 
-    # 2. 检查起居室 (LivingRoom)
+    # ============================================
+    # 规则 B: 必须有起居厅 (Living Room)
+    # ============================================
     sh:property [
-        sh:path ex:hasSpace ;
-        sh:qualifiedValueShape [ sh:class ex:LivingRoom ] ;
+        sh:path bot:containsZone ;
+        sh:qualifiedValueShape [
+            sh:path rdfs:label ;
+            sh:pattern "Living|Lounge" ; # 支持多种叫法
+            sh:flags "i" ;
+        ] ;
         sh:qualifiedMinCount 1 ;
-        sh:message "缺失空间：起居室 (LivingRoom)" ;
+        sh:message "❌ 违反规范 3.1.1：缺少【起居厅】功能空间。" ;
     ] ;
 
-    # 3. 检查厨房 (Kitchen)
+    # ============================================
+    # 规则 C: 必须有厨房 (Kitchen)
+    # ============================================
     sh:property [
-        sh:path ex:hasSpace ;
-        sh:qualifiedValueShape [ sh:class ex:Kitchen ] ;
+        sh:path bot:containsZone ;
+        sh:qualifiedValueShape [
+            sh:path rdfs:label ;
+            sh:pattern "Kitchen|Cook" ;
+            sh:flags "i" ;
+        ] ;
         sh:qualifiedMinCount 1 ;
-        sh:message "缺失空间：厨房 (Kitchen)" ;
+        sh:message "❌ 违反规范 3.1.1：缺少【厨房】功能空间。" ;
     ] ;
 
-    # 4. 检查卫生间 (Bathroom)
+    # ============================================
+    # 规则 D: 必须有卫生间 (Bathroom)
+    # ============================================
     sh:property [
-        sh:path ex:hasSpace ;
-        sh:qualifiedValueShape [ sh:class ex:Bathroom ] ;
+        sh:path bot:containsZone ;
+        sh:qualifiedValueShape [
+            sh:path rdfs:label ;
+            sh:pattern "Bath|Toilet|Restroom" ;
+            sh:flags "i" ;
+        ] ;
         sh:qualifiedMinCount 1 ;
-        sh:message "缺失空间：卫生间 (Bathroom)" ;
-    ] ;
-
-    # 5. 检查玄关 (Entryway)
-    sh:property [
-        sh:path ex:hasSpace ;
-        sh:qualifiedValueShape [ sh:class ex:Entryway ] ;
-        sh:qualifiedMinCount 1 ;
-        sh:message "缺失空间：玄关 (Entryway)" ;
+        sh:message "❌ 违反规范 3.1.1：缺少【卫生间】功能空间。" ;
     ] .

@@ -52,6 +52,20 @@ class Settings:
         path_str = self._cfg.get('data', {}).get('processed_svg_dir', 'data/processed/svg')
         return PROJECT_ROOT / path_str
 
+    @property
+    def output_jsonld_dir(self):
+        path_str = (self._cfg.get('output', {}).get('jsonld_dir', '"output/jsonld"'))
+        return PROJECT_ROOT / path_str
+
+    @property
+    def output_html_dir(self):
+        path_str = (self._cfg.get('output', {}).get('html_dir', "output/html"))
+        return PROJECT_ROOT / path_str
+
+    @property
+    def rules_dir(self):
+        path_str = self._cfg.get('rules',{})
+        return PROJECT_ROOT / path_str
 
 # ==========================================
 # 3. 实例化单例

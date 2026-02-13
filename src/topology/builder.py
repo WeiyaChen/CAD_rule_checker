@@ -1,4 +1,5 @@
 # src/topology/builder.py
+import os
 from collections import defaultdict
 
 import cv2
@@ -12,6 +13,7 @@ from .preprocessing import clean_lines
 from .patching import create_patches
 from ..utils.graph_viz import BotGraphVisualizer
 from ..utils.visualize import plot_floor_plan
+from src.config.config import settings
 
 
 # 1. 定义构件类 (保持不变)
@@ -196,12 +198,10 @@ class TopologyBuilder:
         viz = BotGraphVisualizer(json_output)
 
         # 1. 保存数据
-        viz.save_json("output/floorplan.jsonld")
+        viz.save_json(os.path.join(settings.output_jsonld_dir, "floorplan.jsonld"))
 
         # 2. 画拓扑关系 (圆圈图) -> 验证逻辑连接
-        viz.draw_topology("output/topology.html")
+        viz.draw_topology(os.path.join(settings.output_html_dir, "topology.html"))
 
-        # 3. 画几何平面 (轮廓图) -> 验证位置和形状 [这是你要的新功能]
-        viz.draw_geometry("output/geometry_reconstruction.png")
 
         return room_results

@@ -7,3 +7,9 @@ data:
 
 model:
   save_dir: "models/checkpoints"
+
+output:
+  jsonld_dir: "output/jsonld"
+  html_dir: "output/html"
+
+rules: "rules"
