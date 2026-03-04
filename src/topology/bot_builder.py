@@ -16,6 +16,10 @@ class BotGraphGenerator:
         for r in self.rooms:
             self.room_polys[r["id"]] = Polygon(r["geometry"])
 
+        # 构件房间id和房间类型标签的字典
+        self.room_label_map = {r["id"]: r['label'] for r in self.rooms}
+
+
         # 定义 JSON-LD 的头部 Context
         self.context = {
             "bot": "https://w3id.org/bot#",
@@ -23,7 +27,8 @@ class BotGraphGenerator:
             "inst": "http://mythesis.org/instance/",
             "props": "http://mythesis.org/props/",
             "beo": "https://pi.pauwel.be/voc/buildingelement#",
-            "geo": "http://www.opengis.net/ont/geosparql#"
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#"
         }
         self.graph = []
 
@@ -103,20 +108,37 @@ class BotGraphGenerator:
             # 门的处理逻辑
             if comp.category == "Door":
                 connected_set = self._cast_rays_for_door(comp)
+                # 情况一：射线捕获了两个或以上的空间实体
                 if len(connected_set) >= 2:
                     associated_rooms = list(connected_set)
                     r_a, r_b = associated_rooms[0], associated_rooms[1]
+                    r_a_type = self.room_label_map[r_a]
+                    r_b_type = self.room_label_map[r_b]
+                    public_keywords = ["Exterior", "PublicCorridor", "Stairwell"]
 
-                    # 记录门是接口
+                    # 判断是否为入户门：只要有一侧是公共/室外空间
+                    if (r_a_type in public_keywords) or (r_b_type in public_keywords):
+                        # 将"入户门"语义作为静态属性写入该门的数据包中
+                        comp.properties["doorType"] = "Entrance"
+                    else:
+                        # 常规内门，也可在此处根据连接的房间写入 BedroomDoor 等属性
+                        comp.properties["doorType"] = "InteriorDoor"
+
+                    # 记录门是接口及双向相邻推导
                     topology["interfaces"][comp.uid] = [r_a, r_b]
-
-                    # 推导房间相邻
                     topology["adjacency"][r_a].add(r_b)
                     topology["adjacency"][r_b].add(r_a)
-
-                    # 记录门属于这两个房间
                     topology["containment"][r_a].append(comp.uid)
                     topology["containment"][r_b].append(comp.uid)
+
+                # 情况二：射线仅捕获到一个内部空间，另一侧为未建模的图纸边界
+                elif len(connected_set) == 1:
+                    r_a = list(connected_set)[0]
+
+                    # 强制补充属性与单向包含拓扑
+                    comp.properties["doorType"] = "Entrance"
+                    topology["interfaces"][comp.uid] = [r_a, "UnmodeledExterior"]
+                    topology["containment"][r_a].append(comp.uid)
 
             # 窗户的处理逻辑
             elif comp.category == "Window":
@@ -155,6 +177,24 @@ class BotGraphGenerator:
     def generate(self):
         topo_data = self._calculate_topology()
 
+        # 创建一个 Apartment 根节点
+        apartment_node = {
+            "@id": "inst:Apartment_01",
+            "@type": "bot:Zone",  # 或者 bot:Building
+            "rdfs:label": "ResidentialUnit",
+            "bot:containsZone": []  # 用来装所有房间
+        }
+
+        # 把所有房间的 ID 加进去
+        for r in self.rooms:
+            r_id = r["id"]
+            node_id = f"inst:{r['label']}_{r_id}"
+            apartment_node["bot:containsZone"].append({"@id": node_id})
+
+        self.graph.append(apartment_node)
+
+
+
         # 生成房间节点
         for r in self.rooms:
             r_id = r["id"]
@@ -177,29 +217,29 @@ class BotGraphGenerator:
                     for n_id in topo_data["adjacency"][r_id]
                 ]
             }
-            print(node)
             self.graph.append(node)
 
-            # 生成构件节点
-            for comp in self.components:
-                node_id = f"inst:{comp.uid}"
+        # 生成构件节点
+        for comp in self.components:
+            node_id = f"inst:{comp.uid}"
 
-                node = {
-                    "@id": node_id,
-                    "@type": ["bot:Element", f"beo:{comp.category}"],
-                    "props:width": comp.properties.get("width"),
-                    "props:length": comp.properties.get("length"),
-                    "props:geometryWKT": self._get_wkt(Polygon(comp.geometry))
-                }
+            node = {
+                "@id": node_id,
+                "@type": ["bot:Element", f"beo:{comp.category}"],
+                "props:width": comp.properties.get("width"),
+                "props:length": comp.properties.get("length"),
+                "props:geometryWKT": self._get_wkt(Polygon(comp.geometry))
+            }
 
-                # 如果是门
-                if comp.uid in topo_data["interfaces"]:
-                    connected_rooms = topo_data["interfaces"][comp.uid]
-                    node["bot:interfaceOf"] = [
-                        {"@id": f"inst:{self.rooms[rid]['label']}_{rid}"}
-                        for rid in connected_rooms
-                    ]
-                self.graph.append(node)
+            # 如果是门
+            if comp.uid in topo_data["interfaces"]:
+                connected_rooms = topo_data["interfaces"][comp.uid]
+                node["bot:interfaceOf"] = [
+                    {"@id": f"inst:{self.room_label_map.get(rid, 'Exterior')}_{rid}"}
+                    for rid in connected_rooms
+                ]
+                node["props:doorType"] = comp.properties.get("doorType")
+            self.graph.append(node)
 
         # 最终组装
         final_json_ld = {
@@ -207,18 +247,6 @@ class BotGraphGenerator:
             "@graph": self.graph
         }
 
-        # 创建一个 Apartment 根节点
-        apartment_node = {
-            "@id": "inst:Apartment_01",
-            "@type": "bot:Zone",  # 或者 bot:Building
-            "rdfs:label": "ResidentialUnit",
-            "bot:containsZone": []  # 用来装所有房间
-        }
-
-        # 把所有房间的 ID 加进去
-        for r_id in self.rooms:
-            apartment_node["bot:containsZone"].append({"@id": r_id})
-
-        # 加入到 graph 列表
-        final_json_ld["@graph"].append(apartment_node)
         return final_json_ld
+
+

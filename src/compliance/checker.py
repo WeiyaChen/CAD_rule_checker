@@ -21,7 +21,7 @@ class SimpleRuleChecker:
         2. 几何合规 (Geometry): 面积必须 > 0
         3. 拓扑合规 (Topology): 房间必须有门 (或连接)
         """
-        return settings.rules_dir / 'phase1_basic.ttl'
+        return settings.rules_dir / 'l1_semantic_check.ttl'
 
 
     def run_validation(self):
@@ -55,9 +55,9 @@ class SimpleRuleChecker:
             print("=" * 60)
 
             # 你也可以把报告保存为文件
-            with open("output/validation_report.txt", "w", encoding="utf-8") as f:
+            with open(settings.res_dir / "validation_report.txt", "w", encoding="utf-8") as f:
                 f.write(report_text)
-                print("📄 报告已保存至 output/validation_report.txt")
+                print(f"📄 报告已保存至 {settings.res_dir / 'validation_report.txt'}")
 
 
 # --- 测试代码 ---

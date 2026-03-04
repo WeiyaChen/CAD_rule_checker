@@ -11,5 +11,6 @@ model:
 output:
   jsonld_dir: "output/jsonld"
   html_dir: "output/html"
+  res_dir: "output/res"
 
 rules: "rules"

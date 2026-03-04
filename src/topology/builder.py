@@ -128,7 +128,7 @@ class TopologyBuilder:
     def __init__(self):
         pass
 
-    def build(self, raw_elements):
+    def build(self, raw_elements, json_output_path, html_output_path):
         """
         Main pipeline: Elements -> FloorPlan Object
         """
@@ -188,7 +188,7 @@ class TopologyBuilder:
         room_results = builder.build(clean_walls, door_patches, window_patches, room_tags)
 
         # 调用可视化
-        plot_floor_plan(builder, room_results)
+        # plot_floor_plan(builder, room_results)
 
         # bot构建
         comps = door_objs + window_objs + furn_objs
@@ -198,10 +198,7 @@ class TopologyBuilder:
         viz = BotGraphVisualizer(json_output)
 
         # 1. 保存数据
-        viz.save_json(os.path.join(settings.output_jsonld_dir, "floorplan.jsonld"))
+        viz.save_json(json_output_path)
 
         # 2. 画拓扑关系 (圆圈图) -> 验证逻辑连接
-        viz.draw_topology(os.path.join(settings.output_html_dir, "topology.html"))
-
-
-        return room_results
+        viz.draw_topology(html_output_path)

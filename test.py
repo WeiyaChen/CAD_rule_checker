@@ -1,110 +1,93 @@
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+from shapely.geometry import Polygon as ShapelyPolygon, box, Point
+from shapely.affinity import rotate, translate
+import numpy as np
 
-# 设置绘图风格
-fig, ax = plt.subplots(1, 2, figsize=(12, 5))
 
+# --- 核心MIS算法 (用于右图真理层) ---
+def calculate_maximum_inscribed_square_quick(room_coords):
+    room_poly = ShapelyPolygon(room_coords)
+    minx, miny, maxx, maxy = room_poly.bounds
+    # 降低密度以加快演示速度
+    x_coords = np.linspace(minx, maxx, 30)
+    y_coords = np.linspace(miny, maxy, 30)
+    candidate_centers = []
+    for x in x_coords:
+        for y in y_coords:
+            if room_poly.contains(Point(x, y)):
+                candidate_centers.append((x, y))
 
-# 定义画门和墙的辅助函数
-def draw_scenario(ax, title, door_x, door_y, door_w, door_h, wall_y, label_gap=False):
-    # 1. 画墙 (Wall) - 灰色基准线
-    ax.axhline(y=wall_y, color='gray', linewidth=3, linestyle='--', label='Wall / Baseline')
+    min_w, max_w = 0.0, min(maxx - minx, maxy - miny)
+    best_w, best_square = 0.0, None
 
-    # 2. 画门 (Door) - 蓝色矩形 (OBB)
-    door = patches.Rectangle((door_x, door_y), door_w, door_h,
-                             linewidth=2, edgecolor='blue', facecolor='lightblue', alpha=0.6, label='Door (OBB)')
-    ax.add_patch(door)
-
-    # 3. 计算并画交线 (Intersection) - 红色
-    # 门的底部是 door_y，顶部是 door_y + door_h
-    # 墙的位置是 wall_y
-    # 只有当 door_y <= wall_y <= door_y + door_h 时才有交线
-    if door_y <= wall_y <= door_y + door_h:
-        intersect_start = door_x
-        intersect_end = door_x + door_w
-        # 这里简化处理，假设x方向完全重叠，只看y方向接触
-        # 如果有错位，x也会变化。
-        # 场景2：错位。墙是从 x=0 开始的。
-        wall_start_x = 0
-        wall_end_x = 10  # 假设墙很长
-
-        # 计算X轴的交集
-        x_start = max(door_x, wall_start_x)
-        x_end = min(door_x + door_w, wall_end_x)
-
-        if x_end > x_start:
-            ax.plot([x_start, x_end], [wall_y, wall_y], color='red', linewidth=6,
-                    label='Intersection Length (Unstable)')
-            ax.text((x_start + x_end) / 2, wall_y - 0.5, f"Intersection: {x_end - x_start:.1f}m", color='red',
-                    ha='center', fontweight='bold')
+    # 简化的二分查找
+    for _ in range(15):
+        test_w = (max_w + min_w) / 2.0
+        template = box(-test_w / 2, -test_w / 2, test_w / 2, test_w / 2)
+        is_fitting = False
+        for cx, cy in candidate_centers:
+            placed = translate(template, cx, cy)
+            # 只做简单滑移检查，不做旋转，足以说明问题
+            if room_poly.contains(placed):
+                is_fitting = True
+                best_square = placed
+                break
+        if is_fitting:
+            best_w, min_w = test_w, test_w
         else:
-            ax.text(door_x + door_w / 2, wall_y - 0.5, "Intersection: 0.0m", color='red', ha='center',
-                    fontweight='bold')
-    else:
-        # 没有接触 (Gap)
-        ax.text(door_x + door_w / 2, wall_y - 0.5, "Intersection: 0.0m (FAIL)", color='red', ha='center',
-                fontweight='bold')
-
-    # 4. 画投影 (Projection) - 绿色
-    # 投影只看门在X轴上的跨度
-    proj_y = wall_y - 1.5  # 往下画一点，错开显示
-    ax.plot([door_x, door_x + door_w], [proj_y, proj_y], color='green', linewidth=4, marker='|', markersize=10,
-            label='Projection Length (Robust)')
-
-    # 画投影虚线
-    ax.plot([door_x, door_x], [door_y, proj_y], color='green', linestyle=':', alpha=0.5)
-    ax.plot([door_x + door_w, door_x + door_w], [door_y, proj_y], color='green', linestyle=':', alpha=0.5)
-
-    ax.text(door_x + door_w / 2, proj_y - 0.5, f"Projection: {door_w:.1f}m (CORRECT)", color='green', ha='center',
-            fontweight='bold')
-
-    ax.set_title(title, fontsize=12)
-    ax.set_xlim(-1, 5)
-    ax.set_ylim(-3, 3)
-    ax.set_aspect('equal')
-    ax.axis('off')  # 隐藏坐标轴
-    if label_gap:
-        ax.annotate('Gap / Jitter', xy=(door_x + 0.5, door_y), xytext=(door_x + 1.5, door_y - 0.8),
-                    arrowprops=dict(facecolor='black', shrink=0.05))
+            max_w = test_w
+    return round(best_w, 1), best_square
 
 
-# --- 场景 1: 微小缝隙 (The Gap) ---
-# 门宽 2.0，位置 (1, 0.2)，墙在 y=0。门悬浮在墙上方 0.2m。
-draw_scenario(ax[0], "Scenario A: Positional Jitter (Gap)\nIntersection Fails, Projection Works",
-              door_x=1.0, door_y=0.2, door_w=2.0, door_h=1.0, wall_y=0, label_gap=True)
+# --- 定义反例几何 ---
+# 一个“胖”L型：臂窄(1500)，但转角腹地宽(2500以上)
+l_coords = [(0, 0), (4000, 0), (4000, 1500), (1500, 1500), (1500, 4000), (0, 4000), (0, 0)]
+room_poly = ShapelyPolygon(l_coords)
 
-# --- 场景 2: 错位/部分重叠 (Partial Overlap) ---
-# 门宽 2.0，位置 (2.5, -0.5)。假设墙只画到 x=3.0 就结束了（模拟房间边缘）。
-# 为了演示，我们让墙是一条线，门偏了。
-# 这里我们模拟门的一半在墙上，一半在外面。
-# 墙定义：y=0, x from 0 to 3.0
-ax[1].plot([0, 3.0], [0, 0], color='gray', linewidth=3, linestyle='--')  # 墙只到3.0
-# 门从 2.0 到 4.0 (宽2.0)。
-# 交集：2.0 到 3.0 (长1.0) -> 错误
-# 投影：2.0 到 4.0 (长2.0) -> 正确
-draw_scenario(ax[1], "Scenario B: Partial Overlap / Misalignment\nIntersection Cut Short, Projection Full",
-              door_x=2.0, door_y=-0.5, door_w=2.0, door_h=1.0, wall_y=0)
-# 修正场景2的绘制逻辑以匹配特定描述
-ax[1].patches.pop()  # 移除旧的
-ax[1].lines.pop()  # 移除旧的
-# 重新手动绘制场景2
-ax[1].plot([0, 3.0], [0, 0], color='gray', linewidth=3, linestyle='--', label='Room Boundary')  # 房间轮廓
-door2 = patches.Rectangle((2.0, -0.5), 2.0, 1.0, linewidth=2, edgecolor='blue', facecolor='lightblue', alpha=0.6)
-ax[1].add_patch(door2)
+# --- 绘图 ---
+fig, axes = plt.subplots(1, 2, figsize=(14, 7), dpi=150)
 
-# 交线 (只有重叠部分)
-ax[1].plot([2.0, 3.0], [0, 0], color='red', linewidth=6)
-ax[1].text(2.5, -0.5, "Intersect: 1.0m (Error)", color='red', ha='center', fontweight='bold')
+# [左图] 你的猜想：凸空间分解法 (人为切割)
+axes[0].plot(*room_poly.exterior.xy, color='black', linewidth=2)
+axes[0].fill(*room_poly.exterior.xy, color='#e0e0e0')
 
-# 投影
-proj_y2 = -1.5
-ax[1].plot([2.0, 4.0], [proj_y2, proj_y2], color='green', linewidth=4, marker='|')
-ax[1].plot([2.0, 2.0], [-0.5, proj_y2], color='green', linestyle=':', alpha=0.5)
-ax[1].plot([4.0, 4.0], [-0.5, proj_y2], color='green', linestyle=':', alpha=0.5)
-ax[1].text(3.0, proj_y2 - 0.5, "Projection: 2.0m (Correct)", color='green', ha='center', fontweight='bold')
-ax[1].set_title("Scenario B: Misalignment / Partial Overlap", fontsize=12)
-ax[1].axis('off')
+# 模拟延长凹边 (从 (1500,1500) 向下切到 (1500,0))
+cut_line_x = [1500, 1500]
+cut_line_y = [0, 1500]
+axes[0].plot(cut_line_x, cut_line_y, color='red', linestyle='--', linewidth=3, label='人为切割线 (隐形玻璃墙)')
+
+# 绘制切割后的两个矩形
+# 矩形A (左侧竖向)
+rect_a = box(0, 0, 1500, 4000)
+axes[0].fill(*rect_a.exterior.xy, color='red', alpha=0.3, label='切割矩形 A (短边=1500)')
+# 矩形B (底部横向)
+rect_b = box(1500, 0, 4000, 1500)
+axes[0].fill(*rect_b.exterior.xy, color='orange', alpha=0.3, label='切割矩形 B (短边=1500)')
+
+axes[0].set_title("(a) 你的猜想：人为切割法 (错误)\n判断结果：短边净宽 = 1500mm", fontsize=12, fontweight='bold',
+                  color='darkred')
+axes[0].legend(loc='upper right')
+axes[0].axis('equal')
+axes[0].axis('off')
+
+# [右图] 实际真理：全局MIS寻优 (空间连续性)
+axes[1].plot(*room_poly.exterior.xy, color='black', linewidth=2)
+axes[1].fill(*room_poly.exterior.xy, color='#e0e0e0')
+
+# 计算真实的 MIS
+true_w, true_sq = calculate_maximum_inscribed_square_quick(l_coords)
+
+if true_sq:
+    axes[1].plot(*true_sq.exterior.xy, color='green', linewidth=2)
+    axes[1].fill(*true_sq.exterior.xy, color='green', alpha=0.5,
+                 label=f'最大内切正方形 (跨越切割线)\n边长 = {true_w}mm')
+
+axes[1].set_title(f"(b) 空间真理：全局拓扑寻优 (正确)\n判断结果：短边净宽 = {true_w}mm", fontsize=12, fontweight='bold',
+                  color='darkgreen')
+axes[1].legend(loc='upper right')
+axes[1].axis('equal')
+axes[1].axis('off')
 
 plt.tight_layout()
-plt.legend(loc='upper right')
+fig.suptitle("反例验证：为何不能简单延长凹边切割 L 型房间？", fontsize=16, y=1.05)
 plt.show()

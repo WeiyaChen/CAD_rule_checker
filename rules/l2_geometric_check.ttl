@@ -1,0 +1,25 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix props: <http://mythesis.org/props/> .
+@prefix ex: <http://mythesis.org/rules/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:BedroomShortSideWidthCheck
+    a sh:NodeShape ;
+
+    # 直接锁定通过语义定义的卧室类节点
+    sh:targetClass props:卧室 ;
+
+    # 针对由 Python 刚刚回写到图谱中的短边属性进行审查
+    sh:property [
+        sh:path props:shortSideWidth ;
+
+        # 强制要求该数值必须存在，防止出现漏算导致的静默通过
+        sh:minCount 1 ;
+
+        # 设定规范要求的 1800 毫米红线
+        sh:minInclusive 1800 ;
+
+        # 格式化输出带有真实数值的违规警告
+        sh:message "❌ [强条违规] 卧室短边净宽不足: 规范要求 >= 1800mm，当前通过几何计算得出的实测值为 {?value}mm。" ;
+    ] .
+

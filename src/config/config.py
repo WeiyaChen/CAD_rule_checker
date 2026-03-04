@@ -54,17 +54,22 @@ class Settings:
 
     @property
     def output_jsonld_dir(self):
-        path_str = (self._cfg.get('output', {}).get('jsonld_dir', '"output/jsonld"'))
+        path_str = self._cfg.get('output', {}).get('jsonld_dir', 'output/jsonld')
         return PROJECT_ROOT / path_str
 
     @property
     def output_html_dir(self):
-        path_str = (self._cfg.get('output', {}).get('html_dir', "output/html"))
+        path_str = self._cfg.get('output', {}).get('html_dir', "output/html")
         return PROJECT_ROOT / path_str
 
     @property
     def rules_dir(self):
         path_str = self._cfg.get('rules',{})
+        return PROJECT_ROOT / path_str
+
+    @property
+    def res_dir(self):
+        path_str = self._cfg.get('output',{}).get('res_dir','output/res')
         return PROJECT_ROOT / path_str
 
 # ==========================================
