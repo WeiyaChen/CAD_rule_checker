@@ -35,6 +35,16 @@ class Settings:
         return PROJECT_ROOT / path_str
 
     @property
+    def dxf_data_path(self):
+        path_str = self._cfg.get('data', {}).get('dxf_dir', 'data/raw/dxf')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def dxf_extend_data_path(self):
+        path_str = self._cfg.get('data', {}).get('dxf_extend_dir', 'data/raw/dxf_extend')
+        return PROJECT_ROOT / path_str
+
+    @property
     def raw_pickle_data_path(self):
         """返回 raw pickle 的绝对路径"""
         path_str = self._cfg.get('data', {}).get('raw_pickle_dir', 'data/raw/pickle')
@@ -53,11 +63,6 @@ class Settings:
         return PROJECT_ROOT / path_str
 
     @property
-    def output_jsonld_dir(self):
-        path_str = self._cfg.get('output', {}).get('jsonld_dir', 'output/jsonld')
-        return PROJECT_ROOT / path_str
-
-    @property
     def output_html_dir(self):
         path_str = self._cfg.get('output', {}).get('html_dir', "output/html")
         return PROJECT_ROOT / path_str
@@ -68,8 +73,48 @@ class Settings:
         return PROJECT_ROOT / path_str
 
     @property
-    def res_dir(self):
-        path_str = self._cfg.get('output',{}).get('res_dir','output/res')
+    def svg_ins_dir(self):
+        path_str = self._cfg.get('output',{}).get('svg_ins_dir','output/svg_ins')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def cdt_dir(self):
+        path_str = self._cfg.get('output', {}).get('cdt_dir', 'output/cdt')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def exp_viz_dir(self):
+        path_str = self._cfg.get('output', {}).get('exp_viz_dir', 'output/exp_viz')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def gt_viz_dir(self):
+        path_str = self._cfg.get('output', {}).get('gt_viz_dir', 'output/gt_viz')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def exp_jsonld_dir(self):
+        path_str = self._cfg.get('output', {}).get('exp_jsonld_dir', 'output/exp_jsonld')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def gt_jsonld_dir(self):
+        path_str = self._cfg.get('output', {}).get('gt_jsonld_dir', 'output/gt_jsonld')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def exp_res_dir(self):
+        path_str = self._cfg.get('output', {}).get('exp_res_dir', 'output/exp_res')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def gt_res_dir(self):
+        path_str = self._cfg.get('output', {}).get('gt_res_dir', 'output/gt_res')
+        return PROJECT_ROOT / path_str
+
+    @property
+    def prompt_config_dir(self):
+        path_str = self._cfg.get('prompt',{}).get('prompt_config_dir', "prompt/prompt_config.txt")
         return PROJECT_ROOT / path_str
 
 # ==========================================

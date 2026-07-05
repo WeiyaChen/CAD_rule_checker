@@ -14,9 +14,10 @@ from lxml import etree
 import numpy as np
 from typing import List, Dict, Any
 
+from shapely import LineString, STRtree
 from svgpathtools import parse_path, Line, Arc
 
-from src.config.labels import get_label_list
+from src.config.labels import get_label_list, get_wall
 
 
 def parse_svg(tree, primitives) -> List[Dict[str, Any]]:
@@ -25,7 +26,7 @@ def parse_svg(tree, primitives) -> List[Dict[str, Any]]:
 
     输出:
         List[Dict[str, Any]]: 每个元素为一个图元，包含字段：
-            - type: str, 图元类型 ('wall', 'door', 'window', 'furniture')
+            - type: str
             - instance_id: int
             - semantic_label: str
             - coords: np.ndarray, Nx2
@@ -44,7 +45,7 @@ def parse_svg(tree, primitives) -> List[Dict[str, Any]]:
         semantic_id = int(elem.get("semantic_label", "-1"))
         instance_id = int(elem.get("instance_label", "-1"))
         if semantic_id == -1 or instance_id == -1:
-            semantic_label = "unknown"
+            semantic_label = "background"
 
         else:
             semantic_label = label_list[semantic_id]
@@ -56,14 +57,139 @@ def parse_svg(tree, primitives) -> List[Dict[str, Any]]:
             continue
 
         elements.append({
-            'type': semantic_label,  # 或根据标签映射成 wall/door/window/furniture/None
+            'type': semantic_label,
             'instance_id': instance_id,
             'semantic_label': semantic_label,
             'coords': coords  # np.ndarray, Nx2
         })
 
-    return elements
+    return fix_wall(elements)
 
+# 将背景图元吸附为边界图元
+def fix_wall(raw_elements):
+    # 墙线的预处理 (可选：简单的线段合并)
+    walls = [e for e in raw_elements if e['type'] in get_wall()] # 找到墙体图元
+    backgrounds = [e for e in raw_elements if "background" in e["type"]]
+
+    # 将墙体转为 Shapely 几何对象，作为初始的“引力源”
+    print(f"  [+] 图元连通性开始，初始确权墙体数量: {len(walls)}")
+    wall_geoms = []
+    for w in walls:
+        coords = w.get('coords', [])
+        if len(coords) >= 2:
+            wall_geoms.append(LineString(coords))
+
+    # 迭代扩散算法
+    tolerance = 0.1  # 端点吸附距离容差 (应对微小制图断裂)
+    max_overlap_len = 15.0  # 最大允许的绝对重叠长度 (防止贴墙家具线被误吸)
+    tol_sq = tolerance ** 2  # 预计算容差平方，用于极速距离判定
+
+    print(">>> 启动防污染预处理：隔离贴墙家具图元碎片...")
+    polluted_indices = set()
+    bg_geoms = []
+    bg_endpoints = []
+
+    for bg in backgrounds:
+        coords = bg.get('coords', [])
+        if len(coords) >= 2:
+            bg_geom = LineString(coords)
+            bg_geoms.append(bg_geom)
+            # 提取端点用于快速纯代数传染判定
+            bg_endpoints.append((coords[0], coords[-1]))
+        else:
+            bg_geoms.append(None)
+            bg_endpoints.append(None)
+
+    # 锁定污染源 (与墙体发生明显重叠的图元)
+    if wall_geoms:
+        wall_tree = STRtree(wall_geoms)
+        for i, bg_geom in enumerate(bg_geoms):
+            if bg_geom is None: continue
+            bg_length = bg_geom.length
+            if bg_length < 1e-3: continue
+
+            search_area = bg_geom.buffer(tolerance + 1.0)
+            candidates = wall_tree.query(search_area)
+            for cand in candidates:
+                try:
+                    wg = wall_geoms[cand]
+                except TypeError:
+                    wg = cand
+
+                # 平行重叠度过高，确认为贴墙污染源
+                overlap_geom = bg_geom.intersection(wg.buffer(tolerance))
+                overlap_len = overlap_geom.length if not overlap_geom.is_empty else 0.0
+
+                if overlap_len > max_overlap_len or (overlap_len / bg_length > 0.3):
+                    polluted_indices.add(i)
+                    break
+
+    # 彻底剔除所有污染图元
+    backgrounds = [bg for i, bg in enumerate(backgrounds) if i not in polluted_indices]
+    print(f"  [-] 成功通过拓扑传染拦截并隔离贴墙污染碎片: {len(polluted_indices)} 个")
+
+    # ====================================================================
+    # 4. 迭代扩散算法：端点点对点吸附纯净的缺失墙体
+    # ====================================================================
+    added_new_walls = True
+
+    while added_new_walls:
+        added_new_walls = False
+        remaining_backgrounds = []
+
+        if not wall_geoms:
+            break
+        wall_tree = STRtree(wall_geoms)
+
+        for bg in backgrounds:
+            coords = bg.get('coords', [])
+            if len(coords) < 2:
+                continue
+
+            bg_geom = LineString(coords)
+            bx1, by1 = coords[0]
+            bx2, by2 = coords[-1]
+
+            is_connected = False
+
+            search_area = bg_geom.buffer(tolerance + 1.0)
+            candidates = wall_tree.query(search_area)
+
+            for cand in candidates:
+                try:
+                    wg = wall_geoms[cand]
+                except TypeError:
+                    wg = cand
+
+                wg_coords = wg.coords
+                wx1, wy1 = wg_coords[0]
+                wx2, wy2 = wg_coords[-1]
+
+                # 严格的端点对端点锚定判定
+                min_dist_sq = min(
+                    (bx1 - wx1) ** 2 + (by1 - wy1) ** 2,
+                    (bx1 - wx2) ** 2 + (by1 - wy2) ** 2,
+                    (bx2 - wx1) ** 2 + (by2 - wy1) ** 2,
+                    (bx2 - wx2) ** 2 + (by2 - wy2) ** 2
+                )
+
+                if min_dist_sq <= tol_sq:
+                    is_connected = True
+                    break  # 已确立端点连接，跳出墙体比对
+
+            if is_connected:
+                bg['type'] = 'wall'
+                bg['semantic_label'] = 'wall'
+                walls.append(bg)
+                wall_geoms.append(bg_geom)
+                added_new_walls = True
+            else:
+                remaining_backgrounds.append(bg)
+
+        backgrounds = remaining_backgrounds
+
+    print(f"  [+] 端点连通性吸附完成，最终确权墙体数量: {len(walls)}")
+    return raw_elements
 
 def parse_svg_texts(tree):
     root = tree.getroot()
@@ -100,21 +226,38 @@ def parse_svg_texts(tree):
         # 2. 提取坐标 (Coordinate Extraction)
         # -------------------------------------------------
         try:
-            # 尝试直接从 <text> 属性获取
-            raw_x = node.get('x')
-            raw_y = node.get('y')
-            # 3. 坐标清洗与整型化 (Integer Conversion)
-            real_x, real_y = _transform_point((float(raw_x), float(raw_y)), scale)
+            # 1. 尝试直接从 <text> 属性获取原始起点与字高
+            raw_x = float(node.get('x', 0))
+            raw_y = float(node.get('y', 0))
+            font_size_str = node.get('font-size', '100').replace('px', '').replace('pt', '')
+            font_size = float(font_size_str)
+
+            # 获取文本对齐方式，防止 CAD 原生导出了居中对齐
+            text_anchor = node.get('text-anchor', 'start')
+
+            # 2. 估算几何中心点坐标
+            if text_anchor == 'middle':
+                center_x = raw_x  # 如果本身是居中对齐，x 已经是中心点
+            else:
+                # 估算文本宽度：中文字符宽度约等于字高，英文/数字较窄。这里取折中系数 0.8
+                estimated_width = len(content) * font_size * 0.8
+                center_x = raw_x + (estimated_width / 2)
+
+            # Y 坐标通常是基准线，中心点在基准线上方约半个字高处
+            center_y = raw_y - (font_size / 2)
+
+            # 3. 坐标清洗、放缩与整型化
+            real_x, real_y = _transform_point((center_x, center_y), scale)
             x = int(real_x)
             y = int(real_y)
 
             # 4. 构建标准对象
             element = {
                 'type': 'text',
-                'instance_id': -1,  # 文字通常不参与实例补丁，留空即可
-                'semantic_label': 'room_label',  # 可以在这里加一个统一的子类型
-                'text': content,  # 核心内容
-                'coords': [x, y]  # 核心位置
+                'instance_id': -1,
+                'semantic_label': 'room_label',
+                'text': content,
+                'coords': [x, y]  # 此时这里保存的就是精准的文本质心坐标
             }
             text_element.append(element)
 

@@ -43,14 +43,17 @@ def get_wall():
     boundary_labels = {
         "wall",
         "curtain wall",
-        "railing"
+        "railing",
+        "window",
+        "bay window",
+        "blind window"
     }
 
     return boundary_labels
 
 
-def get_opening():
-    # 2. 门窗/洞口类：嵌入在墙体上的元素
+def get_door():
+    # 2. 洞口类：嵌入在墙体上的元素
     opening_labels = {
         "single door",
         "double door",
@@ -58,12 +61,18 @@ def get_opening():
         "folding door",
         "revolving door",
         "rolling door",
-        "window",
-        "bay window",
-        "blind window",
         "opening symbol"
     }
     return opening_labels
+
+def get_window():
+    window_labels = {
+        "window",
+        "bay window",
+        "blind window"
+    }
+    return window_labels
+
 
 def get_color():
     SVG_CATEGORIES = [

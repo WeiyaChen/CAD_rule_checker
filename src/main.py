@@ -1,122 +1,82 @@
 import os
 import sys
-import traceback
-# 假设你已经将我们之前写的类放入了 src.compliance 包中
-from src.compliance.shacl_engine import ShaclValidationEngine
-from src.compliance.geometric_checker import GeometryChecker
+import openai
+
+# 引入配置与引擎
 from src.config.config import settings
-from src.io.extractor import ElementExtractor
-from src.topology.builder import TopologyBuilder
+from src.compliance.shacl_engine import ShaclValidationEngine
+from src.processor import process_single_drawing, process_directory
 
 
-# from src.compliance.topological_checker import TopologicalChecker
+def setup_llm_client():
+    """初始化大语言模型客户端"""
+    LLM_API_KEY = "68c58c6b481a4d328d2fdf295240c1fb.Zt1Itx9ICDK5VIGB"
+    llm_client = None
+    if LLM_API_KEY:
+        try:
+            llm_client = openai.Client(api_key=LLM_API_KEY, base_url="https://open.bigmodel.cn/api/paas/v4/")
+            print(f"🎉 大模型客户端初始成功！")
+        except Exception as e:
+            print(f"⚠️ 大模型客户端初始化失败: {e}，将使用沙盒降级模式。")
+    return llm_client
 
 
 def main():
-    svg_dir = settings.raw_svg_data_path
-    output_json_dir = settings.output_jsonld_dir
-    output_html_dir = settings.output_html_dir
+    # =====================================================================
+    # 1. 运行模式配置区 (直接在此处修改参数)
+    # =====================================================================
 
-    # 获取目录下所有的 SVG 文件
-    svg_files = [f for f in os.listdir(svg_dir) if f.endswith('.svg')]
+    # RUN_MODE 可选值:
+    #   "SINGLE"  : 处理单张特定的图纸
+    #   "BATCH"   : 批量处理您指定的特定目录下的所有图纸
+    #   "DEFAULT" : 批量处理系统 config.py 中配置的默认图纸目录
+    RUN_MODE = "BATCH"
 
-    if not svg_files:
-        print(f"🛑 在目录 {svg_dir} 中未找到任何 SVG 文件，程序退出。")
-        sys.exit(0)
+    # 若 RUN_MODE = "SINGLE"，请在此指定单个 SVG 文件的路径
+    TARGET_FILE_DIR = "test"
+    FILE_NAME = "南阳名门_1.svg"
+    TARGET_FILE = os.path.join(settings.raw_svg_data_path, TARGET_FILE_DIR, FILE_NAME)
 
-    print(f"🔍 共发现 {len(svg_files)} 份待审查的图纸，正在启动自动化批处理流水线...\n")
+    # 若 RUN_MODE = "BATCH"，请在此指定包含多个 SVG 的文件夹路径
+    TARGET_DIR = os.path.join(settings.raw_svg_data_path, TARGET_FILE_DIR)
 
-    # 初始化全局验证引擎，由于它是无状态的，在循环外实例化一次即可复用
+    # =====================================================================
+    # 2. 全局基础依赖初始化
+    # =====================================================================
+    output_json_dir = settings.exp_jsonld_dir
+
+    os.makedirs(output_json_dir, exist_ok=True)
+
     validator = ShaclValidationEngine()
+    llm_client = setup_llm_client()
 
-    # 初始化全局统计变量
-    total_files = len(svg_files)
-    passed_files = 0
-    failed_files = 0
+    # =====================================================================
+    # 3. 路由分发机制
+    # =====================================================================
+    if RUN_MODE == "SINGLE":
+        if not os.path.exists(TARGET_FILE):
+            print(f"🛑 错误：找不到指定的文件 '{TARGET_FILE}'")
+            sys.exit(1)
+        print(f"🚀 启动单图审查模式: {TARGET_FILE}")
+        process_single_drawing(TARGET_FILE, output_json_dir, validator, llm_client)
 
-    for svg_name in svg_files:
-        input_svg_path = os.path.join(svg_dir, svg_name)
-        # 动态生成输出的 JSON-LD 文件名，保持与输入图纸同名
-        base_name = os.path.splitext(svg_name)[0]
-        jsonld_output_path = output_json_dir / f"{base_name}.jsonld"
-        html_output_path = output_html_dir/ f"{base_name}.html"
+    elif RUN_MODE == "BATCH":
+        if not os.path.exists(TARGET_DIR) or not os.path.isdir(TARGET_DIR):
+            print(f"🛑 错误：指定的目录无效或不存在 '{TARGET_DIR}'")
+            sys.exit(1)
+        print(f"🚀 启动指定目录批处理模式: {TARGET_DIR}")
+        process_directory(TARGET_DIR, output_json_dir, validator, llm_client)
 
-        print("\n" + "=" * 60)
-        print(f"📐 正在处理并审查图纸: {svg_name}")
-        print("=" * 60)
+    elif RUN_MODE == "DEFAULT":
+        default_dir = settings.raw_svg_data_path
+        print(f"🚀 启动系统默认配置目录批处理模式: {default_dir}")
+        if not os.path.exists(default_dir):
+            print(f"🛑 错误：系统默认目录不存在 '{default_dir}'")
+            sys.exit(1)
+        process_directory(default_dir, output_json_dir, validator, llm_client)
 
-        try:
-            print(">>> 阶段 1: 正在识别图纸元素...")
-            extractor = ElementExtractor()
-            elements = extractor.process(input_svg_path)
-
-            print(">>> 阶段 2: 正在构建拓扑与知识图谱...")
-            topology_builder = TopologyBuilder()
-            topology_builder.build(elements, str(jsonld_output_path), str(html_output_path))
-
-        except Exception as e:
-            # 利用 traceback 捕获并格式化完整的堆栈报错信息（包含文件名和精准行号）
-            error_details = traceback.format_exc()
-            print(f"\n⚠️ 🚨 图纸 {svg_name} 在前端解析阶段发生严重异常，已跳过该文件。")
-            print("👇 详细的代码行数定位与报错堆栈如下：")
-            print("=" * 60)
-            print(error_details)
-            print("=" * 60 + "\n")
-
-            failed_files += 1
-            continue
-
-        print(">>> 阶段 3: 启动多层级自动化合规审查...")
-        file_violations = 0
-
-        # [L1层] 基础语义审查
-        print("--- [L1] 执行语义结构审查 ---")
-        l1_passed, l1_report = validator.run_validation(jsonld_output_path, "rules/l1_semantic_check.ttl")
-        if not l1_passed:
-            print("⚠️ 发现 L1 语义违规，图谱结构不完整，跳过后续几何与拓扑推演！详细报告：\n", l1_report)
-            failed_files += 1
-            continue
-        print("✅ L1 语义审查通过。")
-
-        # [L2层] 几何特征富化与尺寸审查
-        print("--- [L2] 执行几何尺寸审查 ---")
-        geo_checker = GeometryChecker(jsonld_output_path)
-        geo_checker.run_all_enrichments()
-
-        l2_passed, l2_report = validator.run_validation(jsonld_output_path, "rules/l2_geometric_check.ttl")
-        if not l2_passed:
-            print("⚠️ 发现 L2 几何违规！详细报告：\n", l2_report)
-            file_violations += 1
-        else:
-            print("✅ L2 几何审查通过。")
-
-        # [L3层] 拓扑分析与连通性审查
-        print("--- [L3] 执行拓扑连通审查 ---")
-        # topo_checker = TopologicalChecker(jsonld_output_path)
-        # topo_checker.run_all_enrichments()
-
-        l3_passed, l3_report = validator.run_validation(jsonld_output_path, "rules/l3_topological_check.ttl")
-        if not l3_passed:
-            print("⚠️ 发现 L3 拓扑违规！详细报告：\n", l3_report)
-            file_violations += 1
-        else:
-            print("✅ L3 拓扑审查通过。")
-
-        # 单文件结论核算
-        if file_violations == 0:
-            print(f"\n🎉 结论：图纸 {svg_name} 顺利通过全部合规审查！")
-            passed_files += 1
-        else:
-            print(f"\n❌ 结论：图纸 {svg_name} 存在 {file_violations} 个层级的违规项。")
-            failed_files += 1
-
-    # 输出全局汇总统计报告
-    print("\n" + "★" * 60)
-    print("📊 批量审查任务全部完成！")
-    print(f"共计处理图纸: {total_files} 份")
-    print(f"✅ 完全合规图纸: {passed_files} 份")
-    print(f"❌ 存在违规图纸: {failed_files} 份")
-    print("★" * 60)
+    else:
+        print(f"🛑 错误：未知的运行模式 '{RUN_MODE}'，请检查配置区的 RUN_MODE 设置。")
 
 
 if __name__ == "__main__":

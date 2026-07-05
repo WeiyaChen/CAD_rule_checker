@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图谱可视交互修正系统 (空间与设施协同版)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f5f7fa;
+            color: #333;
+            overflow: hidden;
+        }
+
+        /* 布局容器 */
+        #main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 10px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .header h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+        .header p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        /* 单画布区 */
+        #workspace-single {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid #dcdde1;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+        }
+        .pane-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #dcdde1;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pane-body {
+            flex: 1;
+            position: relative;
+            background-color: #ecf0f1;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: default;
+        }
+
+        /* 状态指示器 */
+        #mode-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 6px 12px;
+            background: rgba(41, 128, 185, 0.9);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            pointer-events: none;
+            display: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        /* 侧边栏 */
+        #sidebar {
+            width: 320px;
+            background: #fff;
+            border-left: 1px solid #dcdde1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.02);
+            overflow-y: auto;
+        }
+        .panel-section {
+            margin-bottom: 25px;
+        }
+        .panel-section h3 {
+            font-size: 1rem;
+            color: #34495e;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+
+        .toggle-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            cursor: pointer;
+            color: #2c3e50;
+            user-select: none;
+        }
+        .toggle-label input[type="checkbox"] {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #2980b9;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 10px;
+        }
+        button:hover { background-color: #2471a3; }
+        button.success { background-color: #27ae60; }
+        button.success:hover { background-color: #229954; }
+        button.upload-btn { background-color: #e67e22; }
+        button.upload-btn:hover { background-color: #d35400; }
+        button.draw-btn { background-color: #8e44ad; }
+        button.draw-btn:hover { background-color: #732d91; }
+        button.fac-btn { background-color: #f39c12; }
+        button.fac-btn:hover { background-color: #d68910; }
+        button.cancel-btn { background-color: #e74c3c; display: none; }
+        button.cancel-btn:hover { background-color: #c0392b; }
+        button.edit-toggle-btn { background-color: #16a085; font-weight: bold; }
+        button.edit-toggle-btn:hover { background-color: #117a65; }
+        button.edit-toggle-btn.active { background-color: #e74c3c; }
+        button.edit-toggle-btn.active:hover { background-color: #c0392b; }
+
+        #status-box {
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: #e8f8f5;
+            color: #117a65;
+            border: 1px solid #a3e4d7;
+            display: none;
+            margin-top: 15px;
+            word-wrap: break-word;
+        }
+        .legend {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+        .legend span {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+            vertical-align: middle;
+            border: 1px solid #999;
+        }
+
+        #edit-form-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.6);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+        #edit-form-container {
+            position: relative;
+        }
+
+        .hint-text {
+            font-size: 0.8rem;
+            color: #e67e22;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-wrapper">
+        <div class="header">
+            <div>
+                <h2>交互式图谱可视修正系统</h2>
+                <p>操作提示：支持空间几何重塑与设施节点增补；质心连线可自动确立相邻拓扑或包含关联。</p>
+            </div>
+        </div>
+
+        <div id="workspace-single">
+            <div class="pane-header">
+                <span>📐 综合图纸视图 (Integrated View)</span>
+                <span id="view-status" style="font-size:0.85rem; color:#e67e22; font-weight:normal;">当前模式：纯净浏览</span>
+            </div>
+            <div class="pane-body" id="editor-container">
+                <div id="mode-indicator">✍️ 模式提示</div>
+                <canvas id="editor-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <!-- 视图与编辑控制面板 -->
+        <div class="panel-section">
+            <h3>视图与交互控制 (Controls)</h3>
+            <div class="toggle-group">
+                <label class="toggle-label">
+                    <input type="checkbox" id="cb-basemap" checked onchange="toggleLayer()">
+                    🗺️ 显示原生 CAD 底图
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="cb-graph" checked onchange="toggleLayer()">
+                    🌐 显示结构化知识图谱
+                </label>
+            </div>
+            <button id="btn-edit-toggle" class="edit-toggle-btn" onclick="toggleEditMode()">🔒 开启交互编辑</button>
+        </div>
+
+        <!-- 数据接入面板 -->
+        <div class="panel-section">
+            <h3>数据接入 (Data Input)</h3>
+            <input type="file" id="file-bg" accept=".svg, image/png, image/jpeg" style="display: none;">
+            <button class="upload-btn" onclick="document.getElementById('file-bg').click()">🖼️ 1. 上传原生图纸底图</button>
+
+            <input type="file" id="file-json" accept=".json, .jsonld" style="display: none;">
+            <button class="upload-btn" onclick="document.getElementById('file-json').click()">📄 2. 上传知识图谱 (JSON-LD)</button>
+        </div>
+
+        <div class="panel-section">
+            <h3>几何重塑与设施增补</h3>
+            <div class="hint-text">💡 选中空间后，右键点击顶点即可删除该点</div>
+            <button id="btn-draw" class="draw-btn" onclick="toggleDrawMode()" style="opacity: 0.5; cursor: not-allowed;" disabled>✍️ 绘制自定义空间</button>
+            <button id="btn-add-fac" class="fac-btn" onclick="toggleAddFacilityMode()" style="opacity: 0.5; cursor: not-allowed;" disabled>➕ 增补内部设施节点</button>
+            <button id="btn-cancel-draw" class="cancel-btn" onclick="cancelDrawMode()">取消操作</button>
+        </div>
+
+        <div class="panel-section">
+            <h3>节点属性覆写 (Node Override)</h3>
+            <div id="edit-form-container">
+                <div id="edit-form-overlay">请先开启上方“交互编辑”</div>
+
+                <div id="no-selection" style="font-size: 0.9rem; color: #95a5a6; display: none;">请在左侧画布中点击选择节点。</div>
+                <div id="edit-form" style="display: none;">
+                    <div class="form-group">
+                        <label>统一资源标识符 (URI)</label>
+                        <input type="text" id="node-id" disabled style="background: #f4f6f6; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>本体语义 (Semantic Type)</label>
+                        <!-- 空间下拉菜单 -->
+                        <select id="node-type-space" style="display: none;">
+                            <option value="Unknown">Unknown (待推断)</option>
+                            <option value="Bedroom">Bedroom (卧室)</option>
+                            <option value="LivingRoom">LivingRoom (起居室)</option>
+                            <option value="Kitchen">Kitchen (厨房)</option>
+                            <option value="Bathroom">Bathroom (卫生间)</option>
+                            <option value="Balcony">Balcony (阳台)</option>
+                            <option value="Corridor">Corridor (过道)</option>
+                            <option value="DiningRoom">DiningRoom (餐厅)</option>
+                        </select>
+                        <!-- 设施下拉菜单 -->
+                        <select id="node-type-facility" style="display: none;">
+                            <option value="UnknownFacility">Unknown (待确认设施)</option>
+                            <option value="GasStove">Gas Stove (燃气灶)</option>
+                            <option value="Sink">Sink (洗涤池)</option>
+                            <option value="Toilet">Toilet (便器)</option>
+                            <option value="Bathtub">Bathtub (浴缸)</option>
+                            <option value="Bed">Bed (床铺)</option>
+                            <option value="Cabinet">Cabinet (柜子)</option>
+                            <option value="Sofa">Sofa (沙发)</option>
+                            <option value="Table">Table (桌子)</option>
+                            <option value="Wardrobe">Wardrobe (衣柜)</option>
+                            <option value="ShoeCabinet">Shoe Cabinet (鞋柜)</option>
+                            <option value="WashingMachine">Washing Machine (洗衣机)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="fg-area">
+                        <label>净面积 (Area ㎡) - 自动精确核算</label>
+                        <input type="number" id="node-area" step="0.1">
+                    </div>
+                    <button onclick="applyNodeChanges()">确认修改</button>
+                    <button class="cancel-btn" style="display:block; margin-top:5px; background-color:#e74c3c;" onclick="deleteSelectedNode()">🗑️ 删除该节点</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-section" style="margin-top: auto;">
+            <h3>图谱同步 (Synchronization)</h3>
+            <button class="success" onclick="syncGraphData()">序列化并更新至知识图谱</button>
+            <div id="status-box"></div>
+
+            <div class="legend">
+                <div><span style="background: #FFDAB9;"></span> Kitchen</div>
+                <div><span style="background: #E0FFFF;"></span> Bathroom</div>
+                <div style="margin-top: 5px;">📍 蓝色实线：空间相邻拓扑 (adjacentZone)</div>
+                <div>📍 绿色虚线：设施包含拓扑 (containsElement)</div>
+                <div>🔸 菱形标记：设施构件位置</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =================== 核心数据结构与全局变量 ===================
+
+        let backgroundImage = null;
+        let baseMapVertices = [];
+        let baseMapEdges = [];
+        let rawGraphDataCache = null;
+
+        let showBaseMap = true;
+        let showGraph = true;
+
+        // 图谱数据结构
+        let graphData = {
+            "inst:Space_01": {
+                nodeClass: "Space", type: "LivingRoom", area: 24.5,
+                polygon: [[50, 50], [300, 50], [300, 300], [50, 300]],
+                centroid: [175, 175],
+                adjacencies: ["inst:Space_02"], contains: ["inst:ELEM_Cabinet_01"]
+            },
+            "inst:Space_02": {
+                nodeClass: "Space", type: "Corridor", area: 4.2,
+                polygon: [[300, 150], [400, 150], [400, 300], [300, 300]],
+                centroid: [350, 225],
+                adjacencies: ["inst:Space_01", "inst:Space_03"], contains: []
+            },
+            "inst:Space_03": {
+                nodeClass: "Space", type: "Kitchen", area: 11.2,
+                polygon: [[425, 65], [600, 50], [600, 200], [400, 200]],
+                centroid: [500, 125],
+                adjacencies: ["inst:Space_02"], contains: ["inst:ELEM_Sink_01"]
+            },
+            "inst:ELEM_Sink_01": {
+                nodeClass: "Facility", type: "Sink", label: "sink",
+                centroid: [460, 90],
+                contained_in: "inst:Space_03"
+            },
+            "inst:ELEM_Cabinet_01": {
+                nodeClass: "Facility", type: "Cabinet", label: "cabinet",
+                centroid: [100, 100],
+                contained_in: "inst:Space_01"
+            }
+        };
+
+        const colorMap = {
+            "Bedroom": "#FFE4B5", "LivingRoom": "#F0E68C", "Kitchen": "#FFDAB9",
+            "Bathroom": "#E0FFFF", "Balcony": "#D2B4DE", "DiningRoom": "#FDEBD0",
+            "Corridor": "#D3D3D3", "Unknown": "#F2F3F4"
+        };
+        const facilityColorMap = {
+            "GasStove": "#E74C3C", "Sink": "#2980B9", "Toilet": "#8B4513",
+            "Bathtub": "#1ABC9C", "Bed": "#9B59B6", "Cabinet": "#D35400",
+            "Sofa": "#16A085", "Table": "#27AE60", "Wardrobe": "#8E44AD",
+            "ShoeCabinet": "#E67E22", "WashingMachine": "#2980B9",
+            "UnknownFacility": "#7F8C8D"
+        };
+
+        let customRoomCounter = 1;
+        let customFacCounter = 1;
+        let globalScale = 1.0;
+        let globalOffsetX = 0, globalOffsetY = 0;
+        let dxfScale = 1.0;
+        let svgViewBoxW = 140.0, svgViewBoxH = 140.0;
+        let areaScaleFactor = null;
+
+        // =================== 画布与交互状态 ===================
+        const canvasEditor = document.getElementById('editor-canvas');
+        const ctxEditor = canvasEditor.getContext('2d');
+        const containerEditor = document.getElementById('editor-container');
+
+        const modeIndicator = document.getElementById('mode-indicator');
+        const btnDraw = document.getElementById('btn-draw');
+        const btnAddFac = document.getElementById('btn-add-fac');
+        const btnCancelDraw = document.getElementById('btn-cancel-draw');
+        const viewStatus = document.getElementById('view-status');
+        const editFormOverlay = document.getElementById('edit-form-overlay');
+
+        let currentMode = 'VIEW';
+        let selectedNodeId = null;
+        let draggingVertexIndex = null;
+        let isDraggingEdge = false;
+        let dragStartNodeId = null;
+
+        let drawPoints = [];
+        let rawMouseX = 0, rawMouseY = 0;
+        let worldMouseX = 0, worldMouseY = 0;
+        let currentSnapInfo = null;
+
+        // =================== 核心控制逻辑 ===================
+
+        function toggleLayer() {
+            showBaseMap = document.getElementById('cb-basemap').checked;
+            showGraph = document.getElementById('cb-graph').checked;
+            if (!showBaseMap && !showGraph) {
+                document.getElementById('cb-graph').checked = true;
+                showGraph = true;
+                showMessage("⚠️ 必须至少保留一个可见图层。");
+            }
+            drawAll();
+        }
+
+        function toggleEditMode() {
+            const btn = document.getElementById('btn-edit-toggle');
+            if (currentMode === 'VIEW') {
+                currentMode = 'SELECT';
+                btn.innerHTML = "🔓 退出交互编辑";
+                btn.classList.add('active');
+                canvasEditor.style.cursor = 'crosshair';
+                viewStatus.innerHTML = '当前模式：<span style="color:#e74c3c; font-weight:bold;">交互编辑</span>';
+
+                btnDraw.style.opacity = '1'; btnDraw.style.cursor = 'pointer'; btnDraw.disabled = false;
+                btnAddFac.style.opacity = '1'; btnAddFac.style.cursor = 'pointer'; btnAddFac.disabled = false;
+                editFormOverlay.style.display = 'none';
+                updatePanel();
+                showMessage("🔓 交互编辑已开启。");
+            } else {
+                cancelDrawMode();
+                currentMode = 'VIEW';
+                btn.innerHTML = "🔒 开启交互编辑";
+                btn.classList.remove('active');
+                canvasEditor.style.cursor = 'default';
+                viewStatus.innerHTML = '当前模式：<span style="color:#27ae60; font-weight:bold;">纯净浏览</span>';
+
+                btnDraw.style.opacity = '0.5'; btnDraw.style.cursor = 'not-allowed'; btnDraw.disabled = true;
+                btnAddFac.style.opacity = '0.5'; btnAddFac.style.cursor = 'not-allowed'; btnAddFac.disabled = true;
+                editFormOverlay.style.display = 'flex';
+
+                selectedNodeId = null;
+                updatePanel();
+            }
+            drawAll();
+        }
+
+        // =================== 核心数学与渲染 ===================
+
+        function autoFitView() {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let hasData = false;
+
+            for (let id in graphData) {
+                let node = graphData[id];
+                if (node.nodeClass === 'Space' && node.polygon) {
+                    for (let pt of node.polygon) {
+                        minX = Math.min(minX, pt[0]); minY = Math.min(minY, pt[1]);
+                        maxX = Math.max(maxX, pt[0]); maxY = Math.max(maxY, pt[1]);
+                        hasData = true;
+                    }
+                } else if (node.nodeClass === 'Facility') {
+                    minX = Math.min(minX, node.centroid[0]); minY = Math.min(minY, node.centroid[1]);
+                    maxX = Math.max(maxX, node.centroid[0]); maxY = Math.max(maxY, node.centroid[1]);
+                    hasData = true;
+                }
+            }
+
+            if (!hasData && baseMapVertices.length > 0) {
+                for (let pt of baseMapVertices) {
+                    minX = Math.min(minX, pt.x); minY = Math.min(minY, pt.y);
+                    maxX = Math.max(maxX, pt.x); maxY = Math.max(maxY, pt.y);
+                    hasData = true;
+                }
+            }
+
+            if (!hasData && backgroundImage) {
+                minX = 0; minY = 0; maxX = svgViewBoxW; maxY = svgViewBoxH; hasData = true;
+            }
+
+            if (!hasData) return;
+
+            let w = maxX - minX; let h = maxY - minY;
+            if (w <= 0) w = 1; if (h <= 0) h = 1;
+
+            const logicalW = containerEditor.clientWidth;
+            const logicalH = containerEditor.clientHeight;
+
+            let scaleX = (logicalW * 0.9) / w; let scaleY = (logicalH * 0.9) / h;
+            globalScale = Math.min(scaleX, scaleY);
+            globalOffsetX = (logicalW - w * globalScale) / 2 - minX * globalScale;
+            globalOffsetY = (logicalH - h * globalScale) / 2 - minY * globalScale;
+        }
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rectEditor = containerEditor.getBoundingClientRect();
+            canvasEditor.width = rectEditor.width * dpr;
+            canvasEditor.height = rectEditor.height * dpr;
+            canvasEditor.style.width = `${rectEditor.width}px`;
+            canvasEditor.style.height = `${rectEditor.height}px`;
+            ctxEditor.setTransform(1, 0, 0, 1, 0, 0);
+            ctxEditor.scale(dpr, dpr);
+            autoFitView(); drawAll();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function screenToWorld(sx, sy) { return [(sx - globalOffsetX) / globalScale, (sy - globalOffsetY) / globalScale]; }
+
+        function getClosestPointOnSegment(px, py, x1, y1, x2, y2) {
+            let dx = x2 - x1, dy = y2 - y1;
+            if (dx === 0 && dy === 0) return { x: x1, y: y1 };
+            let t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
+            t = Math.max(0, Math.min(1, t));
+            return { x: x1 + t * dx, y: y1 + t * dy };
+        }
+
+        function getSnappedCoordinates(wx, wy, thresholdScreenPx = 15) {
+            let worldThreshold = thresholdScreenPx / globalScale;
+            let bestDist = worldThreshold;
+            let snapPt = null;
+
+            if (baseMapVertices.length > 0) {
+                for (let pt of baseMapVertices) {
+                    let d = Math.hypot(wx - pt.x, wy - pt.y);
+                    if (d < bestDist) { bestDist = d; snapPt = { x: pt.x, y: pt.y }; }
+                }
+            }
+
+            for (let id in graphData) {
+                if (id === selectedNodeId && currentMode === 'SELECT') continue;
+                let node = graphData[id];
+                if(node.nodeClass === 'Space') {
+                    for (let pt of node.polygon) {
+                        let d = Math.hypot(wx - pt[0], wy - pt[1]);
+                        if (d < bestDist) { bestDist = d; snapPt = { x: pt[0], y: pt[1] }; }
+                    }
+                }
+            }
+
+            if (baseMapEdges.length > 0) {
+                for (let edge of baseMapEdges) {
+                    let proj = getClosestPointOnSegment(wx, wy, edge[0].x, edge[0].y, edge[1].x, edge[1].y);
+                    let d = Math.hypot(wx - proj.x, wy - proj.y);
+                    if (d < bestDist) { bestDist = d; snapPt = { x: proj.x, y: proj.y }; }
+                }
+            }
+
+            for (let id in graphData) {
+                if (id === selectedNodeId && currentMode === 'SELECT') continue;
+                let node = graphData[id];
+                if(node.nodeClass === 'Space') {
+                    for (let i = 0; i < node.polygon.length; i++) {
+                        let p1 = node.polygon[i], p2 = node.polygon[(i + 1) % node.polygon.length];
+                        let proj = getClosestPointOnSegment(wx, wy, p1[0], p1[1], p2[0], p2[1]);
+                        let d = Math.hypot(wx - proj.x, wy - proj.y);
+                        if (d < bestDist) { bestDist = d; snapPt = { x: proj.x, y: proj.y }; }
+                    }
+                }
+            }
+            return snapPt;
+        }
+
+        function isPointInPolygon(point, vs) {
+            let x = point[0], y = point[1], inside = false;
+            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                let xi = vs[i][0], yi = vs[i][1], xj = vs[j][0], yj = vs[j][1];
+                let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        function calculatePolygonArea(pts) {
+            let area = 0;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { area += (pts[j][0] + pts[i][0]) * (pts[j][1] - pts[i][1]); }
+            return Math.abs(area / 2);
+        }
+
+        function calculateCentroid(pts) {
+            let minX = Math.min(...pts.map(p => p[0])), maxX = Math.max(...pts.map(p => p[0]));
+            let minY = Math.min(...pts.map(p => p[1])), maxY = Math.max(...pts.map(p => p[1]));
+            return [minX + (maxX - minX) / 2, minY + (maxY - minY) / 2];
+        }
+
+        function parseWKT(wktStr) {
+            const match = wktStr.match(/\(\((.*?)\)\)/);
+            if (!match) return null;
+            return match[1].split(',').map(pt => {
+                const coords = pt.trim().split(/\s+/).map(Number);
+                let sx = coords[0] * dxfScale;
+                let sy = svgViewBoxH - (coords[1] * dxfScale);
+                return [sx, sy];
+            });
+        }
+
+        function drawFacilityMarker(cx, cy, color, isSelected) {
+            let sz = 6 / globalScale;
+            ctxEditor.beginPath();
+            ctxEditor.moveTo(cx, cy - sz); ctxEditor.lineTo(cx + sz, cy);
+            ctxEditor.lineTo(cx, cy + sz); ctxEditor.lineTo(cx - sz, cy);
+            ctxEditor.closePath();
+            ctxEditor.fillStyle = color; ctxEditor.fill();
+            ctxEditor.lineWidth = isSelected ? 3/globalScale : 1.5/globalScale;
+            ctxEditor.strokeStyle = isSelected ? "#e74c3c" : "#2c3e50"; ctxEditor.stroke();
+        }
+
+        function drawAll() {
+            ctxEditor.clearRect(0, 0, canvasEditor.width, canvasEditor.height);
+            ctxEditor.save();
+            ctxEditor.translate(globalOffsetX, globalOffsetY);
+            ctxEditor.scale(globalScale, globalScale);
+
+            if (showBaseMap && backgroundImage) {
+                ctxEditor.globalAlpha = showGraph ? 0.7 : 1.0;
+                ctxEditor.drawImage(backgroundImage, 0, 0, svgViewBoxW, svgViewBoxH);
+                ctxEditor.globalAlpha = 1.0;
+            }
+
+            if (showGraph) {
+                for (let id in graphData) {
+                    let node = graphData[id];
+                    if(node.nodeClass !== 'Space') continue;
+
+                    ctxEditor.beginPath();
+                    ctxEditor.moveTo(node.polygon[0][0], node.polygon[0][1]);
+                    for (let i = 1; i < node.polygon.length; i++) ctxEditor.lineTo(node.polygon[i][0], node.polygon[i][1]);
+                    ctxEditor.closePath();
+
+                    ctxEditor.fillStyle = colorMap[node.type] || colorMap["Unknown"];
+                    ctxEditor.globalAlpha = showBaseMap ? 0.55 : 0.85; ctxEditor.fill(); ctxEditor.globalAlpha = 1.0;
+
+                    ctxEditor.lineWidth = (id === selectedNodeId && currentMode !== 'VIEW') ? 3 / globalScale : 1.5 / globalScale;
+                    ctxEditor.strokeStyle = (id === selectedNodeId && currentMode !== 'VIEW') ? "#e74c3c" : "#2c3e50";
+                    ctxEditor.stroke();
+
+                    if (id === selectedNodeId && currentMode === 'SELECT') {
+                        let handleRadius = 6 / globalScale;
+                        for (let i = 0; i < node.polygon.length; i++) {
+                            ctxEditor.beginPath(); ctxEditor.arc(node.polygon[i][0], node.polygon[i][1], handleRadius, 0, 2 * Math.PI);
+                            ctxEditor.fillStyle = "#ffffff"; ctxEditor.fill();
+                            ctxEditor.lineWidth = 2 / globalScale;
+                            ctxEditor.strokeStyle = (draggingVertexIndex === i) ? "#27ae60" : "#e74c3c"; ctxEditor.stroke();
+                        }
+                    }
+
+                    let cRadius = (currentMode === 'VIEW') ? 4 / globalScale : 6 / globalScale;
+                    ctxEditor.beginPath(); ctxEditor.arc(node.centroid[0], node.centroid[1], cRadius, 0, 2 * Math.PI);
+                    ctxEditor.fillStyle = (id === dragStartNodeId) ? "#e74c3c" : "#2c3e50"; ctxEditor.fill();
+
+                    let minDim = Math.min(Math.max(...node.polygon.map(p=>p[0]))-Math.min(...node.polygon.map(p=>p[0])), Math.max(...node.polygon.map(p=>p[1]))-Math.min(...node.polygon.map(p=>p[1])));
+                    let fontSizeTitle = Math.max(5/globalScale, Math.min(minDim*0.15, 14/globalScale));
+
+                    ctxEditor.fillStyle = "#333"; ctxEditor.font = `bold ${fontSizeTitle}px sans-serif`; ctxEditor.textAlign = "center";
+                    ctxEditor.fillText(node.type, node.centroid[0], node.centroid[1] - fontSizeTitle*0.6);
+                    ctxEditor.font = `${fontSizeTitle*0.8}px sans-serif`;
+                    ctxEditor.fillText(`Area: ${node.area}㎡`, node.centroid[0], node.centroid[1] + fontSizeTitle*0.8);
+                }
+
+                // 绘制设施节点
+                for (let id in graphData) {
+                    let node = graphData[id];
+                    if (node.nodeClass !== 'Facility') continue;
+                    let isSelected = (id === selectedNodeId && currentMode !== 'VIEW');
+                    let color = facilityColorMap[node.type] || facilityColorMap["UnknownFacility"];
+                    if (id === dragStartNodeId) {
+                        ctxEditor.beginPath(); ctxEditor.arc(node.centroid[0], node.centroid[1], 8/globalScale, 0, 2*Math.PI);
+                        ctxEditor.fillStyle = "#e74c3c"; ctxEditor.fill();
+                    } else {
+                        drawFacilityMarker(node.centroid[0], node.centroid[1], color, isSelected);
+                    }
+                    ctxEditor.fillStyle = "#2c3e50"; ctxEditor.font = `bold ${8/globalScale}px sans-serif`;
+                    ctxEditor.fillText(node.type, node.centroid[0], node.centroid[1] - 10/globalScale);
+                }
+
+                // 绘制拓扑线
+                let drawnEdges = new Set();
+                for (let id1 in graphData) {
+                    let node1 = graphData[id1];
+                    // 空间相邻
+                    if (node1.nodeClass === 'Space' && node1.adjacencies) {
+                        ctxEditor.lineWidth = 2 / globalScale; ctxEditor.strokeStyle = "rgba(41, 128, 185, 0.8)";
+                        for (let id2 of node1.adjacencies) {
+                            let edgeKey = [id1, id2].sort().join("-");
+                            if (!drawnEdges.has(edgeKey) && graphData[id2]) {
+                                ctxEditor.beginPath(); ctxEditor.moveTo(node1.centroid[0], node1.centroid[1]); ctxEditor.lineTo(graphData[id2].centroid[0], graphData[id2].centroid[1]); ctxEditor.stroke();
+                                drawnEdges.add(edgeKey);
+                            }
+                        }
+                    }
+                    // 设施包含
+                    if (node1.nodeClass === 'Space' && node1.contains) {
+                        ctxEditor.lineWidth = 2 / globalScale; ctxEditor.strokeStyle = "rgba(39, 174, 96, 0.9)";
+                        ctxEditor.setLineDash([5/globalScale, 5/globalScale]);
+                        for (let facId of node1.contains) {
+                            let edgeKey = [id1, facId].sort().join("-");
+                            if (!drawnEdges.has(edgeKey) && graphData[facId]) {
+                                ctxEditor.beginPath(); ctxEditor.moveTo(node1.centroid[0], node1.centroid[1]); ctxEditor.lineTo(graphData[facId].centroid[0], graphData[facId].centroid[1]); ctxEditor.stroke();
+                                drawnEdges.add(edgeKey);
+                            }
+                        }
+                        ctxEditor.setLineDash([]);
+                    }
+                }
+            }
+
+            if (currentMode !== 'VIEW') {
+                if (isDraggingEdge && dragStartNodeId) {
+                    let startNode = graphData[dragStartNodeId];
+                    ctxEditor.lineWidth = 2 / globalScale; ctxEditor.strokeStyle = "#e74c3c"; ctxEditor.setLineDash([5/globalScale, 5/globalScale]);
+                    ctxEditor.beginPath(); ctxEditor.moveTo(startNode.centroid[0], startNode.centroid[1]); ctxEditor.lineTo(worldMouseX, worldMouseY); ctxEditor.stroke(); ctxEditor.setLineDash([]);
+                }
+                if (currentMode === 'DRAW' && drawPoints.length > 0) {
+                    ctxEditor.lineWidth = 2 / globalScale; ctxEditor.strokeStyle = "#8e44ad"; ctxEditor.fillStyle = "rgba(142, 68, 173, 0.3)";
+                    ctxEditor.beginPath(); ctxEditor.moveTo(drawPoints[0][0], drawPoints[0][1]);
+                    for (let i = 1; i < drawPoints.length; i++) ctxEditor.lineTo(drawPoints[i][0], drawPoints[i][1]);
+                    ctxEditor.lineTo(worldMouseX, worldMouseY); ctxEditor.stroke();
+                    if (drawPoints.length >= 2) ctxEditor.fill();
+                    let handleRadius = 5 / globalScale;
+                    for (let i = 0; i < drawPoints.length; i++) {
+                        ctxEditor.beginPath(); ctxEditor.arc(drawPoints[i][0], drawPoints[i][1], handleRadius, 0, 2*Math.PI);
+                        ctxEditor.fillStyle = (i === 0) ? "#27ae60" : "#8e44ad"; ctxEditor.fill();
+                    }
+                }
+                if (currentSnapInfo) {
+                    let sz = 12 / globalScale;
+                    ctxEditor.beginPath(); ctxEditor.arc(currentSnapInfo.x, currentSnapInfo.y, sz*0.8, 0, Math.PI*2);
+                    ctxEditor.strokeStyle = '#27ae60'; ctxEditor.lineWidth = 2 / globalScale; ctxEditor.stroke();
+                }
+            }
+            ctxEditor.restore();
+        }
+
+        // =================== 数据接入 ===================
+
+        document.getElementById('file-bg').addEventListener('change', function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            baseMapVertices = []; baseMapEdges = [];
+            if (file.name.toLowerCase().endsWith('.svg')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const parser = new DOMParser(); const svgDoc = parser.parseFromString(event.target.result, "image/svg+xml"); const svgElem = svgDoc.documentElement;
+                    const scaleAttr = svgElem.getAttribute('scale'); if (scaleAttr) dxfScale = parseFloat(scaleAttr);
+                    const viewBox = svgElem.getAttribute('viewBox');
+                    if (viewBox) { const vbParts = viewBox.split(/\s+/); if (vbParts.length === 4) { svgViewBoxW = parseFloat(vbParts[2]); svgViewBoxH = parseFloat(vbParts[3]); } }
+                    if (rawGraphDataCache) parseRawJSONLD(rawGraphDataCache); else graphData = {};
+                    svgElem.setAttribute('width', svgViewBoxW * 10); svgElem.setAttribute('height', svgViewBoxH * 10);
+                    svgDoc.querySelectorAll('path').forEach(p => {
+                        const d = p.getAttribute('d');
+                        if(d) {
+                            const matches = d.match(/-?\d+(\.\d+)?/g);
+                            if(matches) {
+                                let pts = [];
+                                for(let i=0; i<matches.length; i+=2) if(i+1<matches.length) { let pt={x:parseFloat(matches[i]), y:parseFloat(matches[i+1])}; baseMapVertices.push(pt); pts.push(pt); }
+                                for (let i=0; i<pts.length-1; i++) baseMapEdges.push([pts[i], pts[i+1]]);
+                                if (d.toLowerCase().includes('z') && pts.length > 0) baseMapEdges.push([pts[pts.length-1], pts[0]]);
+                            }
+                        }
+                    });
+                    const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svgElem)], {type: "image/svg+xml;charset=utf-8"}));
+                    const img = new Image(); img.onload = function() { backgroundImage = img; autoFitView(); drawAll(); showMessage("🖼️ SVG 底图加载成功！"); URL.revokeObjectURL(url); }; img.src = url;
+                }; reader.readAsText(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image(); img.onload = function() { backgroundImage = img; svgViewBoxW = img.width; svgViewBoxH = img.height; if (rawGraphDataCache) parseRawJSONLD(rawGraphDataCache); else graphData = {}; autoFitView(); drawAll(); showMessage("🖼️ 光栅底图加载成功！"); }; img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('file-json').addEventListener('change', function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const rawJson = JSON.parse(event.target.result); rawGraphDataCache = rawJson; parseRawJSONLD(rawJson); autoFitView(); drawAll(); showMessage("📄 知识图谱加载成功！");
+                } catch (err) { showMessage("❌ 解析 JSON 失败: " + err.message); }
+            }; reader.readAsText(file);
+        });
+
+        function parseRawJSONLD(rawJson) {
+            graphData = {}; areaScaleFactor = null;
+            const nodes = rawJson["@graph"] || [];
+
+            // 1. 提取所有空间
+            nodes.forEach(node => {
+                const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
+                if (types.includes("bot:Space")) {
+                    const id = node["@id"];
+                    let wktObj = node["geo:asWKT"]; if(!wktObj) return;
+                    let wktStr = typeof wktObj === 'object' ? wktObj["@value"] : wktObj;
+                    let poly = parseWKT(wktStr); if (!poly) return;
+                    let semType = "Unknown";
+                    for (let t of types) if (t.startsWith("bldg:") && t !== "bldg:Suite") { semType = t.replace("bldg:", ""); break; }
+                    let adjs = node["bot:adjacentZone"] || []; if (!Array.isArray(adjs)) adjs = [adjs];
+                    let contains = node["bot:containsElement"] || []; if (!Array.isArray(contains)) contains = [contains];
+                    let area = node["props:hasArea"] || 0.0;
+                    if (areaScaleFactor === null && area > 0) { let svgArea = calculatePolygonArea(poly); if (svgArea > 0) areaScaleFactor = area / svgArea; }
+                    graphData[id] = { nodeClass: "Space", type: semType, area: area, polygon: poly, centroid: calculateCentroid(poly), adjacencies: adjs.map(a=>typeof a==='object'?a["@id"]:a), contains: contains.map(c=>typeof c==='object'?c["@id"]:c) };
+                }
+            });
+
+            // 2. 提取所有设施并反向映射 contained_in
+            nodes.forEach(node => {
+                const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
+                if (types.includes("bot:Element") && !types.some(t => t.includes("Door"))) {
+                    const id = node["@id"];
+                    let semType = "UnknownFacility";
+                    let label = node["rdfs:label"];
+
+                    // 优先读取 rdfs:label
+                    if (label) {
+                        semType = label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+                    } else {
+                        // 兼容之前没有 rdfs:label 的老数据
+                        for (let t of types) {
+                            if (t.startsWith("beo:") && t !== "beo:FunctionalElement") {
+                                semType = t.replace("beo:", "");
+                                label = semType.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+                                break;
+                            }
+                        }
+                    }
+
+                    let centroid = [0,0]; let wktObj = node["geo:asWKT"];
+                    if(wktObj) {
+                        let wktStr = typeof wktObj === 'object' ? wktObj["@value"] : wktObj;
+                        let poly = parseWKT(wktStr); if (poly && poly.length>0) centroid = poly[0];
+                    }
+
+                    let contained_in = null;
+                    for(let sid in graphData) if(graphData[sid].nodeClass === 'Space' && graphData[sid].contains.includes(id)) contained_in = sid;
+
+                    graphData[id] = {
+                        nodeClass: "Facility",
+                        type: semType,
+                        label: label || "unknown",
+                        centroid: centroid,
+                        contained_in: contained_in
+                    };
+                }
+            });
+        }
+
+        // =================== 模式与事件 ===================
+        function toggleDrawMode() {
+            if (currentMode === 'VIEW') return;
+            currentMode = 'DRAW'; selectedNodeId = null; drawPoints = [];
+            modeIndicator.innerHTML = "✍️ 绘制空间：点击添加顶点，Shift正交约束，右键取消"; modeIndicator.style.display = 'block';
+            btnDraw.style.display = 'none'; btnAddFac.style.display = 'none'; btnCancelDraw.style.display = 'block';
+            updatePanel(); drawAll();
+        }
+
+        function toggleAddFacilityMode() {
+            if (currentMode === 'VIEW') return;
+            currentMode = 'ADD_FACILITY'; selectedNodeId = null;
+            modeIndicator.innerHTML = "➕ 增补设施：请在画布内部点击合适的位置放置节点，随后右侧可覆写语义。"; modeIndicator.style.display = 'block';
+            btnDraw.style.display = 'none'; btnAddFac.style.display = 'none'; btnCancelDraw.style.display = 'block';
+            updatePanel(); drawAll();
+        }
+
+        function cancelDrawMode() {
+            if (currentMode === 'VIEW') return;
+            currentMode = 'SELECT'; drawPoints = []; currentSnapInfo = null;
+            modeIndicator.style.display = 'none';
+            btnDraw.style.display = 'block'; btnAddFac.style.display = 'block'; btnCancelDraw.style.display = 'none';
+            drawAll();
+        }
+
+        function completeDrawing() {
+            if (drawPoints.length < 3) { showMessage("⚠️ 顶点不足，无法闭合多边形！"); return; }
+            let areaPx = calculatePolygonArea(drawPoints);
+            let scaleF = areaScaleFactor || (1 / (dxfScale * dxfScale * 1000000.0));
+            let areaSqm = (areaPx * scaleF).toFixed(2);
+            let newId = `inst:Space_Custom_${customRoomCounter++}`;
+            graphData[newId] = { nodeClass: "Space", type: "Unknown", area: parseFloat(areaSqm), polygon: [...drawPoints], centroid: calculateCentroid(drawPoints), adjacencies: [], contains: [] };
+            showMessage(`[几何确权] 新空间节点 ${newId} 创建成功！面积: ${areaSqm} ㎡。`);
+            cancelDrawMode();
+        }
+
+        canvasEditor.addEventListener('mousedown', function(e) {
+            if (currentMode === 'VIEW') return;
+            let rect = canvasEditor.getBoundingClientRect();
+            rawMouseX = e.clientX - rect.left; rawMouseY = e.clientY - rect.top;
+            let [wx, wy] = screenToWorld(rawMouseX, rawMouseY);
+            worldMouseX = currentSnapInfo ? currentSnapInfo.x : wx; worldMouseY = currentSnapInfo ? currentSnapInfo.y : wy;
+
+            if (currentMode === 'DRAW') {
+                if (e.button === 2) { cancelDrawMode(); return; }
+                if (e.shiftKey && drawPoints.length > 0) {
+                    let lastPt = drawPoints[drawPoints.length - 1];
+                    if (Math.abs(worldMouseX - lastPt[0]) < Math.abs(worldMouseY - lastPt[1])) worldMouseX = lastPt[0]; else worldMouseY = lastPt[1];
+                }
+                if (drawPoints.length > 2) {
+                    if (Math.hypot(worldMouseX - drawPoints[0][0], worldMouseY - drawPoints[0][1]) * globalScale < 15) { completeDrawing(); return; }
+                }
+                drawPoints.push([worldMouseX, worldMouseY]); drawAll(); return;
+            }
+
+            if (currentMode === 'ADD_FACILITY') {
+                if (e.button === 2) { cancelDrawMode(); return; }
+                let newId = `inst:Facility_Custom_${customFacCounter++}`;
+                graphData[newId] = { nodeClass: "Facility", type: "UnknownFacility", label: "unknown facility", centroid: [worldMouseX, worldMouseY], contained_in: null };
+                selectedNodeId = newId;
+                showMessage(`[设施确权] 设施节点 ${newId} 已放置。拖拽质心可将其连线挂载至对应房间。`);
+                cancelDrawMode();
+                updatePanel();
+                return;
+            }
+
+            if (currentMode === 'SELECT') {
+                if (e.button === 2 && selectedNodeId && graphData[selectedNodeId] && graphData[selectedNodeId].nodeClass === 'Space') {
+                    let poly = graphData[selectedNodeId].polygon;
+                    for (let i = 0; i < poly.length; i++) {
+                        if (Math.hypot(wx - poly[i][0], wy - poly[i][1]) * globalScale < 8) {
+                            if (poly.length > 3) {
+                                poly.splice(i, 1);
+                                let scaleF = areaScaleFactor || (1 / (dxfScale * dxfScale * 1000000.0));
+                                graphData[selectedNodeId].area = parseFloat((calculatePolygonArea(poly) * scaleF).toFixed(2));
+                                graphData[selectedNodeId].centroid = calculateCentroid(poly);
+                                updatePanel(); drawAll(); showMessage(`[多边形优化] 已删除冗余顶点，面积自动重算。`);
+                            } else showMessage(`⚠️ 失败：房间轮廓至少需要 3 个顶点维持多边形！`);
+                            return;
+                        }
+                    }
+                    return;
+                }
+
+                if (selectedNodeId && graphData[selectedNodeId] && graphData[selectedNodeId].nodeClass === 'Space') {
+                    let poly = graphData[selectedNodeId].polygon;
+                    for (let i = 0; i < poly.length; i++) {
+                        if (Math.hypot(wx - poly[i][0], wy - poly[i][1]) * globalScale < 8) { draggingVertexIndex = i; return; }
+                    }
+                }
+
+                selectedNodeId = null;
+                if (showGraph) {
+                    for (let id in graphData) {
+                        if (graphData[id].nodeClass === 'Facility' && Math.hypot(wx - graphData[id].centroid[0], wy - graphData[id].centroid[1]) * globalScale < 15) { selectedNodeId = id; break; }
+                    }
+                    if (!selectedNodeId) {
+                        for (let id in graphData) {
+                            if (graphData[id].nodeClass === 'Space' && isPointInPolygon([wx, wy], graphData[id].polygon)) { selectedNodeId = id; break; }
+                        }
+                    }
+                }
+
+                let clickedCentroid = null;
+                for (let id in graphData) {
+                    if (Math.hypot(wx - graphData[id].centroid[0], wy - graphData[id].centroid[1]) * globalScale < 15) { clickedCentroid = id; break; }
+                }
+
+                if (clickedCentroid) {
+                    isDraggingEdge = true;
+                    dragStartNodeId = clickedCentroid;
+                }
+
+                updatePanel();
+                drawAll();
+
+                if (clickedCentroid) return;
+            }
+        });
+
+        canvasEditor.addEventListener('mousemove', function(e) {
+            if (currentMode === 'VIEW') return;
+            let rect = canvasEditor.getBoundingClientRect();
+            rawMouseX = e.clientX - rect.left; rawMouseY = e.clientY - rect.top;
+            let [wx, wy] = screenToWorld(rawMouseX, rawMouseY);
+
+            if (currentMode === 'DRAW' || (currentMode === 'SELECT' && draggingVertexIndex !== null)) {
+                currentSnapInfo = getSnappedCoordinates(wx, wy);
+                worldMouseX = currentSnapInfo ? currentSnapInfo.x : wx; worldMouseY = currentSnapInfo ? currentSnapInfo.y : wy;
+                if (e.shiftKey) {
+                    if (currentMode === 'DRAW' && drawPoints.length > 0) {
+                        let lastPt = drawPoints[drawPoints.length - 1];
+                        if (Math.abs(worldMouseX - lastPt[0]) < Math.abs(worldMouseY - lastPt[1])) worldMouseX = lastPt[0]; else worldMouseY = lastPt[1];
+                    } else if (currentMode === 'SELECT' && draggingVertexIndex !== null) {
+                        let poly = graphData[selectedNodeId].polygon;
+                        let prevPt = poly[(draggingVertexIndex - 1 + poly.length) % poly.length], nextPt = poly[(draggingVertexIndex + 1) % poly.length];
+                        let cands = [ {x: prevPt[0], y: worldMouseY, d: Math.abs(worldMouseX - prevPt[0])}, {x: worldMouseX, y: prevPt[1], d: Math.abs(worldMouseY - prevPt[1])}, {x: nextPt[0], y: worldMouseY, d: Math.abs(worldMouseX - nextPt[0])}, {x: worldMouseX, y: nextPt[1], d: Math.abs(worldMouseY - nextPt[1])} ];
+                        cands.sort((a, b) => a.d - b.d); worldMouseX = cands[0].x; worldMouseY = cands[0].y;
+                    }
+                }
+            } else { currentSnapInfo = null; worldMouseX = wx; worldMouseY = wy; }
+
+            if (currentMode === 'SELECT' && draggingVertexIndex !== null && selectedNodeId) {
+                graphData[selectedNodeId].polygon[draggingVertexIndex] = [worldMouseX, worldMouseY]; drawAll(); return;
+            }
+            if (currentMode === 'DRAW' || currentMode === 'ADD_FACILITY' || (currentMode === 'SELECT' && isDraggingEdge) || currentSnapInfo !== null) drawAll();
+        });
+
+        canvasEditor.addEventListener('mouseup', function(e) {
+            if (currentMode === 'VIEW') return;
+            let [wx, wy] = screenToWorld(rawMouseX, rawMouseY);
+
+            if (currentMode === 'SELECT' && draggingVertexIndex !== null && selectedNodeId) {
+                let node = graphData[selectedNodeId];
+                let scaleF = areaScaleFactor || (1 / (dxfScale * dxfScale * 1000000.0));
+                node.area = parseFloat((calculatePolygonArea(node.polygon) * scaleF).toFixed(2));
+                node.centroid = calculateCentroid(node.polygon);
+                draggingVertexIndex = null; updatePanel(); drawAll(); showMessage(`[几何重塑] 空间边界已对齐吸附，系统重算面积为 ${node.area} ㎡。`); return;
+            }
+
+            if (currentMode === 'SELECT' && isDraggingEdge && dragStartNodeId) {
+                let dropNodeId = null;
+                for (let id in graphData) {
+                    if (id === dragStartNodeId) continue;
+                    if (Math.hypot(wx - graphData[id].centroid[0], wy - graphData[id].centroid[1]) * globalScale < 15) { dropNodeId = id; break; }
+                }
+
+                if (dropNodeId) {
+                    let node1 = graphData[dragStartNodeId], node2 = graphData[dropNodeId];
+                    if (node1.nodeClass === 'Space' && node2.nodeClass === 'Space') {
+                        if (node1.adjacencies.includes(dropNodeId)) {
+                            node1.adjacencies = node1.adjacencies.filter(id => id !== dropNodeId); node2.adjacencies = node2.adjacencies.filter(id => id !== dragStartNodeId);
+                            showMessage(`[拓扑修改] 已成功断开空间 ${dragStartNodeId} 与 ${dropNodeId} 的连通。`);
+                        } else {
+                            node1.adjacencies.push(dropNodeId); node2.adjacencies.push(dragStartNodeId);
+                            showMessage(`[拓扑修复] 已建立空间 ${dragStartNodeId} 与 ${dropNodeId} 的相邻关联。`);
+                        }
+                    }
+                    else if (node1.nodeClass !== node2.nodeClass) {
+                        let spaceId = node1.nodeClass === 'Space' ? dragStartNodeId : dropNodeId;
+                        let facId = node1.nodeClass === 'Facility' ? dragStartNodeId : dropNodeId;
+                        let space = graphData[spaceId], fac = graphData[facId];
+
+                        if (space.contains.includes(facId)) {
+                            space.contains = space.contains.filter(id => id !== facId); fac.contained_in = null;
+                            showMessage(`[包含修改] 已解除空间 ${spaceId} 对设施 ${facId} 的包含。`);
+                        } else {
+                            if (fac.contained_in && graphData[fac.contained_in]) {
+                                let oldSpace = graphData[fac.contained_in]; oldSpace.contains = oldSpace.contains.filter(id => id !== facId);
+                            }
+                            space.contains.push(facId); fac.contained_in = spaceId;
+                            showMessage(`[包含修复] 成功建立空间 ${spaceId} 对设施 ${facId} 的包含关系。`);
+                        }
+                    }
+                }
+            }
+            isDraggingEdge = false; dragStartNodeId = null; drawAll();
+        });
+
+        // =================== 面板与数据操作 ===================
+        function updatePanel() {
+            const noSelection = document.getElementById('no-selection');
+            const editForm = document.getElementById('edit-form');
+            const selSpace = document.getElementById('node-type-space');
+            const selFac = document.getElementById('node-type-facility');
+            const fgArea = document.getElementById('fg-area');
+
+            if (currentMode === 'SELECT' && selectedNodeId && graphData[selectedNodeId]) {
+                noSelection.style.display = 'none';
+                editForm.style.display = 'block';
+                let node = graphData[selectedNodeId];
+                document.getElementById('node-id').value = selectedNodeId;
+
+                if (node.nodeClass === 'Space') {
+                    selSpace.style.display = 'block'; selFac.style.display = 'none';
+                    selSpace.value = node.type;
+                    fgArea.style.display = 'block'; document.getElementById('node-area').value = node.area;
+                } else {
+                    selSpace.style.display = 'none'; selFac.style.display = 'block';
+                    selFac.value = node.type;
+                    fgArea.style.display = 'none';
+                }
+            } else {
+                noSelection.style.display = 'block'; editForm.style.display = 'none';
+            }
+        }
+
+        function applyNodeChanges() {
+            if (!selectedNodeId) return;
+            let node = graphData[selectedNodeId]; let changed = false;
+            if (node.nodeClass === 'Space') {
+                let newType = document.getElementById('node-type-space').value;
+                let newArea = parseFloat(document.getElementById('node-area').value);
+                if (node.type !== newType) { node.type = newType; changed = true; }
+                if (node.area !== newArea) { node.area = newArea; changed = true; }
+            } else {
+                let newType = document.getElementById('node-type-facility').value;
+                if (node.type !== newType) {
+                    node.type = newType;
+                    // 当下拉菜单更新类型时，自动将其转换为底层需要存储的 rdfs:label 形式 (如 "GasStove" -> "gas stove")
+                    node.label = newType.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+                    changed = true;
+                }
+            }
+            if (changed) { drawAll(); showMessage(`[属性覆写] 节点语义已更新。`); }
+        }
+
+        function deleteSelectedNode() {
+            if (!selectedNodeId) return;
+            let node = graphData[selectedNodeId];
+            if (node.nodeClass === 'Space') {
+                for (let id in graphData) {
+                    if (graphData[id].adjacencies) graphData[id].adjacencies = graphData[id].adjacencies.filter(adj => adj !== selectedNodeId);
+                    if (graphData[id].contained_in === selectedNodeId) graphData[id].contained_in = null;
+                }
+            } else {
+                if (node.contained_in && graphData[node.contained_in]) {
+                    let space = graphData[node.contained_in]; space.contains = space.contains.filter(id => id !== selectedNodeId);
+                }
+            }
+            delete graphData[selectedNodeId]; selectedNodeId = null;
+            updatePanel(); drawAll(); showMessage(`🗑️ 节点已彻底删除。`);
+        }
+
+        function syncGraphData() {
+            let jsonldFormat = { "@context": "https://w3id.org/bot#", "@graph": [] };
+            for (let id in graphData) {
+                let node = graphData[id];
+                if (node.nodeClass === 'Space') {
+                    let coordsStr = node.polygon.map(pt => `${(pt[0]/dxfScale).toFixed(2)} ${(svgViewBoxH - pt[1])/dxfScale.toFixed(2)}`).join(', ');
+                    jsonldFormat["@graph"].push({
+                        "@id": id, "@type": ["bot:Space", `bldg:${node.type}`], "props:hasArea": node.area,
+                        "geo:asWKT": `POLYGON ((${coordsStr}))`,
+                        "bot:adjacentZone": node.adjacencies.map(adj => ({"@id": adj})),
+                        "bot:containsElement": node.contains.map(c => ({"@id": c}))
+                    });
+                } else if (node.nodeClass === 'Facility') {
+                    let ox = (node.centroid[0]/dxfScale).toFixed(2); let oy = ((svgViewBoxH - node.centroid[1])/dxfScale).toFixed(2);
+                    jsonldFormat["@graph"].push({
+                        "@id": id,
+                        "@type": ["bot:Element", "beo:FunctionalElement"],
+                        "rdfs:label": node.label,
+                        "geo:asWKT": `POINT (${ox} ${oy})`
+                    });
+                }
+            }
+            console.log(JSON.stringify(jsonldFormat, null, 2));
+            showMessage(`✅ 数据已成功序列化！空间与设施复合拓扑已生成。<br><span style="font-size:10px;">(按 F12 查看控制台输出 RDF 数据)</span>`);
+        }
+
+        function showMessage(msg) {
+            let statusBox = document.getElementById('status-box'); statusBox.innerHTML = msg; statusBox.style.display = 'block';
+            setTimeout(() => { statusBox.style.display = 'none'; }, 5000);
+        }
+
+        setTimeout(resizeCanvas, 100);
+
+    </script>
+</body>
+</html>

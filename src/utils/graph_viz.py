@@ -59,7 +59,7 @@ class BotGraphVisualizer:
             print(f"⚠️ WKT 解析失败: {e}")
             return None
 
-    def save_json(self, filepath="output/floorplan_kg.jsonld"):
+    def save_json(self, filepath):
         folder = os.path.dirname(filepath)
         if folder and not os.path.exists(folder):
             os.makedirs(folder)

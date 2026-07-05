@@ -1,6 +1,7 @@
 import json
 import math
 
+import numpy as np
 from shapely import LineString
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import unary_union
@@ -26,6 +27,7 @@ class BotGraphGenerator:
             "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
             "inst": "http://mythesis.org/instance/",
             "props": "http://mythesis.org/props/",
+            "bldg": "http://mythesis.org/bldg/",
             "beo": "https://pi.pauwel.be/voc/buildingelement#",
             "geo": "http://www.opengis.net/ont/geosparql#",
             "xsd": "http://www.w3.org/2001/XMLSchema#"
@@ -36,55 +38,62 @@ class BotGraphGenerator:
         """辅助函数，将Shapely对象转化为WKT字符串"""
         return geom.wkt
 
-    def _cast_rays_for_door(self, door_comp, probe_len=300):
-        """通过射线法探测门连接的房间对象"""
-        door_geom = door_comp.geometry
-        centroid = Polygon(door_geom).centroid
-        cx, cy = centroid.x, centroid.y  # 中心点坐标
+    def _cast_rays_for_door(self, door_comp, probe_len=300, buffer_dist=0.1):
+        """通过交线中点与法向射线探测门连接的房间对象"""
+        # 构造门的几何多边形
+        door_poly = Polygon(door_comp.geometry)
+        buffered_door = door_poly.buffer(buffer_dist)
 
-        search_zone = Polygon(door_geom)
+        best_line = None
+        max_len = 0
 
-        target_vector = None
-
-        # 遍历所有房间，寻找参考墙线
+        # A. 寻找门图元与任意房间边界的最长交线 (作为门槛基准线)
         for r_id, r_poly in self.room_polys.items():
-            r_boundary = r_poly.boundary
+            intersection = buffered_door.intersection(r_poly.boundary)
+            lines = []
 
-            if search_zone.intersects(r_boundary):
-                ref_line = search_zone.intersection(r_boundary)
-                if ref_line:
-                    cords = list(ref_line.coords)
-                    p1 = cords[0]
-                    p2 = cords[-1]
+            if intersection.geom_type == 'LineString':
+                lines.append(intersection)
+            elif intersection.geom_type == 'MultiLineString':
+                lines.extend(list(intersection.geoms))
+            elif intersection.geom_type == 'GeometryCollection':
+                lines.extend([g for g in intersection.geoms if g.geom_type == 'LineString'])
 
-                    dx = p2[0] - p1[0]
-                    dy = p2[1] - p1[1]
+            for line in lines:
+                if line.length > max_len:
+                    max_len = line.length
+                    best_line = line
 
-                    mid_x = (p1[0] + p2[0]) / 2
-                    mid_y = (p1[1] + p2[1]) / 2
-
-                    # 更新发射源坐标
-                    cx, cy = mid_x, mid_y
-
-                    length = math.sqrt(dx ** 2 + dy ** 2)
-                    if length > 0:
-                        nx, ny = -dy / length, dx / length
-                        target_vector = (nx, ny)
-                        break
-
-        # 射线生成
-        rays = []
-        if target_vector:
-            nx, ny = target_vector
-            rays = [
-                LineString([(cx, cy), (cx + nx * probe_len, cy + ny * probe_len)]),
-                LineString([(cx, cy), (cx - nx * probe_len, cy - ny * probe_len)])
-            ]
         hit_rooms = set()
-        for ray in rays:
+
+        # B. 提取交线中点作法向射线探测
+        if best_line and max_len > 1e-3:
+            coords = list(best_line.coords)
+            p1, p2 = np.array(coords[0]), np.array(coords[-1])
+            midpoint = (p1 + p2) / 2.0
+
+            vec = p2 - p1
+            vec_len = np.linalg.norm(vec)
+            if vec_len > 1e-5:
+                unit_vec = vec / vec_len
+                # 逆时针旋转90度生成法向量
+                normal_vec = np.array([-unit_vec[1], unit_vec[0]])
+
+                # 沿法向量双向延伸构建探测射线
+                ray_line = LineString([midpoint - normal_vec * probe_len, midpoint + normal_vec * probe_len])
+
+                # 检测射线穿越了哪些房间区域
+                for r_id, r_poly in self.room_polys.items():
+                    if r_poly.intersects(ray_line):
+                        hit_rooms.add(r_id)
+
+        # C. 异常兜底策略：若未成功提取有效交线，回退至距离容差判断
+        if not hit_rooms:
+            fallback_tol = 300  # 根据您的实际坐标比例可适当调整该值
             for r_id, r_poly in self.room_polys.items():
-                if ray.intersects(r_poly):
+                if door_poly.distance(r_poly) < fallback_tol:
                     hit_rooms.add(r_id)
+
         return hit_rooms
 
     def _calculate_topology(self):
@@ -112,17 +121,6 @@ class BotGraphGenerator:
                 if len(connected_set) >= 2:
                     associated_rooms = list(connected_set)
                     r_a, r_b = associated_rooms[0], associated_rooms[1]
-                    r_a_type = self.room_label_map[r_a]
-                    r_b_type = self.room_label_map[r_b]
-                    public_keywords = ["Exterior", "PublicCorridor", "Stairwell"]
-
-                    # 判断是否为入户门：只要有一侧是公共/室外空间
-                    if (r_a_type in public_keywords) or (r_b_type in public_keywords):
-                        # 将"入户门"语义作为静态属性写入该门的数据包中
-                        comp.properties["doorType"] = "Entrance"
-                    else:
-                        # 常规内门，也可在此处根据连接的房间写入 BedroomDoor 等属性
-                        comp.properties["doorType"] = "InteriorDoor"
 
                     # 记录门是接口及双向相邻推导
                     topology["interfaces"][comp.uid] = [r_a, r_b]
@@ -135,8 +133,7 @@ class BotGraphGenerator:
                 elif len(connected_set) == 1:
                     r_a = list(connected_set)[0]
 
-                    # 强制补充属性与单向包含拓扑
-                    comp.properties["doorType"] = "Entrance"
+                    # 纯记录单边连通关系
                     topology["interfaces"][comp.uid] = [r_a, "UnmodeledExterior"]
                     topology["containment"][r_a].append(comp.uid)
 
@@ -180,31 +177,23 @@ class BotGraphGenerator:
         # 创建一个 Apartment 根节点
         apartment_node = {
             "@id": "inst:Apartment_01",
-            "@type": "bot:Zone",  # 或者 bot:Building
-            "rdfs:label": "ResidentialUnit",
-            "bot:containsZone": []  # 用来装所有房间
+            "@type": "bot:Zone",
+            "bot:containsZone": [{"@id": f"inst:{r['id']}"} for r in self.rooms]
         }
-
-        # 把所有房间的 ID 加进去
-        for r in self.rooms:
-            r_id = r["id"]
-            node_id = f"inst:{r['label']}_{r_id}"
-            apartment_node["bot:containsZone"].append({"@id": node_id})
-
         self.graph.append(apartment_node)
-
-
 
         # 生成房间节点
         for r in self.rooms:
             r_id = r["id"]
-            node_id = f"inst:{r['label']}_{r_id}"
+            node_id = f"inst:{r_id}" # 直接使用纯ID，如inst:Space_001
 
             node = {
                 "@id": node_id,
-                "@type": ["bot:Space", f"props:{r['label']}"],
-                "rdfs:label": f"{r['label']} Instance",
-                "props:geometryWKT": self._get_wkt(self.room_polys[r_id]),
+                "@type": ["bot:Space"],
+                "geo:asWKT": {
+                    "@value": self._get_wkt(self.room_polys[r_id]),
+                    "@type": "geo:wktLiteral"
+                },
                 "props:hasArea": round(self.room_polys[r_id].area / 1000000, 2),
 
                 # 填充拓扑关系
@@ -213,7 +202,7 @@ class BotGraphGenerator:
                     for comp_uid in topo_data["containment"][r_id]
                 ],
                 "bot:adjacentZone": [
-                    {"@id": f"inst:{self.rooms[n_id]['label']}_{n_id}"}
+                    {"@id": f"inst:{n_id}"}
                     for n_id in topo_data["adjacency"][r_id]
                 ]
             }
@@ -226,19 +215,21 @@ class BotGraphGenerator:
             node = {
                 "@id": node_id,
                 "@type": ["bot:Element", f"beo:{comp.category}"],
+                "rdfs:label":comp.specific_type,
                 "props:width": comp.properties.get("width"),
                 "props:length": comp.properties.get("length"),
-                "props:geometryWKT": self._get_wkt(Polygon(comp.geometry))
+                "geo:asWKT": {
+                    "@value": self._get_wkt(Polygon(comp.geometry)),
+                    "@type": "geo:wktLiteral"
+                }
             }
 
             # 如果是门
             if comp.uid in topo_data["interfaces"]:
                 connected_rooms = topo_data["interfaces"][comp.uid]
                 node["bot:interfaceOf"] = [
-                    {"@id": f"inst:{self.room_label_map.get(rid, 'Exterior')}_{rid}"}
-                    for rid in connected_rooms
+                    {"@id": f"inst:{rid}"} for rid in connected_rooms
                 ]
-                node["props:doorType"] = comp.properties.get("doorType")
             self.graph.append(node)
 
         # 最终组装

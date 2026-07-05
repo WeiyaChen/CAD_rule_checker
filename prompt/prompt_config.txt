@@ -1,0 +1,77 @@
+请根据以下各个房间的【面积】、【内部包含的家具/设施】以及【相邻的房间ID】，推断出该房间最精确的建筑功能类型。
+
+【待推断的建筑空间上下文 (JSON格式)】：
+{context_data}
+
+【严格的分类白名单】（你必须且只能从以下词汇中选择）：
+
+Bedroom (卧室)
+
+LivingRoom (客厅/起居室)
+
+Kitchen (厨房)
+
+Bathroom (卫生间)
+
+Balcony (阳台)
+
+Corridor (过道/走廊)
+
+Entrance (玄关/门厅)
+
+Garden (花园)
+
+DiningRoom (餐厅)
+
+ElevatorShaft (电梯井)
+
+StorageRoom (储藏间)
+
+Stairwell (楼梯间)
+
+Cloakroom (衣帽间)
+
+StudyRoom (书房)
+
+SunRoom (阳光房)
+
+WaterRoom (水机房)
+
+ElectricalRoom (电机房)
+
+VentilationRoom (风机房)
+
+Unknown (无法推断)
+
+【建筑学先验知识指南 (空间推理依据)】：
+
+卫浴空间：含有 "toilet", "squat toilet", "bath", "bath tub", "urinal" 必定是 Bathroom。
+
+厨房空间：含有 "gas stove", "sink", "refrigerator"，通常是 Kitchen。
+
+卧室空间（绝对优先级）：只要含有 "bed" 的，一定是 Bedroom。如果有 "bed" 和 "wardrobe" 则是标准卧室。
+
+客厅空间：含有 "sofa", "TV cabinet" 且面积通常较大，是 LivingRoom。注意区分它与卧室的本质区别是有没有床。
+
+餐厅空间：含有 "table" 和 "chair"，且靠近厨房或位于大空间内，通常是 DiningRoom。
+
+书房空间：含有 "desk", "bookcase", "chair" 且为独立房间，通常是 StudyRoom。
+
+阳台与花园：含有 "washing machine" 或外围有 "railing"，面积通常较小，极大概率是 Balcony；若面积较大且位于建筑最外围边缘，可推断为 Garden。
+
+玄关与衣帽间：内部仅含有 "cabinet" 或 "shoe cabinet" 且位于户型外部入口处的是 Entrance；若内部仅有 "wardrobe" 或 "cabinet" 且紧邻 Bedroom，则是 Cloakroom。
+
+交通核心区：含有 "stairs" 必定是 Stairwell；含有 "elevator" 必定是 ElevatorShaft。
+
+走廊空间：什么家具都不包含，呈现狭长形态，作为交通枢纽连接多个房间的，一定是 Corridor。
+
+辅助机房与储藏：极小面积且无特定家具的封闭附属空间，若在户内通常是 StorageRoom；若在公共走廊区，可能为 WaterRoom, ElectricalRoom 或 VentilationRoom。
+
+【处理混合空间的重要指示】：
+如果该空间是开放式的混合功能区，你可以推断出多个类型，并将它们一起放在数组中返回：
+
+客餐厅一体：同时包含了 "sofa" 和 "table"，返回 ["LivingRoom", "DiningRoom"]。
+
+兼起居室的卧室：同时包含了 "bed" 和 "sofa" 或者 "TV cabinet"，返回 ["Bedroom", "LivingRoom"]。
+
+请直接返回一个严格的 JSON 对象，键为房间 ID，值为推断类型的数组（即使只有一个类型也请放在数组中，不需要带前缀）。

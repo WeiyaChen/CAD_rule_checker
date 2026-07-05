@@ -1,25 +1,68 @@
-@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix bot:   <https://w3id.org/bot#> .
+@prefix bldg:  <http://mythesis.org/bldg/> .
 @prefix props: <http://mythesis.org/props/> .
-@prefix ex: <http://mythesis.org/rules/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-ex:BedroomShortSideWidthCheck
-    a sh:NodeShape ;
+# 【规范 4.1.1】卧室面积下限 (5㎡) 及兼起居室 (9㎡)
+bldg:BedroomAreaShape
+    a              sh:NodeShape ;
+    sh:targetClass bldg:Bedroom ;
+    sh:property    [ sh:path         props:hasArea ;
+                     sh:minInclusive 12.0 ;
+                     sh:message      "【违规 4.1.1】独立卧室使用面积不应小于 12 ㎡" ] .
 
-    # 直接锁定通过语义定义的卧室类节点
-    sh:targetClass props:卧室 ;
+# --- 辅助模块 A：检测是否【不是】起居室 ---
+bldg:NotLivingRoomShape a sh:NodeShape ;
+    sh:not [ sh:class bldg:LivingRoom ] .
 
-    # 针对由 Python 刚刚回写到图谱中的短边属性进行审查
+# --- 辅助模块 B：检测面积是否【大于等于 9.0】 ---
+bldg:AreaGreaterThan9Shape a sh:NodeShape ;
     sh:property [
-        sh:path props:shortSideWidth ;
-
-        # 强制要求该数值必须存在，防止出现漏算导致的静默通过
-        sh:minCount 1 ;
-
-        # 设定规范要求的 1800 毫米红线
-        sh:minInclusive 1800 ;
-
-        # 格式化输出带有真实数值的违规警告
-        sh:message "❌ [强条违规] 卧室短边净宽不足: 规范要求 >= 1800mm，当前通过几何计算得出的实测值为 {?value}mm。" ;
+        sh:path props:hasArea ;
+        sh:minInclusive 9.0 ;
     ] .
 
+# --- 主规则：【规范 4.1.1】兼起居室的卧室 ---
+bldg:DualBedroomLivingAreaShape a sh:NodeShape ;
+    sh:targetClass bldg:Bedroom ;
+    sh:message "【违规 4.1.1】兼起居室的卧室使用面积不应小于 9 ㎡" ;
+    sh:or ( bldg:NotLivingRoomShape bldg:AreaGreaterThan9Shape ) .
+
+# 【规范 4.1.4 & 4.1.6】厨房(3.5㎡) 与 集中配置的卫生间(2.5㎡)
+bldg:KitchenAreaShape
+    a              sh:NodeShape ;
+    sh:targetClass bldg:Kitchen ;
+    sh:property    [ sh:path         props:hasArea ;
+                     sh:minInclusive 3.5 ;
+                     sh:message      "【违规 4.1.4】厨房面积不应小于 3.5 ㎡" ] .
+
+bldg:BathroomAreaShape
+    a              sh:NodeShape ;
+    sh:targetClass bldg:Bathroom ;
+    sh:property    [ sh:path         props:hasArea ;
+                     sh:minInclusive 2.5 ;
+                     sh:message      "【违规 4.1.6】集中配置的卫生间面积不应小于 2.5 ㎡" ] .
+
+# 【规范 4.1.1.3】卧室短边净宽
+bldg:BedroomShortSideShape a sh:NodeShape ;
+    sh:targetClass bldg:Bedroom ;
+    sh:property [
+        sh:path props:hasShortSide ;
+        sh:minInclusive 1.80 ;
+        sh:message "【违规 4.1.1】卧室短边净宽不应小于 1.80m"
+    ] .
+
+# 【规范 4.1.14】户门与房门净宽
+bldg:EntranceDoorShape a sh:NodeShape ;
+    sh:targetClass bldg:EntranceDoor ;
+    sh:property [ sh:path props:hasShortSide ; sh:minInclusive 900 ; sh:message "【违规 4.1.14】户门通行净宽不应小于 0.90m" ] .
+
+bldg:BedroomDoorShape a sh:NodeShape ;
+    sh:targetClass bldg:BedroomDoor ;
+    sh:property [ sh:path props:hasShortSide ; sh:minInclusive 800 ; sh:message "【违规 4.1.14】卧室门通行净宽不应小于 0.80m" ] .
+
+bldg:KitchenBathDoorShape a sh:NodeShape ;
+    sh:targetClass bldg:KitchenDoor ;
+    sh:targetClass bldg:BathroomDoor ;
+    sh:property [ sh:path props:hasShortSide ; sh:minInclusive 700 ; sh:message "【违规 4.1.14】厨卫门通行净宽不应小于 0.70m" ] .

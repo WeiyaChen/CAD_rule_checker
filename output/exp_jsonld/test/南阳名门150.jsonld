@@ -1,0 +1,3164 @@
+{
+  "@context": {
+    "bot": "https://w3id.org/bot#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "inst": "http://mythesis.org/instance/",
+    "props": "http://mythesis.org/props/",
+    "bldg": "http://mythesis.org/bldg/",
+    "beo": "https://pi.pauwel.be/voc/buildingelement#",
+    "geo": "http://www.opengis.net/ont/geosparql#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "inst:Apartment_01",
+      "@type": "bot:Zone",
+      "bot:containsZone": [
+        {
+          "@id": "inst:Space_001"
+        },
+        {
+          "@id": "inst:Space_002"
+        },
+        {
+          "@id": "inst:Space_003"
+        },
+        {
+          "@id": "inst:Space_004"
+        },
+        {
+          "@id": "inst:Space_005"
+        },
+        {
+          "@id": "inst:Space_006"
+        },
+        {
+          "@id": "inst:Space_007"
+        },
+        {
+          "@id": "inst:Space_008"
+        },
+        {
+          "@id": "inst:Space_009"
+        },
+        {
+          "@id": "inst:Space_010"
+        },
+        {
+          "@id": "inst:Space_011"
+        },
+        {
+          "@id": "inst:Space_012"
+        },
+        {
+          "@id": "inst:Space_013"
+        },
+        {
+          "@id": "inst:Space_014"
+        },
+        {
+          "@id": "inst:Space_015"
+        },
+        {
+          "@id": "inst:Space_016"
+        },
+        {
+          "@id": "inst:Space_017"
+        },
+        {
+          "@id": "inst:Space_018"
+        },
+        {
+          "@id": "inst:Space_019"
+        },
+        {
+          "@id": "inst:Space_020"
+        },
+        {
+          "@id": "inst:Space_021"
+        },
+        {
+          "@id": "inst:Space_022"
+        },
+        {
+          "@id": "inst:Space_023"
+        },
+        {
+          "@id": "inst:Space_024"
+        },
+        {
+          "@id": "inst:Space_025"
+        }
+      ]
+    },
+    {
+      "@id": "inst:Space_001",
+      "@type": [
+        "bot:Space",
+        "bldg:Balcony"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((13110 9348, 13110 11648, 13660 11648, 14560 11648, 14910 11648, 14910 10948, 14910 10148, 14910 9348, 13110 9348))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 4.14,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_86"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_003_Sub_3"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "阳台",
+          "std_label": "bldg:Balcony",
+          "coordinates": [
+            13890,
+            10045
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_002",
+      "@type": [
+        "bot:Space",
+        "bldg:Bathroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((15010 11848, 14560 11848, 13660 11848, 13310 11848, 13310 14448, 15010 14448, 15010 14388, 15010 13588, 15010 11848))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 4.42,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_93"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_69"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_78"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_003_Sub_1"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卫生间",
+          "std_label": "bldg:Bathroom",
+          "coordinates": [
+            14074,
+            13267
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.7
+    },
+    {
+      "@id": "inst:Space_004",
+      "@type": [
+        "bot:Space",
+        "bldg:Balcony"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((7760 17948, 10160 17948, 11010 17948, 11010 16148, 6710 16148, 6710 17948, 7760 17948))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 7.74,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_51"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_006_Sub_1"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "阳台",
+          "std_label": "bldg:Balcony",
+          "coordinates": [
+            8578,
+            16739
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_005",
+      "@type": [
+        "bot:Space",
+        "bldg:Bedroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((15010 14548, 13110 14548, 11210 14548, 11210 18048, 15010 18048, 15010 18001, 15010 17101, 15010 14548))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 13.3,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_85"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_11"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_006_Sub_4"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卧室",
+          "std_label": "bldg:Bedroom",
+          "coordinates": [
+            12575,
+            15916
+          ]
+        }
+      ],
+      "props:hasShortSide": 3.5
+    },
+    {
+      "@id": "inst:Space_008",
+      "@type": [
+        "bot:Space",
+        "bldg:StorageRoom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((16310 16448, 16310 17648, 16310 18048, 17710 18048, 17710 15948, 16310 15948, 16310 16448))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 2.94,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_3"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_006_Sub_4"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "储藏",
+          "std_label": "bldg:StorageRoom",
+          "coordinates": [
+            16740,
+            16869
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.4
+    },
+    {
+      "@id": "inst:Space_009",
+      "@type": [
+        "bot:Space",
+        "bldg:ElevatorShaft"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((18360 17948, 19460 17948, 19910 17948, 19910 16048, 17910 16048, 17910 17948, 18360 17948))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 3.8,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_83"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_76"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_010"
+        }
+      ],
+      "props:hasShortSide": 1.9
+    },
+    {
+      "@id": "inst:Space_010",
+      "@type": [
+        "bot:Space",
+        "bldg:ElevatorShaft"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((17710 19248, 17710 19948, 20110 19948, 20110 19248, 20110 18248, 20110 18148, 19460 18148, 18360 18148, 17710 18148, 17710 18248, 17710 19248))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 4.32,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_71"
+        },
+        {
+          "@id": "inst:DOOR_83"
+        },
+        {
+          "@id": "inst:DOOR_12"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_009"
+        },
+        {
+          "@id": "inst:Space_006_Sub_3"
+        },
+        {
+          "@id": "inst:Space_017_Sub_1"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "电梯厅",
+          "std_label": "bldg:ElevatorShaft",
+          "coordinates": [
+            18490,
+            19044
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_011",
+      "@type": [
+        "bot:Space",
+        "bldg:StorageRoom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((20110 15948, 20110 17948, 20210 17948, 20210 18048, 21510 18048, 21510 17648, 21510 16448, 21510 15948, 20110 15948))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 2.93,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_40"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "储藏",
+          "std_label": "bldg:StorageRoom",
+          "coordinates": [
+            20796,
+            16869
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.4
+    },
+    {
+      "@id": "inst:Space_012",
+      "@type": [
+        "bot:Space",
+        "bldg:Bedroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((8310 23048, 8310 26848, 10410 26848, 11210 26848, 11210 24014, 11210 23114, 11210 23048, 8310 23048))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 11.02,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_64"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_006_Sub_5"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卧室",
+          "std_label": "bldg:Bedroom",
+          "coordinates": [
+            9515,
+            25311
+          ]
+        }
+      ],
+      "props:hasShortSide": 2.9
+    },
+    {
+      "@id": "inst:Space_013",
+      "@type": [
+        "bot:Space",
+        "bldg:Bathroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((12510 23401, 12510 24201, 12510 24248, 14710 24248, 14710 23348, 14710 22448, 12510 22448, 12510 23401))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 3.96,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_67"
+        },
+        {
+          "@id": "inst:DOOR_74"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_90"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_16"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_006_Sub_5"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卫生间",
+          "std_label": "bldg:Bathroom",
+          "coordinates": [
+            13097,
+            23516
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_014",
+      "@type": [
+        "bot:Space",
+        "bldg:StudyRoom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((11310 26848, 12610 26848, 14710 26848, 14710 24348, 12270 24348, 11370 24348, 11310 24348, 11310 26848))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 8.5,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_22"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_77"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_87"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_34"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_006_Sub_5"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "书房",
+          "std_label": "bldg:StudyRoom",
+          "coordinates": [
+            12417,
+            25509
+          ]
+        }
+      ],
+      "props:hasShortSide": 2.5
+    },
+    {
+      "@id": "inst:Space_015",
+      "@type": [
+        "bot:Space",
+        "bldg:Kitchen"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((15710 20248, 15710 21448, 15710 22348, 15770 22348, 16570 22348, 17510 22348, 17510 19448, 15710 19448, 15710 20248))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 5.22,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_58"
+        },
+        {
+          "@id": "inst:DOOR_49"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_23"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_14"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_006_Sub_2"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "厨房",
+          "std_label": "bldg:Kitchen",
+          "coordinates": [
+            16221,
+            21015
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_016",
+      "@type": [
+        "bot:Space",
+        "bldg:Stairwell"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((18310 24848, 19510 24848, 20110 24848, 20110 20148, 17710 20148, 17710 24848, 18310 24848))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 11.28,
+      "bot:containsElement": [
+        {
+          "@id": "inst:FUNCTIONALELEMENT_72"
+        }
+      ],
+      "bot:adjacentZone": [],
+      "props:hasShortSide": 2.4
+    },
+    {
+      "@id": "inst:Space_018",
+      "@type": [
+        "bot:Space",
+        "bldg:Kitchen"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((20310 19448, 20310 22348, 21250 22348, 22050 22348, 22110 22348, 22110 21448, 22110 20248, 22110 19448, 20310 19448))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 5.22,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_20"
+        },
+        {
+          "@id": "inst:DOOR_17"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_60"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_6"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_017_Sub_2"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "厨房",
+          "std_label": "bldg:Kitchen",
+          "coordinates": [
+            21328,
+            21015
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_019",
+      "@type": [
+        "bot:Space",
+        "bldg:Balcony"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((22910 10148, 22910 10948, 22910 11648, 23260 11648, 24160 11648, 24710 11648, 24710 9348, 22910 9348, 22910 10148))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 4.14,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_28"
+        },
+        {
+          "@id": "inst:WINDOW_39"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_007_Sub_3"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "阳台",
+          "std_label": "bldg:Balcony",
+          "coordinates": [
+            23633,
+            10045
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_020",
+      "@type": [
+        "bot:Space",
+        "bldg:Bathroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((22810 13588, 22810 14388, 22810 14448, 24510 14448, 24510 11848, 24160 11848, 23260 11848, 22810 11848, 22810 13588))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 4.42,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_42"
+        },
+        {
+          "@id": "inst:WINDOW_39"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_75"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_61"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_48"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_021"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卫生间",
+          "std_label": "bldg:Bathroom",
+          "coordinates": [
+            23348,
+            13267
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.7
+    },
+    {
+      "@id": "inst:Space_021",
+      "@type": [
+        "bot:Space",
+        "bldg:Bedroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((22810 17101, 22810 18001, 22810 18048, 26610 18048, 26610 14548, 24710 14548, 22810 14548, 22810 17101))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 13.3,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_42"
+        },
+        {
+          "@id": "inst:DOOR_10"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_89"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_020"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卧室",
+          "std_label": "bldg:Bedroom",
+          "coordinates": [
+            24940,
+            15916
+          ]
+        }
+      ],
+      "props:hasShortSide": 3.5
+    },
+    {
+      "@id": "inst:Space_022",
+      "@type": [
+        "bot:Space",
+        "bldg:Balcony"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((27660 17948, 30060 17948, 31110 17948, 31110 16148, 26810 16148, 26810 17948, 27660 17948))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 7.74,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_8"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_017_Sub_3"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "阳台",
+          "std_label": "bldg:Balcony",
+          "coordinates": [
+            28946,
+            16739
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_023",
+      "@type": [
+        "bot:Space",
+        "bldg:Bathroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((23783 23266, 23748 23288, 23710 23306, 23672 23321, 23632 23333, 23592 23341, 23551 23346, 23510 23348, 23110 23348, 23110 24248, 25310 24248, 25310 24201, 25310 23401, 25310 22448, 24010 22448, 24010 22848, 24008 22889, 24003 22930, 23994 22971, 23982 23010, 23967 23049, 23949 23086, 23928 23121, 23904 23155, 23877 23187, 23848 23216, 23817 23242, 23783 23266))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 3.2,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_33"
+        },
+        {
+          "@id": "inst:WINDOW_9"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_66"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_63"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_017_Sub_5"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卫生间",
+          "std_label": "bldg:Bathroom",
+          "coordinates": [
+            24325,
+            23516
+          ]
+        }
+      ],
+      "props:hasShortSide": 1.8
+    },
+    {
+      "@id": "inst:Space_024",
+      "@type": [
+        "bot:Space",
+        "bldg:StudyRoom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((25210 26848, 26510 26848, 26510 24348, 26450 24348, 25550 24348, 23110 24348, 23110 26848, 25210 26848))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 8.5,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_19"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_24"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_79"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_70"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_017_Sub_5"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "书房",
+          "std_label": "bldg:StudyRoom",
+          "coordinates": [
+            25112,
+            25509
+          ]
+        }
+      ],
+      "props:hasShortSide": 2.5
+    },
+    {
+      "@id": "inst:Space_025",
+      "@type": [
+        "bot:Space",
+        "bldg:Bedroom"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((26610 23114, 26610 24014, 26610 26848, 27410 26848, 29510 26848, 29510 23048, 26610 23048, 26610 23114))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 11.02,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_73"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_017_Sub_5"
+        }
+      ],
+      "props:textAnchors": [
+        {
+          "raw_text": "卧室",
+          "std_label": "bldg:Bedroom",
+          "coordinates": [
+            27999,
+            25311
+          ]
+        }
+      ],
+      "props:hasShortSide": 2.9
+    },
+    {
+      "@id": "inst:DOOR_51",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 130,
+      "props:length": 2400,
+      "geo:asWKT": {
+        "@value": "POLYGON ((7759.562107463496 17947.88183806267, 10159.566768652712 17947.88183806267, 10159.566768652712 18078.64507632985, 7759.562107463496 18078.64507632985, 7759.562107463496 17947.88183806267))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_004"
+        },
+        {
+          "@id": "inst:Space_006_Sub_1"
+        }
+      ],
+      "props:clearWidth": 2.4
+    },
+    {
+      "@id": "inst:DOOR_93",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BathroomDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 53,
+      "props:length": 1146,
+      "geo:asWKT": {
+        "@value": "POLYGON ((15009.580081491424 13241.473151324239, 15063.241598216013 13241.473151324239, 15063.241598216013 14387.880708374265, 15009.580081491424 14387.880708374265, 15009.580081491424 13241.473151324239))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_003_Sub_1"
+        },
+        {
+          "@id": "inst:Space_002"
+        }
+      ],
+      "props:clearWidth": 1.15
+    },
+    {
+      "@id": "inst:DOOR_58",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:KitchenDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 69,
+      "props:length": 1199,
+      "geo:asWKT": {
+        "@value": "POLYGON ((15639.849278921316 20247.905215603336, 15709.555856119276 20247.905215603336, 15709.555856119276 21447.894197561945, 15639.849278921316 21447.894197561945, 15639.849278921316 20247.905215603336))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_2"
+        },
+        {
+          "@id": "inst:Space_015"
+        }
+      ],
+      "props:clearWidth": 1.2
+    },
+    {
+      "@id": "inst:DOOR_49",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:KitchenDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 779,
+      "props:length": 799,
+      "geo:asWKT": {
+        "@value": "POLYGON ((15769.571323580407 22447.89391495145, 16569.55507912881 22447.89391495145, 16569.55507912881 23227.881413770145, 15769.571323580407 23227.881413770145, 15769.571323580407 22447.89391495145))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_2"
+        },
+        {
+          "@id": "inst:Space_015"
+        }
+      ],
+      "props:clearWidth": 0.8
+    },
+    {
+      "@id": "inst:DOOR_67",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BathroomDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 780,
+      "props:length": 800,
+      "geo:asWKT": {
+        "@value": "POLYGON ((12459.563448921379 23401.38698451298, 13239.577645012076 23401.38698451298, 13239.577645012076 24201.397437333388, 12459.563448921379 24201.397437333388, 12459.563448921379 23401.38698451298))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_5"
+        },
+        {
+          "@id": "inst:Space_013"
+        }
+      ],
+      "props:clearWidth": 0.8
+    },
+    {
+      "@id": "inst:DOOR_3",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 69,
+      "props:length": 1199,
+      "geo:asWKT": {
+        "@value": "POLYGON ((16239.843769900619 16447.89561061441, 16309.577044370582 16447.89561061441, 16309.577044370582 17647.884592573017, 16239.843769900619 17647.884592573017, 16239.843769900619 16447.89561061441))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_4"
+        },
+        {
+          "@id": "inst:Space_008"
+        }
+      ],
+      "props:clearWidth": 1.2
+    },
+    {
+      "@id": "inst:DOOR_86",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 780,
+      "props:length": 799,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14229.565885400727 10147.900060787715, 15009.580081491424 10147.900060787715, 15009.580081491424 10947.883816336118, 14229.565885400727 10947.883816336118, 14229.565885400727 10147.900060787715))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_003_Sub_3"
+        },
+        {
+          "@id": "inst:Space_001"
+        }
+      ],
+      "props:clearWidth": 0.8
+    },
+    {
+      "@id": "inst:DOOR_8",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 130,
+      "props:length": 2400,
+      "geo:asWKT": {
+        "@value": "POLYGON ((27659.575171605084 17947.88183806267, 30059.5798327943 17947.88183806267, 30059.5798327943 18078.64507632985, 27659.575171605084 18078.64507632985, 27659.575171605084 17947.88183806267))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_022"
+        },
+        {
+          "@id": "inst:Space_017_Sub_3"
+        }
+      ],
+      "props:clearWidth": 2.4
+    },
+    {
+      "@id": "inst:DOOR_42",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BathroomDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 53,
+      "props:length": 1146,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22755.927039313792 13241.473151324239, 22809.588556038376 13241.473151324239, 22809.588556038376 14387.880708374265, 22755.927039313792 14387.880708374265, 22755.927039313792 13241.473151324239))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_021"
+        },
+        {
+          "@id": "inst:Space_020"
+        }
+      ],
+      "props:clearWidth": 1.15
+    },
+    {
+      "@id": "inst:DOOR_20",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:KitchenDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 69,
+      "props:length": 1199,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22109.586084138522 20247.905215603336, 22179.319358608485 20247.905215603336, 22179.319358608485 21447.894197561945, 22109.586084138522 21447.894197561945, 22109.586084138522 20247.905215603336))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_017_Sub_2"
+        },
+        {
+          "@id": "inst:Space_018"
+        }
+      ],
+      "props:clearWidth": 1.2
+    },
+    {
+      "@id": "inst:DOOR_17",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:KitchenDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 779,
+      "props:length": 800,
+      "geo:asWKT": {
+        "@value": "POLYGON ((21249.586861128988 22447.89391495145, 22049.597313949394 22447.89391495145, 22049.597313949394 23227.881413770145, 21249.586861128988 23227.881413770145, 21249.586861128988 22447.89391495145))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_017_Sub_2"
+        },
+        {
+          "@id": "inst:Space_018"
+        }
+      ],
+      "props:clearWidth": 0.8
+    },
+    {
+      "@id": "inst:DOOR_33",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BathroomDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 779,
+      "props:length": 800,
+      "geo:asWKT": {
+        "@value": "POLYGON ((24579.590992517726 23401.38698451298, 25359.57849133642 23401.38698451298, 25359.57849133642 24201.397437333388, 24579.590992517726 24201.397437333388, 24579.590992517726 23401.38698451298))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_017_Sub_5"
+        },
+        {
+          "@id": "inst:Space_023"
+        }
+      ],
+      "props:clearWidth": 0.8
+    },
+    {
+      "@id": "inst:DOOR_40",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 69,
+      "props:length": 1199,
+      "geo:asWKT": {
+        "@value": "POLYGON ((21509.591593159217 16447.89561061441, 21579.29817035718 16447.89561061441, 21579.29817035718 17647.884592573017, 21509.591593159217 17647.884592573017, 21509.591593159217 16447.89561061441))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_011"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:clearWidth": 1.2
+    },
+    {
+      "@id": "inst:DOOR_28",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 779,
+      "props:length": 799,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22809.588556038376 10147.900060787715, 23589.576054857072 10147.900060787715, 23589.576054857072 10947.883816336118, 22809.588556038376 10947.883816336118, 22809.588556038376 10147.900060787715))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_019"
+        },
+        {
+          "@id": "inst:Space_007_Sub_3"
+        }
+      ],
+      "props:clearWidth": 0.8
+    },
+    {
+      "@id": "inst:DOOR_25",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 1148,
+      "geo:asWKT": {
+        "@value": "POLYGON ((15160.740035568348 15020.392476652347, 16309.577044370582 15020.392476652347, 16309.577044370582 15897.90511009538, 15160.740035568348 15897.90511009538, 15160.740035568348 15020.392476652347))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_4"
+        },
+        {
+          "@id": "inst:Space_003_Sub_2"
+        }
+      ],
+      "props:clearWidth": 1.15
+    },
+    {
+      "@id": "inst:DOOR_85",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BedroomDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 900,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14182.071438508665 17101.36473741429, 15059.557374679698 17101.36473741429, 15059.557374679698 18001.383171155245, 14182.071438508665 18001.383171155245, 14182.071438508665 17101.36473741429))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_4"
+        },
+        {
+          "@id": "inst:Space_005"
+        }
+      ],
+      "props:clearWidth": 0.9
+    },
+    {
+      "@id": "inst:DOOR_64",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BedroomDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((10382.061833519738 23114.070943224415, 11259.574466962771 23114.070943224415, 11259.574466962771 24014.06267969337, 10382.061833519738 24014.06267969337, 10382.061833519738 23114.070943224415))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_5"
+        },
+        {
+          "@id": "inst:Space_012"
+        }
+      ],
+      "props:clearWidth": 0.9
+    },
+    {
+      "@id": "inst:DOOR_22",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((11369.567227612177 24297.881378349633, 12269.558964081132 24297.881378349633, 12269.558964081132 25175.39401179267, 11369.567227612177 25175.39401179267, 11369.567227612177 24297.881378349633))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_5"
+        },
+        {
+          "@id": "inst:Space_014"
+        }
+      ],
+      "props:clearWidth": 0.9
+    },
+    {
+      "@id": "inst:DOOR_71",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 975,
+      "props:length": 1000,
+      "geo:asWKT": {
+        "@value": "POLYGON ((16634.56293645437 18247.87908355232, 17609.574007249743 18247.87908355232, 17609.574007249743 19247.90549821383, 16634.56293645437 19247.90549821383, 16634.56293645437 18247.87908355232))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_006_Sub_3"
+        },
+        {
+          "@id": "inst:Space_010"
+        }
+      ],
+      "props:clearWidth": 1.0
+    },
+    {
+      "@id": "inst:DOOR_83",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "sliding door",
+      "props:width": 70,
+      "props:length": 1114,
+      "geo:asWKT": {
+        "@value": "POLYGON ((18359.580469609868 17877.85489360068, 19474.08478661717 17877.85489360068, 19474.08478661717 17947.88183806267, 18359.580469609868 17947.88183806267, 18359.580469609868 17877.85489360068))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_010"
+        },
+        {
+          "@id": "inst:Space_009"
+        }
+      ],
+      "props:clearWidth": 1.11
+    },
+    {
+      "@id": "inst:DOOR_73",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BedroomDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((26559.594170567027 23114.070943224415, 27437.08010673806 23114.070943224415, 27437.08010673806 24014.06267969337, 26559.594170567027 24014.06267969337, 26559.594170567027 23114.070943224415))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_017_Sub_5"
+        },
+        {
+          "@id": "inst:Space_025"
+        }
+      ],
+      "props:clearWidth": 0.9
+    },
+    {
+      "@id": "inst:DOOR_19",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((25549.582976176665 24297.881378349633, 26449.57471264562 24297.881378349633, 26449.57471264562 25175.39401179267, 25549.582976176665 25175.39401179267, 25549.582976176665 24297.881378349633))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_017_Sub_5"
+        },
+        {
+          "@id": "inst:Space_024"
+        }
+      ],
+      "props:clearWidth": 0.9
+    },
+    {
+      "@id": "inst:DOOR_30",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((21758.4368654925 15020.392476652347, 22658.428601961452 15020.392476652347, 22658.428601961452 15897.90511009538, 21758.4368654925 15897.90511009538, 21758.4368654925 15020.392476652347))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_007_Sub_2"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:clearWidth": 0.9
+    },
+    {
+      "@id": "inst:DOOR_10",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:BedroomDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 877,
+      "props:length": 900,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22759.584565578105 17101.364737414286, 23637.097199021133 17101.364737414286, 23637.097199021133 18001.383171155245, 22759.584565578105 18001.383171155245, 22759.584565578105 17101.364737414286))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_021"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:clearWidth": 0.9
+    },
+    {
+      "@id": "inst:DOOR_12",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:InteriorDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 975,
+      "props:length": 999,
+      "geo:asWKT": {
+        "@value": "POLYGON ((20209.567933008057 18247.905780824323, 21184.57900380343 18247.905780824323, 21184.57900380343 19247.90549821383, 20209.567933008057 19247.90549821383, 20209.567933008057 18247.905780824323))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_017_Sub_1"
+        },
+        {
+          "@id": "inst:Space_010"
+        }
+      ],
+      "props:clearWidth": 1.0
+    },
+    {
+      "@id": "inst:DOOR_74",
+      "@type": [
+        "bot:Element",
+        "beo:Door",
+        "bldg:EntranceDoor"
+      ],
+      "rdfs:label": "single door",
+      "props:width": 683,
+      "props:length": 684,
+      "geo:asWKT": {
+        "@value": "POLYGON ((13809.564402260814 22663.501083641888, 14493.495116415294 22663.501083641888, 14493.495116415294 23347.885651420405, 13809.564402260814 23347.885651420405, 13809.564402260814 22663.501083641888))",
+        "@type": "geo:wktLiteral"
+      },
+      "bot:interfaceOf": [
+        {
+          "@id": "inst:Space_013"
+        },
+        {
+          "@id": "inst:UnmodeledExterior"
+        }
+      ],
+      "props:clearWidth": 0.68
+    },
+    {
+      "@id": "inst:WINDOW_53",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 775,
+      "props:length": 1475,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22787.616701180497 18375.865805531263, 24262.72107112263 18375.865805531263, 24262.72107112263 19151.6618326456, 22787.616701180497 19151.6618326456, 22787.616701180497 18375.865805531263))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_62",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 800,
+      "props:length": 1899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((11209.570476502495 13747.893703935542, 13109.561930360958 13747.893703935542, 13109.561930360958 14547.904156755945, 11209.570476502495 14547.904156755945, 11209.570476502495 13747.893703935542))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_56",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 800,
+      "props:length": 2400,
+      "geo:asWKT": {
+        "@value": "POLYGON ((16409.585025291133 9347.889607967309, 18809.58968648035 9347.889607967309, 18809.58968648035 10147.900060787715, 16409.585025291133 10147.900060787715, 16409.585025291133 9347.889607967309))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_26",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 599,
+      "props:length": 2299,
+      "geo:asWKT": {
+        "@value": "POLYGON ((8109.563343413424 27047.88727548878, 10409.56002368209 27047.88727548878, 10409.56002368209 27647.881766468083, 8109.563343413424 27647.881766468083, 8109.563343413424 27047.88727548878))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_44",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 599,
+      "props:length": 2299,
+      "geo:asWKT": {
+        "@value": "POLYGON ((12609.575420302204 27047.88727548878, 14909.572100570871 27047.88727548878, 14909.572100570871 27647.881766468083, 12609.575420302204 27647.881766468083, 12609.575420302204 27047.88727548878))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_57",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 800,
+      "props:length": 1900,
+      "geo:asWKT": {
+        "@value": "POLYGON ((24709.58000989684 13747.893703935542, 26609.598161027305 13747.893703935542, 26609.598161027305 14547.904156755945, 24709.58000989684 14547.904156755945, 24709.58000989684 13747.893703935542))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_21",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 599,
+      "props:length": 2400,
+      "geo:asWKT": {
+        "@value": "POLYGON ((19009.57895104945 9347.889607967309, 21409.583612238668 9347.889607967309, 21409.583612238668 9947.884098946612, 19009.57895104945 9947.884098946612, 19009.57895104945 9347.889607967309))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_15",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 799,
+      "props:length": 2299,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22909.59653695893 26847.898010919682, 25209.593217227593 26847.898010919682, 25209.593217227593 27647.881766468083, 22909.59653695893 27647.881766468083, 22909.59653695893 26847.898010919682))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_31",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 799,
+      "props:length": 2299,
+      "geo:asWKT": {
+        "@value": "POLYGON ((27409.581916575706 26847.898010919682, 29709.57859684437 26847.898010919682, 29709.57859684437 27647.881766468083, 27409.581916575706 27647.881766468083, 27409.581916575706 26847.898010919682))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_45",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 800,
+      "props:length": 999,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14709.55613872977 22347.8859340309, 15509.566591550176 22347.8859340309, 15509.566591550176 23347.885651420405, 14709.55613872977 23347.885651420405, 14709.55613872977 22347.8859340309))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_82",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 799,
+      "props:length": 4800,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14709.55613872977 24247.904085161364, 19509.565461108203 24247.904085161364, 19509.565461108203 25047.887840709765, 14709.55613872977 25047.887840709765, 14709.55613872977 24247.904085161364))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_43",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 200,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((7209.571606944468 22947.880425010204, 8109.563343413424 22947.880425010204, 8109.563343413424 23147.896386851306, 7209.571606944468 23147.896386851306, 7209.571606944468 22947.880425010204))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_9",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 199,
+      "props:length": 900,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22909.59653695893 23347.885651420405, 23109.58580152803 23347.885651420405, 23109.58580152803 24247.904085161364, 22909.59653695893 24247.904085161364, 22909.59653695893 23347.885651420405))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_27",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 200,
+      "props:length": 900,
+      "geo:asWKT": {
+        "@value": "POLYGON ((29709.57859684437 22947.880425010204, 30609.59703058533 22947.880425010204, 30609.59703058533 23147.896386851306, 29709.57859684437 23147.896386851306, 29709.57859684437 22947.880425010204))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_39",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 200,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23259.59777290886 11647.886288235974, 24159.589509377813 11647.886288235974, 24159.589509377813 11847.902250077075, 23259.59777290886 11847.902250077075, 23259.59777290886 11647.886288235974))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:WINDOW_81",
+      "@type": [
+        "bot:Element",
+        "beo:Window"
+      ],
+      "rdfs:label": "window",
+      "props:width": 200,
+      "props:length": 600,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22309.57534870762 22347.8859340309, 22909.59653695893 22347.8859340309, 22909.59653695893 22547.901895872, 22309.57534870762 22547.901895872, 22309.57534870762 22347.8859340309))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_76",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "elevator",
+      "props:width": 1550,
+      "props:length": 1593,
+      "geo:asWKT": {
+        "@value": "POLYGON ((18113.27143811681 16161.086817493884, 19663.288353297346 16161.086817493884, 19663.288353297346 17754.780469670153, 18113.27143811681 17754.780469670153, 18113.27143811681 16161.086817493884))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_72",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "stairs",
+      "props:width": 2400,
+      "props:length": 3690,
+      "geo:asWKT": {
+        "@value": "POLYGON ((17709.581988170292 21157.881731801146, 20109.58664935951 21157.881731801146, 20109.58664935951 24847.898576140666, 17709.581988170292 24847.898576140666, 17709.581988170292 21157.881731801146))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_90",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sink",
+      "props:width": 599,
+      "props:length": 1847,
+      "geo:asWKT": {
+        "@value": "POLYGON ((12509.567439381655 22447.89391495145, 14357.392423747657 22447.89391495145, 14357.392423747657 23047.888405930753, 12509.567439381655 23047.888405930753, 12509.567439381655 22447.89391495145))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_69",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sink",
+      "props:width": 649,
+      "props:length": 1537,
+      "geo:asWKT": {
+        "@value": "POLYGON ((13309.57789220206 12910.40028122393, 13959.576373641641 12910.40028122393, 13959.576373641641 14447.896175835396, 13309.57789220206 14447.896175835396, 13309.57789220206 12910.40028122393))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_23",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sink",
+      "props:width": 549,
+      "props:length": 823,
+      "geo:asWKT": {
+        "@value": "POLYGON ((16960.456535786234 21402.562229702064, 17509.56602632919 21402.562229702064, 17509.56602632919 22226.226465516498, 16960.456535786234 22226.226465516498, 16960.456535786234 21402.562229702064))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_14",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sink",
+      "props:width": 291,
+      "props:length": 639,
+      "geo:asWKT": {
+        "@value": "POLYGON ((17032.26325248432 20192.97164605553, 17323.566132289285 20192.97164605553, 17323.566132289285 20832.165597140407, 17032.26325248432 20832.165597140407, 17032.26325248432 20192.97164605553))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_16",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "toilet",
+      "props:width": 474,
+      "props:length": 649,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14036.170847016188 23618.11543862751, 14686.169328455768 23618.11543862751, 14686.169328455768 24093.113302092126, 14036.170847016188 24093.113302092126, 14036.170847016188 23618.11543862751))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_78",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "bath",
+      "props:width": 719,
+      "props:length": 1660,
+      "geo:asWKT": {
+        "@value": "POLYGON ((13349.570405661481 11877.883286535642, 15009.580081491424 11877.883286535642, 15009.580081491424 12597.882015165205, 13349.570405661481 12597.882015165205, 13349.570405661481 11877.883286535642))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_75",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sink",
+      "props:width": 599,
+      "props:length": 1154,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23909.596254348435 13293.399345368676, 24509.59074532774 13293.399345368676, 24509.59074532774 14447.896175835396, 23909.596254348435 14447.896175835396, 23909.596254348435 13293.399345368676))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_61",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "urinal",
+      "props:width": 474,
+      "props:length": 649,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23859.59226388816 12910.40028122393, 24509.590745327743 12910.40028122393, 24509.590745327743 13385.398144688543, 23859.59226388816 13385.398144688543, 23859.59226388816 12910.40028122393))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_60",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sink",
+      "props:width": 549,
+      "props:length": 823,
+      "geo:asWKT": {
+        "@value": "POLYGON ((20309.57591392861 21402.56222970206, 20858.712101743564 21402.56222970206, 20858.712101743564 22226.2264655165, 20309.57591392861 22226.2264655165, 20309.57591392861 21402.56222970206))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_6",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "washing machine",
+      "props:width": 289,
+      "props:length": 639,
+      "geo:asWKT": {
+        "@value": "POLYGON ((20497.239206628215 20192.97164605553, 20787.11001823344 20192.97164605553, 20787.11001823344 20832.165597140407, 20497.239206628215 20832.165597140407, 20497.239206628215 20192.97164605553))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_66",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sink",
+      "props:width": 599,
+      "props:length": 1099,
+      "geo:asWKT": {
+        "@value": "POLYGON ((24209.593499838087 22447.89391495145, 25309.57450087614 22447.89391495145, 25309.57450087614 23047.888405930753, 24209.593499838087 23047.888405930753, 24209.593499838087 22447.89391495145))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_63",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "urinal",
+      "props:width": 474,
+      "props:length": 649,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23132.99930907403 23618.11543862751, 23782.99779051361 23618.11543862751, 23782.99779051361 24093.113302092126, 23132.99930907403 24093.113302092126, 23132.99930907403 23618.11543862751))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_48",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "bath tub",
+      "props:width": 719,
+      "props:length": 1660,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22809.588556038376 11877.883286535642, 24469.59823186832 11877.883286535642, 24469.59823186832 12597.882015165205, 22809.588556038376 12597.882015165205, 22809.588556038376 11877.883286535642))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_84",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "bed",
+      "props:width": 2123,
+      "props:length": 3537,
+      "geo:asWKT": {
+        "@value": "POLYGON ((15272.174448905876 10958.082174240992, 18809.58968648035 10958.082174240992, 18809.58968648035 13081.823464750587, 15272.174448905876 13081.823464750587, 15272.174448905876 10958.082174240992))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_59",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 411,
+      "props:length": 553,
+      "geo:asWKT": {
+        "@value": "POLYGON ((18397.730871301133 10633.122979429207, 18809.58968648035 10633.122979429207, 18809.58968648035 11186.34384986051, 18397.730871301133 11186.34384986051, 18397.730871301133 10633.122979429207))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_54",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sofa",
+      "props:width": 1331,
+      "props:length": 2988,
+      "geo:asWKT": {
+        "@value": "POLYGON ((8887.415060471936 18723.250708824966, 10219.128382489806 18723.250708824966, 10219.128382489806 21711.93021766452, 8887.415060471936 21711.93021766452, 8887.415060471936 18723.250708824966))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_55",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sofa",
+      "props:width": 931,
+      "props:length": 1660,
+      "geo:asWKT": {
+        "@value": "POLYGON ((10120.882421521404 19488.180946234374, 11052.56381985707 19488.180946234374, 11052.56381985707 21149.098329312394, 10120.882421521404 21149.098329312394, 10120.882421521404 19488.180946234374))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_38",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 812,
+      "props:length": 856,
+      "geo:asWKT": {
+        "@value": "POLYGON ((10218.994896129794 18745.970087298912, 11031.8467367833 18745.970087298912, 11031.8467367833 19602.04481132411, 10218.994896129794 19602.04481132411, 10218.994896129794 18745.970087298912))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_1",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 774,
+      "props:length": 808,
+      "geo:asWKT": {
+        "@value": "POLYGON ((10278.556509966887 21148.911448408377, 11052.56381985707 21148.911448408377, 11052.56381985707 21957.117963733486, 10278.556509966887 21957.117963733486, 10278.556509966887 21148.911448408377))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_35",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "bed",
+      "props:width": 2123,
+      "props:length": 2396,
+      "geo:asWKT": {
+        "@value": "POLYGON ((19009.57895104945 10958.082174240992, 21406.406636870397 10958.082174240992, 21406.406636870397 13081.823464750587, 19009.57895104945 13081.823464750587, 19009.57895104945 10958.082174240992))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_80",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 411,
+      "props:length": 553,
+      "geo:asWKT": {
+        "@value": "POLYGON ((19009.57895104945 10633.122979429207, 19421.437766228668 10633.122979429207, 19421.437766228668 11186.34384986051, 19009.57895104945 11186.34384986051, 19009.57895104945 10633.122979429207))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_65",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sofa",
+      "props:width": 1619,
+      "props:length": 1788,
+      "geo:asWKT": {
+        "@value": "POLYGON ((26766.604817672727 19474.004694801162, 28386.24821823522 19474.004694801162, 28386.24821823522 21262.668524410103, 26766.604817672727 21262.668524410103, 26766.604817672727 19474.004694801162))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_46",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "sofa",
+      "props:width": 750,
+      "props:length": 1331,
+      "geo:asWKT": {
+        "@value": "POLYGON ((27600.147044128003 18723.250708824966, 28931.75357705786 18723.250708824966, 28931.75357705786 19474.13818116117, 27600.147044128003 19474.13818116117, 27600.147044128003 18723.250708824966))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_91",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 742,
+      "props:length": 812,
+      "geo:asWKT": {
+        "@value": "POLYGON ((26787.295203474496 18745.970087298912, 27600.147044128003 18745.970087298912, 27600.147044128003 19488.28773532238, 26787.295203474496 19488.28773532238, 26787.295203474496 18745.970087298912))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_68",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "bed",
+      "props:width": 1040,
+      "props:length": 1390,
+      "geo:asWKT": {
+        "@value": "POLYGON ((27540.478641202903 21624.46995458504, 28931.11284252981 21624.46995458504, 28931.11284252981 22665.396589954045, 27540.478641202903 22665.396589954045, 27540.478641202903 21624.46995458504))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_5",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 753,
+      "props:length": 808,
+      "geo:asWKT": {
+        "@value": "POLYGON ((26786.707863490446 21148.938145680382, 27540.58543029091 21148.938145680382, 27540.58543029091 21957.117963733486, 26786.707863490446 21957.117963733486, 26786.707863490446 21148.938145680382))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_52",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 604,
+      "props:length": 700,
+      "geo:asWKT": {
+        "@value": "POLYGON ((13567.793907008141 21479.076611260607, 14267.796378907995 21479.076611260607, 14267.796378907995 22083.609638480302, 13567.793907008141 22083.609638480302, 13567.793907008141 21479.076611260607))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_18",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 460,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14337.049102481917 20873.266220889553, 14797.069796353253 20873.266220889553, 14797.069796353253 21371.69607736268, 14337.049102481917 21371.69607736268, 14337.049102481917 20873.266220889553))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_92",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 459,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((12988.543196374609 20186.425504086823, 13448.537192973943 20186.425504086823, 13448.537192973943 20684.882057831957, 12988.543196374609 20684.882057831957, 12988.543196374609 20186.425504086823))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_32",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 460,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14337.049102481917 20186.425504086823, 14797.069796353253 20186.425504086823, 14797.069796353253 20684.882057831957, 14337.049102481917 20684.882057831957, 14337.049102481917 20186.425504086823))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_36",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "table",
+      "props:width": 750,
+      "props:length": 1400,
+      "geo:asWKT": {
+        "@value": "POLYGON ((13517.789916547865 20079.0716674609, 14267.796378907995 20079.0716674609, 14267.796378907995 21479.07661126061, 13517.789916547865 21479.07661126061, 13517.789916547865 20079.0716674609))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_37",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 459,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((13639.205011642778 19474.511942969206, 14137.67089664497 19474.511942969206, 14137.67089664497 19934.50593956854, 13639.205011642778 19934.50593956854, 13639.205011642778 19474.511942969206))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_11",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "TV cabinet",
+      "props:width": 121,
+      "props:length": 921,
+      "geo:asWKT": {
+        "@value": "POLYGON ((14777.821063239606 15366.442516345936, 14899.61401811402 15366.442516345936, 14899.61401811402 16287.44500588069, 14777.821063239606 16287.44500588069, 14777.821063239606 15366.442516345936))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_29",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 459,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((24370.631444555853 20873.258017013337, 24830.62544115519 20873.258017013337, 24830.62544115519 21371.704281238897, 24370.631444555853 21371.704281238897, 24370.631444555853 20873.258017013337))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_41",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 604,
+      "props:length": 750,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23551.345561349804 21479.07661126058, 24301.352023709933 21479.07661126058, 24301.352023709933 22083.609638480302, 23551.345561349804 22083.609638480302, 23551.345561349804 21479.07661126058))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_0",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 459,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23022.09884117655 20873.266220889553, 23482.092837775883 20873.266220889553, 23482.092837775883 21371.69607736268, 23022.09884117655 21371.69607736268, 23022.09884117655 20873.266220889553))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_50",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 459,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((24370.631444555856 20186.417300210607, 24830.62544115519 20186.417300210607, 24830.62544115519 20684.890261708173, 24370.631444555856 20684.890261708173, 24370.631444555856 20186.417300210607))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_4",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 459,
+      "props:length": 498,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23022.09884117655 20186.425504086823, 23482.092837775883 20186.425504086823, 23482.092837775883 20684.882057831957, 23022.09884117655 20684.882057831957, 23022.09884117655 20186.425504086823))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_13",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 604,
+      "props:length": 750,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23551.345561349804 19474.511942969206, 24301.352023709933 19474.511942969206, 24301.352023709933 20079.0716674609, 23551.345561349804 20079.0716674609, 23551.345561349804 19474.511942969206))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_2",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "table",
+      "props:width": 0,
+      "props:length": 1400,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23551.345561349804 20079.0716674609, 23551.345561349804 20079.0716674609, 23551.345561349804 21479.07661126061, 23551.345561349804 21479.07661126061, 23551.345561349804 20079.0716674609))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_89",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "TV cabinet",
+      "props:width": 300,
+      "props:length": 1500,
+      "geo:asWKT": {
+        "@value": "POLYGON ((22875.931276964053 15076.93729875318, 23176.195495173724 15076.93729875318, 23176.195495173724 16576.950223473443, 22875.931276964053 16576.950223473443, 22875.931276964053 15076.93729875318))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_77",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 549,
+      "props:length": 1341,
+      "geo:asWKT": {
+        "@value": "POLYGON ((11309.578457423046 25505.98633099694, 11859.568957942076 25505.98633099694, 11859.568957942076 26847.898010919682, 11309.578457423046 26847.898010919682, 11309.578457423046 25505.98633099694))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_87",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 522,
+      "props:length": 523,
+      "geo:asWKT": {
+        "@value": "POLYGON ((13198.971094296603 25626.755186234266, 13721.917258277319 25626.755186234266, 13721.917258277319 26149.92338993912, 13198.971094296603 26149.92338993912, 13198.971094296603 25626.755186234266))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_34",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "table",
+      "props:width": 1200,
+      "props:length": 1909,
+      "geo:asWKT": {
+        "@value": "POLYGON ((12799.579905142451 25647.88233168907, 14709.55613872977 25647.88233168907, 14709.55613872977 26847.898010919682, 12799.579905142451 26847.898010919682, 12799.579905142451 25647.88233168907))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_88",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 893,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((17911.5780192975 13450.779763822133, 18804.810874791943 13450.779763822133, 18804.810874791943 14350.771500291088, 17911.5780192975 14350.771500291088, 17911.5780192975 13450.779763822133))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_24",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "table",
+      "props:width": 550,
+      "props:length": 1341,
+      "geo:asWKT": {
+        "@value": "POLYGON ((25959.572982315723 25505.98633099694, 26509.590180106752 25505.98633099694, 26509.590180106752 26847.898010919682, 25959.572982315723 26847.898010919682, 25959.572982315723 25505.98633099694))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_79",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "chair",
+      "props:width": 522,
+      "props:length": 523,
+      "geo:asWKT": {
+        "@value": "POLYGON ((24097.22468198048 25626.755186234266, 24620.170845961195 25626.755186234266, 24620.170845961195 26149.92338993912, 24097.22468198048 26149.92338993912, 24097.22468198048 25626.755186234266))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_70",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "table",
+      "props:width": 1200,
+      "props:length": 1910,
+      "geo:asWKT": {
+        "@value": "POLYGON ((23109.58580152803 25647.88233168907, 25019.58873238735 25647.88233168907, 25019.58873238735 26847.898010919682, 23109.58580152803 26847.898010919682, 23109.58580152803 25647.88233168907))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:FUNCTIONALELEMENT_47",
+      "@type": [
+        "bot:Element",
+        "beo:FunctionalElement"
+      ],
+      "rdfs:label": "cabinet",
+      "props:width": 895,
+      "props:length": 899,
+      "geo:asWKT": {
+        "@value": "POLYGON ((19014.357762737858 13450.779763822133, 19910.291513862467 13450.779763822133, 19910.291513862467 14350.771500291088, 19014.357762737858 14350.771500291088, 19014.357762737858 13450.779763822133))",
+        "@type": "geo:wktLiteral"
+      }
+    },
+    {
+      "@id": "inst:Space_003_Sub_1",
+      "@type": [
+        "bot:Space",
+        "bldg:Bedroom"
+      ],
+      "geo:asWKT": "POLYGON ((15110 13588, 15110 14388, 15110 14448, 16210 14448, 16210.55 14448, 18810 14448, 18810 10148, 16410 10148, 15110 10148, 15110 10948, 15110 10948.4, 15110 13588))",
+      "props:hasArea": 15.91,
+      "bot:containsElement": [
+        {
+          "@id": "inst:FUNCTIONALELEMENT_84"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_59"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_88"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_002"
+        },
+        {
+          "@id": "inst:Space_003_Sub_2"
+        },
+        {
+          "@id": "inst:Space_003_Sub_3"
+        }
+      ],
+      "props:roomLabel": "主卧室",
+      "props:labelCoordinates": [
+        17189,
+        12270
+      ],
+      "props:hasShortSide": 3.7
+    },
+    {
+      "@id": "inst:Space_003_Sub_2",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((15110 14448, 15110 15848, 15161 15848, 16061 15848, 16210 15848, 16210 15148, 16210 15147.650000000001, 16210 14448, 15110 14448))",
+      "props:hasArea": 1.54,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_25"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_003_Sub_1"
+        },
+        {
+          "@id": "inst:Space_003_Sub_4"
+        },
+        {
+          "@id": "inst:Space_006_Sub_4"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.0
+    },
+    {
+      "@id": "inst:Space_003_Sub_3",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((15110 10148, 14910 10148, 14910 10948, 15110 10948, 15110 10148))",
+      "props:hasArea": 0.16,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_001"
+        },
+        {
+          "@id": "inst:Space_003_Sub_1"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.2
+    },
+    {
+      "@id": "inst:Space_003_Sub_4",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor"
+      ],
+      "geo:asWKT": "POLYGON ((16210 15848, 16310 15848, 16310 15148, 16210 15148, 16210 15848))",
+      "props:hasArea": 0.07,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_003_Sub_2"
+        },
+        {
+          "@id": "inst:Space_003_Sub_5"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.1
+    },
+    {
+      "@id": "inst:Space_003_Sub_5",
+      "@type": [
+        "bot:Space",
+        "bldg:Cloakroom"
+      ],
+      "geo:asWKT": "POLYGON ((16310 15848, 18810 15848, 18810 14548, 16310 14548, 16310 15147.650000000001, 16310 15148, 16310 15848))",
+      "props:hasArea": 3.25,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_003_Sub_4"
+        }
+      ],
+      "props:roomLabel": "更衣",
+      "props:labelCoordinates": [
+        17166,
+        15478
+      ],
+      "props:hasShortSide": 1.3
+    },
+    {
+      "@id": "inst:Space_006_Sub_1",
+      "@type": [
+        "bot:Space",
+        "bldg:LivingRoom"
+      ],
+      "geo:asWKT": "POLYGON ((10160 18148, 7760 18148, 6910 18148, 6910 22948, 7210 22948, 8110 22948, 11309.45 22948, 11310 22948, 12410 22948, 12410 22350.100000000002, 12410 22348, 12410 18148, 10160 18148))",
+      "props:hasArea": 26.4,
+      "bot:containsElement": [
+        {
+          "@id": "inst:FUNCTIONALELEMENT_54"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_55"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_38"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_1"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_004"
+        },
+        {
+          "@id": "inst:Space_006_Sub_2"
+        },
+        {
+          "@id": "inst:Space_006_Sub_5"
+        }
+      ],
+      "props:roomLabel": "客厅",
+      "props:labelCoordinates": [
+        8198,
+        20552
+      ],
+      "props:hasShortSide": 4.8
+    },
+    {
+      "@id": "inst:Space_006_Sub_2",
+      "@type": [
+        "bot:Space",
+        "bldg:DiningRoom"
+      ],
+      "geo:asWKT": "POLYGON ((12410 22348, 14910 22348, 15510 22348, 15610 22348, 15610 21448, 15610 20248, 15610 19348.6, 15610 19348, 15610 18148, 15110 18148, 15109.45 18148, 12410 18148, 12410 22348))",
+      "props:hasArea": 13.44,
+      "bot:containsElement": [
+        {
+          "@id": "inst:FUNCTIONALELEMENT_52"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_18"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_92"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_32"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_36"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_37"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_015"
+        },
+        {
+          "@id": "inst:Space_006_Sub_1"
+        },
+        {
+          "@id": "inst:Space_006_Sub_3"
+        },
+        {
+          "@id": "inst:Space_006_Sub_4"
+        }
+      ],
+      "props:roomLabel": "餐厅",
+      "props:labelCoordinates": [
+        14752,
+        19753
+      ],
+      "props:hasShortSide": 3.2
+    },
+    {
+      "@id": "inst:Space_006_Sub_3",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:PublicCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((15610 19348, 17510 19348, 17510 19248, 17510 18248, 17510 18148, 16210.55 18148, 16210 18148, 15610 18148, 15610 19348))",
+      "props:hasArea": 2.28,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_71"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_010"
+        },
+        {
+          "@id": "inst:Space_006_Sub_2"
+        },
+        {
+          "@id": "inst:Space_006_Sub_4"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.0
+    },
+    {
+      "@id": "inst:Space_006_Sub_4",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((16210 18148, 16210 17648, 16210 16448, 16210 15948, 16061 15948, 15161 15948, 15110 15948, 15110 17101, 15110 18001, 15110 18148, 16210 18148))",
+      "props:hasArea": 2.42,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_008"
+        },
+        {
+          "@id": "inst:Space_003_Sub_2"
+        },
+        {
+          "@id": "inst:Space_005"
+        },
+        {
+          "@id": "inst:Space_006_Sub_2"
+        },
+        {
+          "@id": "inst:Space_006_Sub_3"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.05
+    },
+    {
+      "@id": "inst:Space_006_Sub_5",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor",
+        "bldg:SecondaryCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((11310 22948, 11310 23114, 11310 24014, 11310 24248, 11370 24248, 12270 24248, 12410 24248, 12410 24201, 12410 23401, 12410 22948, 11310 22948))",
+      "props:hasArea": 1.43,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_013"
+        },
+        {
+          "@id": "inst:Space_012"
+        },
+        {
+          "@id": "inst:Space_014"
+        },
+        {
+          "@id": "inst:Space_006_Sub_1"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.05
+    },
+    {
+      "@id": "inst:Space_007_Sub_1",
+      "@type": [
+        "bot:Space",
+        "bldg:Bedroom"
+      ],
+      "geo:asWKT": "POLYGON ((19010 10148, 19010 14448, 21609.45 14448, 21610 14448, 22710 14448, 22710 14388, 22710 13588, 22710 10948.4, 22710 10948, 22710 10148, 21410 10148, 19010 10148))",
+      "props:hasArea": 15.91,
+      "bot:containsElement": [
+        {
+          "@id": "inst:FUNCTIONALELEMENT_35"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_80"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_47"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_007_Sub_2"
+        },
+        {
+          "@id": "inst:Space_007_Sub_3"
+        }
+      ],
+      "props:roomLabel": "主卧室",
+      "props:labelCoordinates": [
+        20188,
+        12270
+      ],
+      "props:hasShortSide": 3.7
+    },
+    {
+      "@id": "inst:Space_007_Sub_2",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((21610 14448, 21610 15147.650000000001, 21610 15148, 21610 15848, 21758 15848, 22658 15848, 22710 15848, 22710 14448, 21610 14448))",
+      "props:hasArea": 1.54,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_30"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_007_Sub_1"
+        },
+        {
+          "@id": "inst:Space_007_Sub_4"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.0
+    },
+    {
+      "@id": "inst:Space_007_Sub_3",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((22710 10948, 22910 10948, 22910 10148, 22710 10148, 22710 10948))",
+      "props:hasArea": 0.16,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_019"
+        },
+        {
+          "@id": "inst:Space_007_Sub_1"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.2
+    },
+    {
+      "@id": "inst:Space_007_Sub_4",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor"
+      ],
+      "geo:asWKT": "POLYGON ((21610 15148, 21510 15148, 21510 15848, 21610 15848, 21610 15148))",
+      "props:hasArea": 0.07,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_007_Sub_2"
+        },
+        {
+          "@id": "inst:Space_007_Sub_5"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.1
+    },
+    {
+      "@id": "inst:Space_007_Sub_5",
+      "@type": [
+        "bot:Space",
+        "bldg:Cloakroom"
+      ],
+      "geo:asWKT": "POLYGON ((21510 15148, 21510 15147.650000000001, 21510 14548, 19010 14548, 19010 15848, 21510 15848, 21510 15148))",
+      "props:hasArea": 3.25,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_007_Sub_4"
+        }
+      ],
+      "props:roomLabel": "更衣",
+      "props:labelCoordinates": [
+        20364,
+        15478
+      ],
+      "props:hasShortSide": 1.3
+    },
+    {
+      "@id": "inst:Space_017_Sub_1",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:PublicCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((20310 18148, 20310 18248, 20310 19248, 20310 19348, 22210 19348, 22210 18148, 21610 18148, 21609.45 18148, 20310 18148))",
+      "props:hasArea": 2.28,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_12"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_010"
+        },
+        {
+          "@id": "inst:Space_017_Sub_2"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.0
+    },
+    {
+      "@id": "inst:Space_017_Sub_2",
+      "@type": [
+        "bot:Space",
+        "bldg:DiningRoom"
+      ],
+      "geo:asWKT": "POLYGON ((22210 19348, 22210 19348.6, 22210 20248, 22210 21448, 22210 22348, 22310 22348, 22910 22348, 25410 22348, 25410 18148, 22710.550000000003 18148, 22710 18148, 22210 18148, 22210 19348))",
+      "props:hasArea": 13.44,
+      "bot:containsElement": [
+        {
+          "@id": "inst:WINDOW_53"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_29"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_41"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_0"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_50"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_4"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_13"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_2"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_018"
+        },
+        {
+          "@id": "inst:Space_017_Sub_1"
+        },
+        {
+          "@id": "inst:Space_017_Sub_3"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        }
+      ],
+      "props:roomLabel": "餐厅",
+      "props:labelCoordinates": [
+        22793,
+        19753
+      ],
+      "props:hasShortSide": 3.2
+    },
+    {
+      "@id": "inst:Space_017_Sub_3",
+      "@type": [
+        "bot:Space",
+        "bldg:LivingRoom"
+      ],
+      "geo:asWKT": "POLYGON ((25410 22348, 25410 22350.100000000002, 25410 22948, 26510 22948, 26510.550000000003 22948, 29710 22948, 30610 22948, 30910 22948, 30910 18148, 30060 18148, 27660 18148, 25410 18148, 25410 22348))",
+      "props:hasArea": 26.4,
+      "bot:containsElement": [
+        {
+          "@id": "inst:FUNCTIONALELEMENT_65"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_46"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_91"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_68"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_5"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_022"
+        },
+        {
+          "@id": "inst:Space_017_Sub_2"
+        },
+        {
+          "@id": "inst:Space_017_Sub_5"
+        }
+      ],
+      "props:roomLabel": "客厅",
+      "props:labelCoordinates": [
+        29340,
+        20552
+      ],
+      "props:hasShortSide": 4.8
+    },
+    {
+      "@id": "inst:Space_017_Sub_4",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((22710 18148, 22710 18001, 22710 17101, 22710 15948, 22658 15948, 21758 15948, 21610 15948, 21610 16448, 21610 17648, 21610 18148, 22710 18148))",
+      "props:hasArea": 2.42,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_011"
+        },
+        {
+          "@id": "inst:Space_007_Sub_2"
+        },
+        {
+          "@id": "inst:Space_021"
+        },
+        {
+          "@id": "inst:Space_017_Sub_1"
+        },
+        {
+          "@id": "inst:Space_017_Sub_2"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.05
+    },
+    {
+      "@id": "inst:Space_017_Sub_5",
+      "@type": [
+        "bot:Space",
+        "bldg:Corridor",
+        "bldg:MainCorridor",
+        "bldg:SecondaryCorridor"
+      ],
+      "geo:asWKT": "POLYGON ((25410 22948, 25410 23401, 25410 24201, 25410 24248, 25550 24248, 26450 24248, 26510 24248, 26510 24014, 26510 23114, 26510 22948, 25410 22948))",
+      "props:hasArea": 1.43,
+      "bot:containsElement": [],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_023"
+        },
+        {
+          "@id": "inst:Space_025"
+        },
+        {
+          "@id": "inst:Space_024"
+        },
+        {
+          "@id": "inst:Space_017_Sub_3"
+        }
+      ],
+      "props:roomLabel": "过道",
+      "props:clearWidth": 0.05
+    },
+    {
+      "@id": "inst:Suite_01",
+      "@type": [
+        "bot:Zone",
+        "bldg:Suite"
+      ],
+      "bot:hasSpace": [
+        {
+          "@id": "inst:Space_001"
+        },
+        {
+          "@id": "inst:Space_003_Sub_3"
+        },
+        {
+          "@id": "inst:Space_003_Sub_1"
+        },
+        {
+          "@id": "inst:Space_002"
+        },
+        {
+          "@id": "inst:Space_003_Sub_2"
+        },
+        {
+          "@id": "inst:Space_003_Sub_4"
+        },
+        {
+          "@id": "inst:Space_006_Sub_4"
+        },
+        {
+          "@id": "inst:Space_003_Sub_5"
+        },
+        {
+          "@id": "inst:Space_008"
+        },
+        {
+          "@id": "inst:Space_005"
+        },
+        {
+          "@id": "inst:Space_006_Sub_2"
+        },
+        {
+          "@id": "inst:Space_015"
+        },
+        {
+          "@id": "inst:Space_006_Sub_1"
+        },
+        {
+          "@id": "inst:Space_004"
+        },
+        {
+          "@id": "inst:Space_006_Sub_5"
+        },
+        {
+          "@id": "inst:Space_013"
+        },
+        {
+          "@id": "inst:Space_012"
+        },
+        {
+          "@id": "inst:Space_014"
+        }
+      ]
+    },
+    {
+      "@id": "inst:Suite_02",
+      "@type": [
+        "bot:Zone",
+        "bldg:Suite"
+      ],
+      "bot:hasSpace": [
+        {
+          "@id": "inst:Space_011"
+        },
+        {
+          "@id": "inst:Space_017_Sub_4"
+        },
+        {
+          "@id": "inst:Space_007_Sub_2"
+        },
+        {
+          "@id": "inst:Space_021"
+        },
+        {
+          "@id": "inst:Space_017_Sub_2"
+        },
+        {
+          "@id": "inst:Space_007_Sub_1"
+        },
+        {
+          "@id": "inst:Space_007_Sub_4"
+        },
+        {
+          "@id": "inst:Space_020"
+        },
+        {
+          "@id": "inst:Space_018"
+        },
+        {
+          "@id": "inst:Space_017_Sub_3"
+        },
+        {
+          "@id": "inst:Space_007_Sub_3"
+        },
+        {
+          "@id": "inst:Space_007_Sub_5"
+        },
+        {
+          "@id": "inst:Space_022"
+        },
+        {
+          "@id": "inst:Space_017_Sub_5"
+        },
+        {
+          "@id": "inst:Space_019"
+        },
+        {
+          "@id": "inst:Space_023"
+        },
+        {
+          "@id": "inst:Space_025"
+        },
+        {
+          "@id": "inst:Space_024"
+        }
+      ]
+    }
+  ]
+}

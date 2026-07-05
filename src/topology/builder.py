@@ -1,19 +1,22 @@
 # src/topology/builder.py
+import math
 import os
 from collections import defaultdict
+from pathlib import Path
 
 import cv2
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
-from shapely import Polygon, wkt
+from shapely import Polygon, wkt, LineString, MultiPoint, Point, STRtree
 
 from .bot_builder import BotGraphGenerator
-from .generate_virtual_wall import FloorPlanMeshBuilder
+from .generate_virtual_wall import FloorPlanMeshBuilderCDT
 from .preprocessing import clean_lines
 from .patching import create_patches
+from ..utils.cdt_viz import plot_floor_plan
 from ..utils.graph_viz import BotGraphVisualizer
-from ..utils.visualize import plot_floor_plan
 from src.config.config import settings
+from src.config.labels import get_wall, get_window, get_door
 
 
 # 1. 定义构件类 (保持不变)
@@ -80,81 +83,136 @@ def aggregate_geometry(sub_elements):
     return aabb_box
 
 
-# --- 3. 核心处理函数：聚合与实例化 ---
 def process_compound_instances(raw_elements, target_category):
     """
-    将离散图元按 instance_id 聚合并封装为 Component 对象
+    第一步：将离散图元按 instance_id 聚合并封装为具备 MRR 几何特征的 Component 对象
     """
     # A. 分组 (Grouping)
     grouped = defaultdict(list)
     for e in raw_elements:
         # 必须有 instance_id 才能聚合，否则作为噪声丢弃或作为独立物体处理
         if 'instance_id' in e:
-            grouped[e['instance_id']].append(e)
+            iid = e['instance_id']
+            # 坚决拦截 -1（不论它是数字类型还是字符串类型）
+            if str(iid) == "-1" or iid == -1:
+                continue
+            grouped[iid].append(e)
 
     instances = []
-
-    # B. 实例化 (Instantiation)
     for iid, subs in grouped.items():
-        # 1. 计算融合几何 (AABB)
-        unified_geom = aggregate_geometry(subs)
-        if not unified_geom: continue
+        # 1. 收集该实例下所有碎片的顶点以计算融合几何
+        all_points = []
+        for sub in subs:
+            # 假设每个图元具有 'points' 或 'coords' 属性
+            pts = sub.get('points', sub.get('coords', []))
+            all_points.extend(pts)
 
-        # 2. 确定代表性类型 (优先取非line的类型)
-        # 简单策略：取出现次数最多的类型，或优先取 'panel'/'leaf'
+        if not all_points:
+            continue
+
+        # 2. 计算常规包围盒 (Axis-Aligned Bounding Box / OBB)
+        obb_poly = MultiPoint(all_points).envelope
+
+        # 【核心修复】：防止几何退化导致下游 Polygon() 初始化失败
+        # 如果点集完全共线或重合导致退化为线/点，则施加极小的缓冲使其成为合法的多边形
+        if obb_poly.geom_type in ['LineString', 'Point']:
+            obb_poly = obb_poly.buffer(1.0).envelope
+
+        # 此时 obb_poly 必定是合法的 Polygon
+        if obb_poly.geom_type == 'Polygon':
+            # 提取外接矩形的 5 个顶点坐标（首尾重合以闭合）
+            unified_geom = list(obb_poly.exterior.coords)
+            if len(unified_geom) >= 3:
+                side1 = math.dist(unified_geom[0], unified_geom[1])
+                side2 = math.dist(unified_geom[1], unified_geom[2])
+                length = int(max(side1, side2))
+                width = int(min(side1, side2))
+            else:
+                length, width = 0, 0
+        else:
+            continue
+
+        # 3. 确定代表性类型 (优先取非line的类型)
         raw_types = [e['type'] for e in subs]
         specific_type = raw_types[0]  # 简化处理，取第一个作为具体类型
 
-        # 3. 计算属性 (简单计算长宽)
-        a = max(p[0] for p in unified_geom) - min(p[0] for p in unified_geom)
-        b = max(p[1] for p in unified_geom) - min(p[1] for p in unified_geom)
-        length = int(max(a, b))
-        width = int(min(a, b))
-
-        # 4. 创建对象
+        # 5. 创建 Component 对象
         comp = Component(
             uid=f"{target_category.upper()}_{iid}",
             category=target_category,
             specific_type=specific_type,
-            geometry=unified_geom,
+            geometry=unified_geom,  # 这里保存的是完整的 MRR 矩形顶点序列
             properties={"length": length, "width": width}
         )
+
         instances.append(comp)
 
     return instances
+
+
+def decompose_components_to_segments(components):
+    """
+    第二步：读取 Component 对象列表，将其 geometry (矩形轮廓) 拆分为独立的线段元素列表
+    """
+    decomposed_elements = []
+
+    for comp in components:
+        coords = comp.geometry
+        # MRR 外部轮廓通常有 5 个点（首尾重合），形成 4 条边
+        if not coords or len(coords) < 2:
+            continue
+
+        # 尝试从 UID 中恢复纯数字的 instance_id，若失败则回退为 UID 字符串
+        try:
+            original_iid = int(comp.uid.split('_')[-1])
+        except (ValueError, IndexError):
+            original_iid = comp.uid
+
+        # 遍历顶点序列，每相邻两个点提取为一条线段
+        for i in range(len(coords) - 1):
+            p1 = coords[i]
+            p2 = coords[i + 1]
+
+            # 构造新的二元线段元素 (Element 字典格式)
+            segment_element = {
+                'type': 'line',  # 拆分后几何属性严格变为线
+                'instance_id': original_iid,
+                'semantic_label': comp.category,
+                'text': None,  # 线段无文本
+                'coords': [list(p1), list(p2)]  # 仅保存该线段的两个端点
+            }
+            decomposed_elements.append(segment_element)
+
+    return decomposed_elements
 
 
 class TopologyBuilder:
     def __init__(self):
         pass
 
-    def build(self, raw_elements, json_output_path, html_output_path):
+    def build(self, raw_elements, json_output_path):
         """
         Main pipeline: Elements -> FloorPlan Object
         """
-
-        # 墙线的预处理 (可选：简单的线段合并)
-        walls = [e for e in raw_elements if 'wall' in e['type']]
+        walls = [e for e in raw_elements if e['type'] in get_wall()]  # 找到边界图元图元
         clean_walls = clean_lines(walls)
 
         # 提取并合并门
-        raw_doors = [e for e in raw_elements if 'door' in e['type']]
+        raw_doors = [e for e in raw_elements if e['type'] in get_door()]
         door_objs = process_compound_instances(raw_doors, target_category="Door")
 
         # 提取合并窗
-        raw_windows = [e for e in raw_elements if 'window' in e['type'] or 'opening' in e['type']]
+        raw_windows = [e for e in raw_elements if e['type'] in get_window()]
         window_objs = process_compound_instances(raw_windows, target_category="Window")
 
         # 提取合并家具
         raw_furn = [
             e for e in raw_elements
-            if "wall" not in e['type']
-               and "door" not in e['type']
-               and "window" not in e['type']
-               and "opening" not in e['type']
+            if e['type'] not in get_wall()
+               and e['type'] not in get_door()
                and e['type'] != "text"
         ]
-        furn_objs = process_compound_instances(raw_furn, target_category="Furniture")
+        fun_objs = process_compound_instances(raw_furn, target_category="FunctionalElement")
 
         # patches提取
         # 正确写法 (转为 Shapely 对象):
@@ -174,7 +232,7 @@ class TopologyBuilder:
                 except Exception as e:
                     print(f"Invalid geometry for Window {w.uid}: {e}")
 
-        # 生成房间种子
+        # 生成房间标签列表
         rooms = [e for e in raw_elements if e['type'] == 'text']
         room_tags = []
         for room in rooms:
@@ -183,22 +241,21 @@ class TopologyBuilder:
             room_tag = (content, (cord[0], cord[1]))
             room_tags.append(room_tag)
 
-        # 构建房间轮廓
-        builder = FloorPlanMeshBuilder()  # 容差设小点，测试长窗户是否能通过
-        room_results = builder.build(clean_walls, door_patches, window_patches, room_tags)
+        # 构建房间轮廓，使用CDT算法
+        builder = FloorPlanMeshBuilderCDT()
+        room_results = builder.new_build(clean_walls, door_patches, window_patches, room_tags)
 
         # 调用可视化
-        # plot_floor_plan(builder, room_results)
+        input_svg_path_parse = Path(json_output_path)
+        folder_name = input_svg_path_parse.parent.name
+        save_dir = os.path.join(settings.cdt_dir, folder_name)
+        filename = os.path.basename(json_output_path).replace("_raw.jsonld", ".png")
+        plot_floor_plan(builder, room_results, save_dir, filename)
 
         # bot构建
-        comps = door_objs + window_objs + furn_objs
+        comps = door_objs + window_objs + fun_objs
         generator = BotGraphGenerator(room_results, comps)
         json_output = generator.generate()
         # 实例化可视化工具
         viz = BotGraphVisualizer(json_output)
-
-        # 1. 保存数据
         viz.save_json(json_output_path)
-
-        # 2. 画拓扑关系 (圆圈图) -> 验证逻辑连接
-        viz.draw_topology(html_output_path)

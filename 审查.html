@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能建筑合规审查交互原型</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #2980b9;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #e67e22;
+            --bg-light: #f5f7fa;
+            --border-color: #dcdde1;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --panel-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-dark);
+        }
+
+        /* 顶部导航 */
+        .navbar {
+            background-color: var(--panel-bg);
+            color: var(--text-dark);
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
+
+        .navbar h1 {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .sys-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-nav {
+            background-color: #f8f9fa;
+            color: var(--primary);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-nav:hover {
+            background-color: #e2e6e8;
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .sys-status {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-light);
+            padding-left: 10px;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success);
+            box-shadow: 0 0 5px rgba(39, 174, 96, 0.5);
+        }
+
+        /* 主体布局 */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 左侧：多维数据管理区 */
+        .sidebar {
+            width: 300px; /* 略微收窄侧边栏以释放更多空间 */
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.02);
+            z-index: 5;
+            flex-shrink: 0;
+        }
+
+        .section-header {
+            background-color: #f8f9fa;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--secondary);
+            border-bottom: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+        .section-header:first-child { border-top: none; }
+
+        .sidebar-content {
+            padding: 20px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .btn-upload {
+            background-color: var(--warning);
+            color: #fff;
+            font-weight: bold;
+        }
+        .btn-upload:hover { background-color: #d35400; }
+
+        .btn-review {
+            background-color: var(--accent);
+            color: white;
+            opacity: 0.5;
+            cursor: not-allowed;
+            font-weight: bold;
+        }
+        .btn-review.active {
+            opacity: 1;
+            cursor: pointer;
+        }
+        .btn-review.active:hover { background-color: #2471a3; }
+
+        .btn-export {
+            background-color: var(--success);
+            color: white;
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+        .btn-export:hover { background-color: #229954; }
+
+        /* 流水线状态列表 */
+        .pipeline-list {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+
+        .pipeline-item {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .pipeline-item .icon {
+            width: 16px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .pipeline-item.done { color: var(--success); }
+        .pipeline-item.active { color: var(--accent); font-weight: bold; }
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(41, 128, 185, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 筛选器 */
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+        .filter-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            box-sizing: border-box;
+        }
+
+        /* 违规列表 */
+        .violation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .violation-card {
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--danger);
+            border-radius: 4px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+        .violation-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .violation-card.active {
+            background-color: #fef5f5;
+            border-color: #fca5a5;
+            border-left-color: var(--danger);
+        }
+        .violation-card.warning { border-left-color: #f1c40f; }
+        .violation-card.warning.active { background-color: #fef9e7; border-color: #f5cba7; }
+
+        .v-title { font-size: 0.9rem; font-weight: bold; color: var(--text-dark); margin-bottom: 5px; }
+        .v-desc { font-size: 0.8rem; color: var(--text-light); line-height: 1.4; word-break: break-all; }
+
+        /* 右侧容器 (改为左右横向布局以最大化画布区域) */
+        .right-container {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            padding: 15px;
+            gap: 15px;
+            min-width: 0;
+        }
+
+        .pane {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 可视画布审查区 */
+        .canvas-area {
+            flex: 1; /* 占据所有剩余横向空间 */
+            position: relative;
+            min-width: 0;
+        }
+
+        .pane-header {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .control-hints {
+            font-size: 0.8rem;
+            color: var(--accent);
+            background: #eaf2f8;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: normal;
+        }
+
+        .canvas-content {
+            flex: 1;
+            overflow: hidden;
+            background-color: #ecf0f1;
+            background-image: radial-gradient(#dcdde1 1px, transparent 0);
+            background-size: 20px 20px;
+            position: relative;
+            cursor: grab;
+        }
+
+        .canvas-content:active {
+            cursor: grabbing;
+        }
+
+        /* SVG 样式 */
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .svg-room {
+            stroke: #000000;
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke; /* 保证无论怎么放大，线都不会变粗 */
+            transition: opacity 0.3s;
+            cursor: pointer;
+        }
+        .svg-room:hover {
+            opacity: 0.8;
+        }
+        .svg-text {
+            font-weight: bold;
+            fill: #2C3E50;
+            pointer-events: none;
+        }
+
+        /* 逆向视觉映射高亮样式 */
+        .highlight-danger {
+            fill: #FADBD8 !important;
+            stroke: #E74C3C !important;
+            stroke-width: 4 !important;
+        }
+        .highlight-warning {
+            fill: #FCF3CF !important;
+            stroke: #F39C12 !important;
+            stroke-width: 4 !important;
+        }
+
+        /* 浮动诊断气泡 */
+        .tooltip-bubble {
+            position: absolute;
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+            z-index: 100;
+            white-space: pre-wrap;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            max-width: 250px;
+            text-align: center;
+        }
+        .tooltip-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: rgba(44, 62, 80, 0.95) transparent transparent transparent;
+        }
+
+        /* 多视角报告输出区 (改为右侧固定宽度属性面板形式) */
+        .report-area {
+            width: 360px; /* 固定宽度 */
+            flex-shrink: 0;
+        }
+
+        .report-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .report-placeholder {
+            margin: auto;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        .report-detail {
+            display: none;
+            width: 100%;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--bg-light);
+            flex-wrap: wrap;
+        }
+        .detail-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+        }
+        .bg-danger { background-color: var(--danger); }
+        .bg-warning { background-color: var(--warning); }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 100px 1fr; /* 适应右侧较窄的宽度 */
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .detail-label { color: var(--text-light); font-weight: bold; }
+
+        .code-block {
+            background-color: #f4f6f6;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+            white-space: pre-wrap;
+            margin-top: 10px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+            word-break: break-all;
+            overflow-x: auto;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .modal.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .modal h3 { margin-bottom: 10px; color: var(--text-dark); font-size: 1.1rem; }
+        .modal p { font-size: 0.9rem; color: var(--text-light); margin-bottom: 20px; }
+        .modal-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+        .modal-btn:hover { background-color: #229954; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航 -->
+    <header class="navbar">
+        <h1>交互式合规审查原型</h1>
+        <div class="sys-actions">
+            <!-- 跳转至交互修正界面的导航按钮 -->
+            <button class="btn-nav" onclick="window.open('interactive_graph_editor.html', '_blank')" title="前往图谱可视交互修正原型处理底层几何偏差">
+                ✏️ 交互式图谱修正
+            </button>
+            <div class="sys-status">
+                <div class="status-dot"></div>
+                内核引擎: 就绪 (Neuro-Symbolic V1.0)
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体内容 -->
+    <main class="main-container">
+
+        <!-- 左侧：多维数据管理区 -->
+        <aside class="sidebar">
+            <div class="section-header">数据流管线</div>
+            <div class="sidebar-content">
+                <!-- 支持多文件上传，允许同时选中 SVG 和 JSONLD -->
+                <input type="file" id="file-project" accept=".svg,.png,.jpeg,.jpg,.json,.jsonld" multiple style="display: none;">
+                <button class="btn btn-upload" id="btnUpload" onclick="document.getElementById('file-project').click()">
+                    📁 联合导入图纸与图谱
+                </button>
+                <div style="font-size: 10px; color: #7f8c8d; text-align: center; margin-bottom: 15px; margin-top: -10px;">
+                    (请同时选中 SVG 底图与 JSON-LD 知识图谱)
+                </div>
+
+                <ul class="pipeline-list" id="pipelineList">
+                    <li class="pipeline-item" id="step1"><span class="icon">-</span> 1. 解析视口与物理坐标系</li>
+                    <li class="pipeline-item" id="step2"><span class="icon">-</span> 2. 映射空间拓扑网络</li>
+                    <li class="pipeline-item" id="step3"><span class="icon">-</span> 3. 提取 SHACL 违规报告</li>
+                </ul>
+
+                <button class="btn btn-review" id="btnReview" onclick="executeReview()" disabled>
+                    ⚡ 执行逆向视觉映射
+                </button>
+            </div>
+
+            <div class="section-header">操作日志与违规视图</div>
+            <div class="sidebar-content" style="flex: 1; display: flex; flex-direction: column;">
+
+                <div class="filter-group">
+                    <label>违规维度筛选</label>
+                    <select id="filterType">
+                        <option value="all">全部违规类别</option>
+                        <option value="scale">空间尺度约束</option>
+                        <option value="topology">拓扑动线约束</option>
+                        <option value="facility">功能配置约束</option>
+                    </select>
+                </div>
+
+                <div class="violation-list" id="violationList" style="flex:1; overflow-y: auto; display: none;">
+                    <!-- 动态注入审查项或加载兜底的 Mock 假数据 -->
+                </div>
+
+                <div id="emptyListMsg" style="text-align: center; color: #95a5a6; font-size: 0.85rem; margin-top: 30px;">
+                    等待执行审查...
+                </div>
+
+                <button class="btn btn-export" id="btnExport" onclick="exportReport()" style="display: none;">
+                    📥 一键导出批注报告
+                </button>
+            </div>
+        </aside>
+
+        <!-- 右侧容器 (左侧为主画布，右侧为审查报告面板) -->
+        <section class="right-container">
+
+            <!-- 可视画布审查区 (占据最大空间) -->
+            <div class="pane canvas-area">
+                <div class="pane-header">
+                    <span>🌐 可视画布审查区 (逆向坐标映射)</span>
+                    <span class="control-hints">🖱️ 提示：支持鼠标滚轮缩放图纸，按住左键拖拽平移</span>
+                </div>
+
+                <!-- 画布容器 -->
+                <div class="canvas-content" id="canvasContent">
+                    <!-- SVG 画布：移除 viewBox，改用 transform group 实现无限缩放平移 -->
+                    <svg id="floorplanSvg" width="100%" height="100%">
+                        <!-- 用于承载缩放和平移的主转换组 -->
+                        <g id="transform-group" transform="translate(0, 0) scale(1)">
+                            <!-- 底图容器 -->
+                            <g id="base-map-layer"></g>
+                            <!-- 遮罩与高亮容器 -->
+                            <g id="highlight-overlay"></g>
+                        </g>
+                    </svg>
+                    <!-- 浮动气泡 (坐标通过 JS 动态计算) -->
+                    <div id="tooltip" class="tooltip-bubble"></div>
+                </div>
+            </div>
+
+            <!-- 多视角报告输出区 (固定于右侧边缘) -->
+            <div class="pane report-area">
+                <div class="pane-header">
+                    <span>📄 报告输出区 (推演溯源)</span>
+                </div>
+                <div class="report-content">
+                    <div class="report-placeholder" id="reportPlaceholder">
+                        审查结果详情将在此区域联动展示。<br>请在左侧列表中点击相关违规节点。
+                    </div>
+
+                    <!-- 动态详情容器 -->
+                    <div class="report-detail" id="reportDetail">
+                        <div class="detail-header">
+                            <span class="detail-badge bg-danger" id="detailBadge">违规异常</span>
+                            <h3 id="detailTitle" style="margin:0; font-size: 1rem; color: var(--text-dark);">动态违规标题</h3>
+                        </div>
+
+                        <div class="detail-grid">
+                            <span class="detail-label">图谱实例标识:</span>
+                            <span style="font-family: monospace; color: var(--secondary);" id="detailId">inst:Node_001</span>
+
+                            <span class="detail-label">关联规范模板:</span>
+                            <span id="detailRule" style="color: var(--secondary);">RuleShape</span>
+
+                            <span class="detail-label">逻辑推演溯源:</span>
+                            <span id="detailDesc" style="color: var(--secondary);">具体原因描述</span>
+                        </div>
+
+                        <div class="detail-label" style="margin-bottom: 5px;">SHACL 形状断言触发记录 (Trace):</div>
+                        <div class="code-block" id="detailCode">
+// 动态加载中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- 提示模态框 -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal" id="modalBox">
+            <h3 id="modalTitle">操作成功</h3>
+            <p id="modalMsg">操作已完成。</p>
+            <button class="modal-btn" onclick="closeModal()">确定</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 核心变量声明与颜色映射库
+        // ==========================================
+        let loadedGraphData = null;
+        let loadedViolations = [];
+        let isDataReady = false;
+
+        // 底图配置参数
+        let baseMapSvgContent = null;
+        let dxfScale = 1.0;
+        let svgViewBoxW = 1000.0;
+        let svgViewBoxH = 1000.0;
+
+        // 缩放与平移状态变量
+        let scale = 1.0;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        // 当前激活的违规信息 (用于动态重绘 tooltip 位置)
+        let activeViolationId = null;
+        let activeCentroidSvg = null; // SVG 坐标系下的质心
+        let activeTooltipMsg = "";
+
+        const COLOR_MAP = {
+            "Bedroom": "#FFE4B5",
+            "LivingRoom": "#F9E79F",
+            "Kitchen": "#F5CBA7",
+            "Bathroom": "#D5F5E3",
+            "Balcony": "#D2B4DE",
+            "Corridor": "#EBEDEF",
+            "EntranceCorridor": "#EBEDEF",
+            "MainCorridor": "#EBEDEF",
+            "SecondaryCorridor": "#EBEDEF",
+            "DiningRoom": "#FDEBD0",
+            "Entrance": "#E59866",
+            "StorageRoom": "#EAECEE",
+            "Unknown": "#FFFFFF"
+        };
+
+        // ==========================================
+        // UI 元素引用
+        // ==========================================
+        const btnUpload = document.getElementById('btnUpload');
+        const btnReview = document.getElementById('btnReview');
+        const fileInput = document.getElementById('file-project');
+        const pipelineList = document.getElementById('pipelineList').children;
+        const canvasContent = document.getElementById('canvasContent');
+
+        const svgCanvas = document.getElementById('floorplanSvg');
+        const transformGroup = document.getElementById('transform-group');
+        const baseMapLayer = document.getElementById('base-map-layer');
+        const overlayGroup = document.getElementById('highlight-overlay');
+
+        const violationList = document.getElementById('violationList');
+        const emptyListMsg = document.getElementById('emptyListMsg');
+        const reportPlaceholder = document.getElementById('reportPlaceholder');
+        const reportDetail = document.getElementById('reportDetail');
+        const tooltip = document.getElementById('tooltip');
+
+        // ==========================================
+        // 核心解析与渲染引擎
+        // ==========================================
+        function parseWKT(wktStr) {
+            if (!wktStr) return [];
+            const match = wktStr.match(/\(\((.*?)\)\)/) || wktStr.match(/\((.*?)\)/);
+            if (!match) return [];
+            return match[1].split(',').map(ptStr => {
+                const parts = ptStr.trim().split(/\s+/).map(Number);
+                return [parts[0], parts[1]];
+            });
+        }
+
+        function extractSemanticType(types) {
+            if (!Array.isArray(types)) types = [types];
+            for (let t of types) {
+                if (t.startsWith("bldg:") && t !== "bldg:Suite" && !t.includes("Door")) {
+                    return t.replace("bldg:", "");
+                }
+            }
+            return "Unknown";
+        }
+
+        function renderDynamicSVG(graph) {
+            // 清理原有覆盖物
+            overlayGroup.innerHTML = '';
+
+            let allPoints = [];
+            let spacesToRender = [];
+            let doorsToRender = [];
+
+            // 提取并映射几何坐标
+            graph.forEach(node => {
+                const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
+                const wktObj = node["geo:asWKT"];
+                if (!wktObj) return;
+
+                const wktStr = typeof wktObj === 'object' ? wktObj["@value"] : wktObj;
+                const pts = parseWKT(wktStr);
+                if (pts.length === 0) return;
+
+                pts.forEach(p => allPoints.push(p));
+
+                if (types.includes("bot:Space")) {
+                    spacesToRender.push({
+                        id: node["@id"],
+                        pts: pts,
+                        type: extractSemanticType(types),
+                        area: node["props:hasArea"] || 0
+                    });
+                } else if (types.includes("beo:Door") || types.some(t => t.includes("Door"))) {
+                    doorsToRender.push({ id: node["@id"], pts: pts });
+                }
+            });
+
+            // 核心坐标映射函数 (适应 DXF/WKT -> SVG Y轴翻转)
+            function transformCoords(x, y) {
+                if (baseMapSvgContent) {
+                    // 如果有原生 SVG 底图，假设 WKT 是物理坐标
+                    // 逆向映射: x_svg = x_wkt * scale, y_svg = ViewBoxH - y_wkt * scale
+                    return {
+                        x: x * dxfScale,
+                        y: svgViewBoxH - (y * dxfScale)
+                    };
+                } else {
+                    // 如果没有底图，直接返回
+                    return { x: x, y: y };
+                }
+            }
+
+            // 渲染房间图层
+            spacesToRender.forEach(room => {
+                let min_x = Infinity, max_x = -Infinity;
+                let min_y = Infinity, max_y = -Infinity;
+
+                const pointsStr = room.pts.map(p => {
+                    let trans = transformCoords(p[0], p[1]);
+                    // 记录转换后的实际渲染边界用于计算自适应字号
+                    min_x = Math.min(min_x, trans.x);
+                    max_x = Math.max(max_x, trans.x);
+                    min_y = Math.min(min_y, trans.y);
+                    max_y = Math.max(max_y, trans.y);
+                    return `${trans.x},${trans.y}`;
+                }).join(' ');
+
+                const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                poly.setAttribute('id', room.id.replace(/[^a-zA-Z0-9_-]/g, '_'));
+                poly.setAttribute('points', pointsStr);
+
+                const color = COLOR_MAP[room.type] || COLOR_MAP["Unknown"];
+                poly.setAttribute('fill', color);
+                poly.setAttribute('class', 'svg-room');
+                poly.setAttribute('fill-opacity', '0.4'); // 半透明以便看清底图
+
+                overlayGroup.appendChild(poly);
+
+                // 绘制文字 (质心计算)
+                let cx = 0, cy = 0;
+                room.pts.forEach(p => { let trans = transformCoords(p[0], p[1]); cx += trans.x; cy += trans.y; });
+                cx /= room.pts.length; cy /= room.pts.length;
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', cx);
+                text.setAttribute('y', cy);
+                text.setAttribute('class', 'svg-text');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+
+                // 动态字号：基于当前多边形渲染后的实际短边尺寸自适应 (规避超大图纸下字号失真溢出)
+                let polyWidth = max_x - min_x;
+                let polyHeight = max_y - min_y;
+                let minDim = Math.min(polyWidth, polyHeight);
+                let fontSize = minDim * 0.15; // 房间短边的 15% 作为字号基准
+                if (!isFinite(fontSize) || fontSize <= 0) fontSize = 14; // 安全兜底
+
+                text.setAttribute('font-size', fontSize);
+                text.textContent = `${room.type} (${room.area}㎡)`;
+                overlayGroup.appendChild(text);
+            });
+
+            // 渲染门图层
+            doorsToRender.forEach(door => {
+                const pointsStr = door.pts.map(p => {
+                    let trans = transformCoords(p[0], p[1]);
+                    return `${trans.x},${trans.y}`;
+                }).join(' ');
+
+                const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                poly.setAttribute('id', door.id.replace(/[^a-zA-Z0-9_-]/g, '_'));
+                poly.setAttribute('points', pointsStr);
+                poly.setAttribute('fill', 'none');
+                poly.setAttribute('stroke', 'none');
+
+                overlayGroup.appendChild(poly);
+            });
+
+            // 执行全局视口自适应居中
+            autoFitTransform(allPoints, transformCoords);
+        }
+
+        // ==========================================
+        // 缩放、平移与自适应居中逻辑 (核心增强)
+        // ==========================================
+
+        function applyTransform() {
+            transformGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
+            updateTooltipPosition(); // 同步更新可能悬浮的气泡位置
+        }
+
+        function autoFitTransform(allPoints, transformFn) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            if (baseMapSvgContent) {
+                // 如果有原生底图，以 SVG ViewBox 的尺寸为绝对基准
+                minX = 0; minY = 0;
+                maxX = svgViewBoxW;
+                maxY = svgViewBoxH;
+            } else if (allPoints.length > 0) {
+                // 否则基于知识图谱的边界自适应
+                allPoints.forEach(p => {
+                    let trans = transformFn(p[0], p[1]);
+                    minX = Math.min(minX, trans.x);
+                    minY = Math.min(minY, trans.y);
+                    maxX = Math.max(maxX, trans.x);
+                    maxY = Math.max(maxY, trans.y);
+                });
+            } else {
+                return;
+            }
+
+            let w = maxX - minX || 1;
+            let h = maxY - minY || 1;
+
+            // 获取当前容器的实际像素尺寸
+            const rect = canvasContent.getBoundingClientRect();
+            const pad = 40; // 四周边距
+            const availableW = rect.width - pad * 2;
+            const availableH = rect.height - pad * 2;
+
+            // 计算完美铺满的缩放比例
+            scale = Math.min(availableW / w, availableH / h);
+
+            // 计算居中平移量
+            translateX = (rect.width - w * scale) / 2 - minX * scale;
+            translateY = (rect.height - h * scale) / 2 - minY * scale;
+
+            applyTransform();
+        }
+
+        // 监听鼠标滚轮缩放事件
+        canvasContent.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = 1.15; // 每次滚动的缩放步长
+            const direction = e.deltaY > 0 ? -1 : 1;
+            const newScale = direction > 0 ? scale * zoomFactor : scale / zoomFactor;
+
+            // 限制极端缩放级别
+            if (newScale < 0.1 || newScale > 50) return;
+
+            // 获取鼠标在画布容器内的像素坐标，实现“以鼠标为中心缩放”
+            const rect = canvasContent.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 数学推导：补偿因为缩放导致的坐标原点偏移
+            translateX = mouseX - (mouseX - translateX) * (newScale / scale);
+            translateY = mouseY - (mouseY - translateY) * (newScale / scale);
+            scale = newScale;
+
+            applyTransform();
+        }, { passive: false });
+
+        // 监听鼠标拖拽平移事件
+        canvasContent.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // 仅限左键拖拽
+            isDragging = true;
+            // 记录初始按下时的相对偏移
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            applyTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        function updateTooltipPosition() {
+            if (!activeViolationId || !activeCentroidSvg) {
+                tooltip.style.opacity = 0;
+                return;
+            }
+            // 将 SVG 内部的虚拟坐标映射为当前屏幕上的像素绝对坐标
+            const screenX = translateX + activeCentroidSvg.x * scale;
+            const screenY = translateY + activeCentroidSvg.y * scale - 10; // 略微向上偏移
+
+            tooltip.style.left = `${screenX}px`;
+            tooltip.style.top = `${screenY}px`;
+        }
+
+        // ==========================================
+        // 违规列表动态渲染
+        // ==========================================
+        function renderViolations(violations) {
+            violationList.innerHTML = '';
+            activeViolationId = null;
+            activeCentroidSvg = null;
+            updateTooltipPosition();
+
+            if (violations.length === 0) {
+                emptyListMsg.style.display = 'block';
+                emptyListMsg.innerText = "🎉 当前图谱未检测到任何违规项。";
+                return;
+            }
+
+            violations.forEach((v, index) => {
+                const isWarning = v.rule && v.rule.toLowerCase().includes('topology');
+                const safeId = v.node_id.replace(/[^a-zA-Z0-9_-]/g, '_');
+                const dataString = encodeURIComponent(JSON.stringify(v));
+
+                const card = document.createElement('div');
+                card.className = `violation-card ${isWarning ? 'warning' : ''}`;
+                card.onclick = function() { selectDynamicViolation(safeId, dataString, this); };
+
+                const titlePrefix = isWarning ? '【预警】' : '【违规】';
+                let titleMsg = v.message.split('】').pop() || v.message;
+
+                card.innerHTML = `
+                    <div class="v-title">${titlePrefix} ${titleMsg}</div>
+                    <div class="v-desc">定位节点: ${v.node_id}<br>检测规则: ${v.rule || 'Unknown Rule'}</div>
+                `;
+
+                violationList.appendChild(card);
+            });
+        }
+
+        // ==========================================
+        // 核心联合上传与异步解析流水线
+        // ==========================================
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        // 提取原图 SVG 内容并注入底层
+        function processSvgBackground(svgText) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const parser = new DOMParser();
+                    const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+                    const svgElem = svgDoc.documentElement;
+
+                    const scaleAttr = svgElem.getAttribute('scale');
+                    if (scaleAttr) dxfScale = parseFloat(scaleAttr);
+
+                    const viewBox = svgElem.getAttribute('viewBox');
+                    if (viewBox) {
+                        const vbParts = viewBox.split(/\s+/);
+                        if (vbParts.length === 4) {
+                            svgViewBoxW = parseFloat(vbParts[2]);
+                            svgViewBoxH = parseFloat(vbParts[3]);
+                        }
+                    }
+
+                    // 提取原 SVG 中的内部元素作为纯净的组，注入到现在的画布中
+                    baseMapSvgContent = svgElem.innerHTML;
+
+                    // 利用包裹的 <g> 将底图放进我们的体系
+                    baseMapLayer.innerHTML = baseMapSvgContent;
+
+                    // 如果存在原 SVG 中的高亮遮罩，将其移除以免干扰
+                    const oldOverlay = baseMapLayer.querySelector('#highlight-overlay');
+                    if (oldOverlay) oldOverlay.remove();
+
+                    resolve();
+                } catch(e) {
+                    reject(e);
+                }
+            });
+        }
+
+        fileInput.addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            btnUpload.disabled = true;
+            btnUpload.innerText = "⏳ 正在解析联合数据...";
+
+            // 重置状态
+            baseMapSvgContent = null;
+            baseMapLayer.innerHTML = '';
+            overlayGroup.innerHTML = '';
+            dxfScale = 1.0;
+            activeViolationId = null;
+            activeCentroidSvg = null;
+            updateTooltipPosition();
+
+            // 分离底图与 JSON 文件
+            let bgFile = files.find(f => f.name.toLowerCase().match(/\.(svg)$/)); // 此处专属强化原生 SVG 挂载
+            let jsonFile = files.find(f => f.name.toLowerCase().match(/\.(json|jsonld)$/));
+
+            try {
+                // 1. 如果有底图，先解析底图从而确立物理坐标映射系
+                if (bgFile) {
+                    const text = await readFileAsText(bgFile);
+                    await processSvgBackground(text);
+                }
+
+                // 2. 如果有 JSON-LD，加载图谱数据
+                if (jsonFile) {
+                    const jsonText = await readFileAsText(jsonFile);
+                    const rawJson = JSON.parse(jsonText);
+                    loadedGraphData = rawJson['@graph'] || rawJson;
+                    loadedViolations = rawJson['violations'] || [];
+                }
+
+                // 3. 启动 UI 流水线动画
+                let step = 0;
+                function nextStep() {
+                    if(step > 0) {
+                        pipelineList[step-1].classList.remove('active');
+                        pipelineList[step-1].classList.add('done');
+                        pipelineList[step-1].innerHTML = `<span class="icon">✓</span> ${pipelineList[step-1].innerText.replace('- ', '').split(' (')[0]} (完成)`;
+                    }
+                    if(step < 3) {
+                        pipelineList[step].classList.add('active');
+                        pipelineList[step].innerHTML = `<span class="spinner"></span> ${pipelineList[step].innerText.replace('- ', '')}...`;
+                        setTimeout(nextStep, 400);
+                        step++;
+                    } else {
+                        isDataReady = true;
+
+                        let msg = [];
+                        if (bgFile) msg.push("SVG底图");
+                        if (jsonFile) msg.push("图谱");
+
+                        btnUpload.innerText = `✅ 成功导入: ${msg.join(' + ')}`;
+                        btnUpload.style.backgroundColor = "var(--bg-light)";
+                        btnUpload.style.color = "var(--success)";
+                        btnUpload.style.border = "1px dashed var(--success)";
+
+                        btnReview.disabled = false;
+                        btnReview.classList.add('active');
+                        canvasContent.style.opacity = 1;
+
+                        // 预先渲染底层图谱与底图对齐
+                        if(loadedGraphData) renderDynamicSVG(loadedGraphData);
+
+                        showModal("联合数据就绪", `图纸底图与空间图谱的物理空间已映射对齐。\n请点击左侧的“执行逆向视觉映射”查看审查结果。`);
+                    }
+                }
+                nextStep();
+
+            } catch (err) {
+                showModal("解析错误", "文件解析失败: " + err.message);
+                btnUpload.disabled = false;
+                btnUpload.innerText = "📁 联合导入图纸与图谱";
+            }
+
+            e.target.value = '';
+        });
+
+        // ==========================================
+        // 执行审查与视觉联动逻辑
+        // ==========================================
+        function executeReview() {
+            if (!isDataReady) return;
+
+            btnReview.innerText = "⏳ 坐标逆映射与渲染中...";
+            btnReview.disabled = true;
+
+            setTimeout(() => {
+                btnReview.innerText = "✅ 可视化映射完成";
+                btnReview.classList.remove('active');
+                btnReview.style.backgroundColor = "var(--success)";
+                btnReview.style.cursor = "default";
+
+                renderDynamicSVG(loadedGraphData);
+
+                emptyListMsg.style.display = "none";
+                violationList.style.display = "flex";
+                renderViolations(loadedViolations);
+
+                btnExport.style.display = "block";
+
+                const firstCard = violationList.querySelector('.violation-card');
+                if (firstCard) firstCard.click();
+
+            }, 600);
+        }
+
+        function selectDynamicViolation(safeId, dataString, cardElement) {
+            const data = JSON.parse(decodeURIComponent(dataString));
+
+            document.querySelectorAll('.violation-card').forEach(c => c.classList.remove('active'));
+            cardElement.classList.add('active');
+
+            reportPlaceholder.style.display = "none";
+            reportDetail.style.display = "block";
+
+            const isWarning = data.rule && data.rule.toLowerCase().includes('topology');
+
+            document.getElementById('detailBadge').className = `detail-badge ${isWarning ? 'bg-warning' : 'bg-danger'}`;
+            document.getElementById('detailBadge').innerText = isWarning ? '预警提示' : '违规异常';
+            document.getElementById('detailTitle').innerText = data.message.split('】').pop() || data.message;
+            document.getElementById('detailId').innerText = data.node_id;
+            document.getElementById('detailRule').innerText = data.rule || 'Unknown Rule';
+            document.getElementById('detailDesc').innerText = `系统在映射该节点绝对坐标时，检测到其偏离了 SHACL 设定的逻辑边界。`;
+            document.getElementById('detailCode').innerText = JSON.stringify(data, null, 2);
+
+            // 清除反向高亮
+            document.querySelectorAll('.svg-room, polygon').forEach(el => {
+                el.classList.remove('highlight-danger', 'highlight-warning');
+            });
+
+            activeViolationId = null;
+            activeCentroidSvg = null;
+            updateTooltipPosition();
+
+            // 激活新的高亮
+            const svgElement = document.getElementById(safeId);
+            if(svgElement) {
+                svgElement.classList.add(isWarning ? 'highlight-warning' : 'highlight-danger');
+
+                // 计算当前 SVG 元素自身的质心坐标 (针对 Polygon)
+                const pointsAttr = svgElement.getAttribute('points');
+                if(pointsAttr) {
+                    const pts = pointsAttr.trim().split(' ').map(p => {
+                        const coords = p.split(',');
+                        return {x: parseFloat(coords[0]), y: parseFloat(coords[1])};
+                    });
+
+                    let cx = 0, cy = 0;
+                    pts.forEach(p => { cx += p.x; cy += p.y; });
+                    activeCentroidSvg = { x: cx / pts.length, y: cy / pts.length };
+
+                    activeViolationId = safeId;
+                    activeTooltipMsg = data.message;
+
+                    tooltip.innerText = activeTooltipMsg;
+                    tooltip.style.opacity = 1;
+
+                    // 动态更新屏幕坐标位置
+                    updateTooltipPosition();
+                }
+            } else {
+                console.warn("未能找到对应的 SVG 多边形 ID: " + safeId);
+            }
+        }
+
+        // ==========================================
+        // 模态框控制
+        // ==========================================
+        const modalOverlay = document.getElementById('customModal');
+        const modalBox = document.getElementById('modalBox');
+
+        function showModal(title, msg) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMsg').innerText = msg;
+            modalOverlay.style.display = "flex";
+            setTimeout(() => { modalBox.classList.add('show'); }, 10);
+        }
+
+        function closeModal() {
+            modalBox.classList.remove('show');
+            setTimeout(() => { modalOverlay.style.display = "none"; }, 300);
+        }
+
+        function exportReport() {
+            showModal("报告导出成功", "带有动态可视化批注及溯源属性的合规报告已生成。");
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xs:   <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix bot: <https://w3id.org/bot#> .
+@prefix props: <http://mythesis.org/props/> .
+@prefix bldg: <http://mythesis.org/bldg/> .
+@prefix inst: <http://mythesis.org/instance/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# =====================================================================
+# 规则 1 (维度: 空间尺度) - 卧室面积必须大于12平方米
+# =====================================================================
+bldg:BedroomAreaShape a sh:NodeShape ;
+    sh:targetClass bldg:Bedroom ;
+    sh:property [
+        sh:path props:hasArea ;
+        sh:minExclusive 12.0 ;
+        sh:message "【违规】卧室使用面积必须大于 12.0 ㎡"
+    ] .
+
+# =====================================================================
+# 规则 2 (维度: 拓扑动线) - 客厅应该连着阳台
+# 逻辑：检查 LivingRoom 是否沿 bot:adjacentZone 路径至少连接了一个 Balcony
+# =====================================================================
+bldg:LivingRoomBalconyShape a sh:NodeShape ;
+    sh:targetClass bldg:LivingRoom ;
+    sh:property [
+        sh:path bot:adjacentZone ;
+        sh:qualifiedValueShape [
+            sh:class bldg:Balcony
+        ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "【违规】客厅未与阳台直接连通"
+    ] .
+
+# =====================================================================
+# 规则 3 (维度: 拓扑动线) - 厨房应该连着餐厅
+# 逻辑：检查 Kitchen 是否沿 bot:adjacentZone 路径至少连接了一个 DiningRoom
+# =====================================================================
+bldg:KitchenDiningShape a sh:NodeShape ;
+    sh:targetClass bldg:Kitchen ;
+    sh:property [
+        sh:path bot:adjacentZone ;
+        sh:qualifiedValueShape [
+            sh:class bldg:DiningRoom
+        ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "【违规】厨房未与餐厅直接连通"
+    ] .
+
+# =====================================================================
+# 规则 4 & 5 (维度: 功能配置) - 厨房里应该要有 sink 和 gas stove
+# 逻辑：检查 Kitchen 的 bot:containsElement 列表中是否包含对应 label 的构件
+# =====================================================================
+bldg:KitchenFacilityShape a sh:NodeShape ;
+    sh:targetClass bldg:Kitchen ;
+    # 检查水槽 (sink)
+    sh:property [
+        sh:path bot:containsElement ;
+        sh:qualifiedValueShape [
+            sh:property [
+                sh:path rdfs:label ;
+                sh:hasValue "sink"
+            ]
+        ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "【违规】厨房内部缺少洗涤池 (sink)"
+    ] ;
+    # 检查灶具 (gas stove)
+    sh:property [
+        sh:path bot:containsElement ;
+        sh:qualifiedValueShape [
+            sh:property [
+                sh:path rdfs:label ;
+                sh:hasValue "gas stove"
+            ]
+        ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:message "【违规】厨房内部缺少灶具 (gas stove)"
+    ] .

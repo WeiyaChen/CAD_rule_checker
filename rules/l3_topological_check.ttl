@@ -1,0 +1,29 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix bot: <https://w3id.org/bot#> .
+@prefix bldg: <http://mythesis.org/bldg/> .
+@prefix props: <http://mythesis.org/props/> .
+
+# 【规范 4.1.6】布置便器的卫生间的门不应直接开在厨房内
+# 逻辑：检查Bathroom是否直接adjacentZone到Kitchen
+bldg:BathroomTopologyShape a sh:NodeShape ;
+    sh:targetClass bldg:Bathroom ;
+    sh:property [
+        sh:path bot:adjacentZone ;
+        sh:node [ sh:not [ sh:class bldg:Kitchen ] ] ;
+        sh:message "【违规 4.1.6】卫生间不应与厨房直接连通（门开向厨房）"
+    ] .
+
+# 【规范 4.1.13】过道净宽 (前提: 经过拓扑富化打上了特定标签)
+bldg:EntranceCorridorShape a sh:NodeShape ;
+    sh:targetClass bldg:EntranceCorridor ; # 连通外部的过道
+    sh:property [ sh:path props:clearWidth ; sh:minInclusive 1.10 ; sh:message "【违规 4.1.13】套内入口过道净宽不应小于 1.10m" ] .
+
+bldg:MainCorridorShape a sh:NodeShape ;
+    sh:targetClass bldg:MainCorridor ; # 通往卧室起居室的过道
+    sh:property [ sh:path props:clearWidth ; sh:minInclusive 1.00 ; sh:message "【违规 4.1.13】通往卧室/起居室过道净宽不应小于 1.00m" ] .
+
+bldg:SecondaryCorridorShape a sh:NodeShape ;
+    sh:targetClass bldg:SecondaryCorridor ; # 通往厨房卫生的过道
+    sh:property [ sh:path props:clearWidth ; sh:minInclusive 0.90 ; sh:message "【违规 4.1.13】通往厨卫过道净宽不应小于 0.90m" ] .
+
+

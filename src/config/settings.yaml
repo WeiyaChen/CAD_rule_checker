@@ -1,16 +1,28 @@
 # 这里只写相对路径，不要写绝对路径
 data:
   root_dir: "data"
+  dxf_dir: "data/raw/dxf"
   raw_pickle_dir: "data/raw/pickle"
   raw_svg_dir: "data/raw/svg"
+  dxf_extend_dir: "data/raw/dxf_extend"
   processed_svg_dir: "data/processed/svg"
 
 model:
   save_dir: "models/checkpoints"
 
 output:
-  jsonld_dir: "output/jsonld"
+  gt_jsonld_dir: "output/gt_jsonld"
   html_dir: "output/html"
-  res_dir: "output/res"
+  exp_jsonld_dir: "output/exp_jsonld"
+  svg_ins_dir: "output/svg_ins"
+  cdt_dir: "output/cdt"
+  exp_viz_dir: "output/exp_viz"
+  gt_viz_dir: "output/gt_viz"
+  exp_res_dir: "output/exp_res"
+  gt_res_dir: "output/gt_res"
+
 
 rules: "rules"
+
+prompt:
+  prompt_config_dir: "prompt/prompt_config.txt"

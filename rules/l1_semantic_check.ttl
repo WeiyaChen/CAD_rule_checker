@@ -1,111 +1,69 @@
 @prefix sh:    <http://www.w3.org/ns/shacl#> .
 @prefix bot:   <https://w3id.org/bot#> .
-@prefix beo:   <https://pi.pauwel.be/voc/buildingelement#> .
 @prefix props: <http://mythesis.org/props/> .
+@prefix bldg:  <http://mythesis.org/bldg/> .
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
-@prefix ex:    <http://mythesis.org/rules/> .
 
-# =======================================================
-# 规则组 1: 空间完备性检查
-# 依据: 2.2.5 住宅建筑应按套型设计,每套住宅应有卧室、起居室、 厨房和卫生间等基本功能空间。
-# =======================================================
-
-ex:ApartmentCompletenessShape
+# 基础语义与功能完整性
+# 【规范 2.2.5】套型必须包含卧室、起居室、厨房和卫生间
+bldg:SuiteCompletenessShape
     a              sh:NodeShape ;
-    # 1. 锁定目标: 针对类型为 bot:Zone 的根节点 (公寓)
-    sh:targetClass bot:Zone ;
-
-    # 2. 检查: 必须包含至少一个 "卧室"
-    sh:property    [ sh:path                bot:containsZone ;
-                     sh:qualifiedValueShape [ sh:path    rdfs:label ;
-                                              sh:pattern "Bedroom|卧室" ;
-                                              sh:flags   "i" ; # 忽略大小写
-                                            ] ;
+    sh:targetClass bldg:Suite ;
+    sh:property    [ sh:path                bot:hasSpace ;
+                     sh:qualifiedValueShape [ sh:class bldg:Bedroom ] ;
                      sh:qualifiedMinCount   1 ;
-                     sh:message             "❌ [强条违规 2.2.5] 空间缺失: 本户型缺少【卧室】功能空间。" ; ] ;
-
-    # 3. 检查: 必须包含至少一个 "起居室/客厅"
-    sh:property    [ sh:path                bot:containsZone ;
-                     sh:qualifiedValueShape [ sh:path    rdfs:label ;
-                                              sh:pattern "Living|Lounge|起居|客厅" ;
-                                              sh:flags   "i" ; ] ;
+                     sh:message             "【违规 2.2.5】该套型缺少基本空间：卧室" ] ;
+    sh:property    [ sh:path                bot:hasSpace ;
+                     sh:qualifiedValueShape [ sh:class bldg:LivingRoom ] ;
                      sh:qualifiedMinCount   1 ;
-                     sh:message             "❌ [强条违规 2.2.5] 空间缺失: 本户型缺少【起居室/客厅】功能空间。" ; ] ;
-
-    # 4. 检查: 必须包含至少一个 "厨房"
-    sh:property    [ sh:path                bot:containsZone ;
-                     sh:qualifiedValueShape [ sh:path    rdfs:label ;
-                                              sh:pattern "Kitchen|Cook|厨房" ;
-                                              sh:flags   "i" ; ] ;
+                     sh:message             "【违规 2.2.5】该套型缺少基本空间：起居室" ] ;
+    sh:property    [ sh:path                bot:hasSpace ;
+                     sh:qualifiedValueShape [ sh:class bldg:Kitchen ] ;
                      sh:qualifiedMinCount   1 ;
-                     sh:message             "❌ [强条违规 2.2.5] 空间缺失: 本户型缺少【厨房】功能空间。" ; ] ;
-
-    # 5. 检查: 必须包含至少一个 "卫生间"
-    sh:property    [ sh:path                bot:containsZone ;
-                     sh:qualifiedValueShape [ sh:path    rdfs:label ;
-                                              sh:pattern "Bath|Toilet|Restroom|卫生间" ;
-                                              sh:flags   "i" ; ] ;
+                     sh:message             "【违规 2.2.5】该套型缺少基本空间：厨房" ] ;
+    sh:property    [ sh:path                bot:hasSpace ;
+                     sh:qualifiedValueShape [ sh:class bldg:Bathroom ] ;
                      sh:qualifiedMinCount   1 ;
-                     sh:message             "❌ [强条违规 2.2.5] 空间缺失: 本户型缺少【卫生间】功能空间。" ; ] .
+                     sh:message             "【违规 2.2.5】该套型缺少基本空间：卫生间" ];
+    sh:property    [ sh:path                bot:hasSpace ;
+                     sh:qualifiedValueShape [ sh:class bldg:Entrance ] ;
+                     sh:qualifiedMinCount   1 ;
+                     sh:message             "【违规 2.2.5】该套型缺少基本空间：玄关" ] .
 
-# =======================================================
-# 规则组 2: 最小面积检查
-# 依据: 4.1.1 卧室的使用面积应符合下列规定：1.卧室使用面积不应小于5平方米
-#      4.1.4 厨房的使用面积不应小于3.5平方米
-# =======================================================
-
-# 2.1 卧室面积 >= 5m²
-ex:BedroomAreaShape
+# 【规范 4.1.5】厨房设施检查 (洗涤池、灶具)
+bldg:KitchenFacilityShape
     a              sh:NodeShape ;
-    sh:targetClass props:卧室 ;
-    sh:property    [ sh:path         props:hasArea ;
-                     sh:minCount     1 ;
-                     sh:minInclusive 5.0 ;
-                     sh:datatype     xsd:double ;
-                     sh:message      "❌ [强条违规 4.1.1] 面积不足: 卧室使用面积应 >= 5.0m² (当前: {?value}m²)。" ; ] .
+    sh:targetClass bldg:Kitchen ;
+    sh:property    [ sh:path                bot:containsElement ;
+                     sh:qualifiedValueShape [ sh:property [ sh:path     rdfs:label ;
+                                                            sh:hasValue "sink" ] ] ;
+                     sh:qualifiedMinCount   1 ;
+                     sh:message             "【违规 4.1.5】厨房缺少洗涤池(sink)" ] ;
+    sh:property    [ sh:path                bot:containsElement ;
+                     sh:qualifiedValueShape [ sh:property [ sh:path     rdfs:label ;
+                                                            sh:hasValue "gas stove" ] ] ;
+                     sh:qualifiedMinCount   1 ;
+                     sh:message             "【违规 4.1.5】厨房缺少灶具(gas stove)" ] .
 
-# 2.2 厨房面积 >= 3.5m²
-ex:KitchenAreaShape
+# 【规范 4.1.6 & 4.1.8】卫生间三件套及扶手检查
+bldg:BathroomFacilityShape
     a              sh:NodeShape ;
-    sh:targetClass props:厨房 ;
-    sh:property    [ sh:path         props:hasArea ;
-                     sh:minInclusive 3.5 ;
-                     sh:datatype     xsd:double ;
-                     sh:message      "❌ [强条违规 4.1.4] 面积不足: 厨房使用面积应 >= 3.5m² (当前: {?value}m²)。" ; ] .
+    sh:targetClass bldg:Bathroom ;
+    sh:property    [ sh:path                bot:containsElement ;
+                     sh:qualifiedValueShape [ sh:property [ sh:path     rdfs:label ;
+                                                            sh:in   ( "toilet" "squat toilet" ) ] ] ;
 
-# 2.3 卫生间面积 >= 2.5m²
-ex:BathroomAreaShape
-    a              sh:NodeShape ;
-    sh:targetClass props:卫生间 ;
-    sh:property    [ sh:path         props:hasArea ;
-                     sh:minInclusive 2.5 ;
-                     sh:datatype     xsd:double ;
-                     sh:message      "❌ [强条违规 4.1.6] 面积不足: 卫生间使用面积应 >= 2.5m² (当前: {?value}m²)。" ; ] .
+                     sh:qualifiedMinCount   1 ;
+                     sh:message             "【违规 4.1.6】卫生间缺少便器" ] ;
+    sh:property    [ sh:path                bot:containsElement ;
+                     sh:qualifiedValueShape [ sh:property [ sh:path     rdfs:label ;
+                                                            sh:in   ( "bath" "bath tub" ) ] ] ;
+                     sh:qualifiedMinCount   1 ;
+                     sh:message             "【违规 4.1.6】卫生间缺少洗浴器" ] ;
 
+    sh:property    [ sh:path                bot:containsElement ;
+                     sh:qualifiedValueShape [ sh:property [ sh:path     rdfs:label ;
+                                                            sh:hasValue "sink" ] ] ;
+                     sh:qualifiedMinCount   1 ;
+                     sh:message             "【违规 4.1.6】卫生间缺少洗面器" ] .
 
-# =======================================================
-# 规则组 3: 门的通行净宽检查
-# 依据: 4.1.14 新建住宅建筑户门通行净宽不应小于0.90m，既有住宅建筑改造户门通行净宽不应小于0.80m
-#             卧室门的通行净宽不应小于0.80m，厨房门和卫生间门的通行净宽不应小于0.70m 。
-# =======================================================
-# 1. 主控节点：只保留极其干净的命名列表
-ex:EntranceDoorShape a sh:NodeShape ;
-    sh:targetClass beo:Door ;
-    # 这里面再也没有方括号了，只有两个清晰的命名引用！
-    sh:or ( ex:NotEntranceCondition ex:EntranceWidthCondition ) .
-
-# 2. 独立赛道 A：非入户门豁免条件
-ex:NotEntranceCondition a sh:NodeShape ;
-    sh:property [
-        sh:path props:doorType ;
-        sh:not [ sh:hasValue "Entrance" ]
-    ] .
-
-# 3. 独立赛道 B：入户门尺寸严格审查条件
-ex:EntranceWidthCondition a sh:NodeShape ;
-    sh:property [
-        sh:path props:length ;
-        sh:minInclusive 900 ;
-        sh:message "违规：新建户门通行净宽不得小于 900mm"
-    ] .
