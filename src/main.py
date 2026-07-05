@@ -30,11 +30,11 @@ def main():
     #   "SINGLE"  : 处理单张特定的图纸
     #   "BATCH"   : 批量处理您指定的特定目录下的所有图纸
     #   "DEFAULT" : 批量处理系统 config.py 中配置的默认图纸目录
-    RUN_MODE = "BATCH"
+    RUN_MODE = "SINGLE"
 
     # 若 RUN_MODE = "SINGLE"，请在此指定单个 SVG 文件的路径
     TARGET_FILE_DIR = "test"
-    FILE_NAME = "南阳名门_1.svg"
+    FILE_NAME = "南阳名门150.svg"
     TARGET_FILE = os.path.join(settings.raw_svg_data_path, TARGET_FILE_DIR, FILE_NAME)
 
     # 若 RUN_MODE = "BATCH"，请在此指定包含多个 SVG 的文件夹路径
