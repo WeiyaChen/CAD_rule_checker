@@ -1,21 +1,32 @@
 from locale import normalize
 
-import ezdxf
 import os
 import math
-from ezdxf import bbox
-from ezdxf import colors
+from pathlib import Path
 from collections import Counter
 import xml.etree.ElementTree as ET
 
 from numpy import cross
-from ezdxf import path
+
+try:
+    import ezdxf
+    from ezdxf import bbox
+    from ezdxf import colors
+    from ezdxf import path
+except ImportError:  # pragma: no cover - optional runtime dependency
+    ezdxf = None
+    bbox = None
+    colors = None
+    path = None
 
 from src.config.config import settings
 
 
 def get_entity_color(entity, override_layer=None):
     """获取图元颜色，支持图层覆盖逻辑以适配块引用"""
+    if colors is None:
+        return 0, 0, 0
+
     # 优先使用 TrueColor（24位）
     if entity.dxf.hasattr("true_color"):
         r, g, b = colors.aci2rgb(entity.dxf.true_color)
@@ -52,6 +63,9 @@ def get_entity_color(entity, override_layer=None):
 
 
 def convert_dxf_to_svg(dxf_path, svg_path):
+    if ezdxf is None or bbox is None or path is None:
+        raise ImportError("缺少 ezdxf 依赖，无法转换 DXF 为 SVG")
+
     # 读取 DXF 文件
     doc = ezdxf.readfile(dxf_path)
     msp = doc.modelspace()
@@ -313,7 +327,17 @@ def convert_dxf_to_svg(dxf_path, svg_path):
 
     # 保存 SVG 文件
     tree = ET.ElementTree(svg)
-    tree.write(svg_path, xml_declaration=True)
+    write_svg_tree(tree, svg_path)
+
+
+def write_svg_tree(tree, svg_path):
+    output_path = Path(svg_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(tree, ET.ElementTree):
+        tree.write(output_path, encoding="utf-8", xml_declaration=True)
+    else:
+        ET.ElementTree(tree).write(output_path, encoding="utf-8", xml_declaration=True)
 
 
 def main():

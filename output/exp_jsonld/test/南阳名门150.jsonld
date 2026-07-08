@@ -95,7 +95,7 @@
       "@id": "inst:Space_001",
       "@type": [
         "bot:Space",
-        "bldg:Balcony"
+        "bldg:Corridor"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((13097 9348, 13097 11648, 13647 11648, 14547 11648, 14897 11648, 14897 10948, 14897 10148, 14897 9348, 13097 9348))",
@@ -109,20 +109,10 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_003_Sub_3"
+          "@id": "inst:Space_003"
         }
       ],
-      "props:textAnchors": [
-        {
-          "raw_text": "阳台",
-          "std_label": "bldg:Balcony",
-          "coordinates": [
-            13877,
-            10045
-          ]
-        }
-      ],
-      "props:hasShortSide": 1.8
+      "props:clearWidth": 0.35
     },
     {
       "@id": "inst:Space_002",
@@ -148,26 +138,58 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_003_Sub_1"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "卫生间",
-          "std_label": "bldg:Bathroom",
-          "coordinates": [
-            14061,
-            13267
-          ]
+          "@id": "inst:Space_003"
         }
       ],
       "props:hasShortSide": 1.7
     },
     {
+      "@id": "inst:Space_003",
+      "@type": [
+        "bot:Space"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((15097 13588, 15097 14388, 15097 15848, 15148 15848, 16048 15848, 18797 15848, 18797 14548, 16297 14548, 16297 15148, 16197 15148, 16197 14448, 18797 14448, 18797 10148, 16397 10148, 14897 10148, 14897 10948, 15097 10948, 15097 13588))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 20.93,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_93"
+        },
+        {
+          "@id": "inst:DOOR_86"
+        },
+        {
+          "@id": "inst:DOOR_25"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_84"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_59"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_88"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_002"
+        },
+        {
+          "@id": "inst:Space_001"
+        },
+        {
+          "@id": "inst:Space_006"
+        }
+      ],
+      "props:hasShortSide": 3.9
+    },
+    {
       "@id": "inst:Space_004",
       "@type": [
-        "bot:Space",
-        "bldg:Balcony"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((7747 17948, 10147 17948, 10997 17948, 10997 16148, 6697 16148, 6697 17948, 7747 17948))",
@@ -181,17 +203,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_006_Sub_1"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "阳台",
-          "std_label": "bldg:Balcony",
-          "coordinates": [
-            8565,
-            16739
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 1.8
@@ -199,8 +211,7 @@
     {
       "@id": "inst:Space_005",
       "@type": [
-        "bot:Space",
-        "bldg:Bedroom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((14997 14548, 13097 14548, 11197 14548, 11197 18048, 14997 18048, 14997 18001, 14997 17101, 14997 14548))",
@@ -217,26 +228,164 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_006_Sub_4"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "卧室",
-          "std_label": "bldg:Bedroom",
-          "coordinates": [
-            12562,
-            15916
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 3.5
     },
     {
+      "@id": "inst:Space_006",
+      "@type": [
+        "bot:Space"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((10147 18148, 7747 18148, 6897 18148, 6897 22948, 7197 22948, 8097 22948, 11297 22948, 11297 23114, 11297 24014, 11297 24248, 11357 24248, 12257 24248, 12397 24248, 12397 24201, 12397 23401, 12397 22348, 14897 22348, 15497 22348, 15597 22348, 15597 21448, 15597 20248, 15597 19348, 17497 19348, 17497 19248, 17497 18248, 17497 18148, 16197 18148, 16197 17648, 16197 16448, 16197 15948, 16048 15948, 15148 15948, 15097 15948, 15097 17101, 15097 18001, 15097 18148, 10147 18148))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 45.97,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_51"
+        },
+        {
+          "@id": "inst:DOOR_58"
+        },
+        {
+          "@id": "inst:DOOR_49"
+        },
+        {
+          "@id": "inst:DOOR_67"
+        },
+        {
+          "@id": "inst:DOOR_3"
+        },
+        {
+          "@id": "inst:DOOR_25"
+        },
+        {
+          "@id": "inst:DOOR_85"
+        },
+        {
+          "@id": "inst:DOOR_64"
+        },
+        {
+          "@id": "inst:DOOR_22"
+        },
+        {
+          "@id": "inst:DOOR_71"
+        },
+        {
+          "@id": "inst:WINDOW_43"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_54"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_55"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_38"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_1"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_52"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_18"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_92"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_32"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_36"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_37"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_014"
+        },
+        {
+          "@id": "inst:Space_003"
+        },
+        {
+          "@id": "inst:Space_012"
+        },
+        {
+          "@id": "inst:Space_010"
+        },
+        {
+          "@id": "inst:Space_004"
+        },
+        {
+          "@id": "inst:Space_005"
+        },
+        {
+          "@id": "inst:Space_015"
+        },
+        {
+          "@id": "inst:Space_008"
+        },
+        {
+          "@id": "inst:Space_013"
+        }
+      ],
+      "props:hasShortSide": 7.32
+    },
+    {
+      "@id": "inst:Space_007",
+      "@type": [
+        "bot:Space"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((18997 10148, 18997 14448, 21597 14448, 21597 15148, 21497 15148, 21497 14548, 18997 14548, 18997 15848, 21746 15848, 22646 15848, 22697 15848, 22697 14388, 22697 13588, 22697 10948, 22897 10948, 22897 10148, 21397 10148, 18997 10148))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 20.93,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_42"
+        },
+        {
+          "@id": "inst:DOOR_28"
+        },
+        {
+          "@id": "inst:DOOR_30"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_35"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_80"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_47"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_017"
+        },
+        {
+          "@id": "inst:Space_020"
+        },
+        {
+          "@id": "inst:Space_019"
+        }
+      ],
+      "props:hasShortSide": 3.9
+    },
+    {
       "@id": "inst:Space_008",
       "@type": [
-        "bot:Space",
-        "bldg:StorageRoom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((16297 16448, 16297 17648, 16297 18048, 17697 18048, 17697 15948, 16297 15948, 16297 16448))",
@@ -250,17 +399,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_006_Sub_4"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "储藏",
-          "std_label": "bldg:StorageRoom",
-          "coordinates": [
-            16727,
-            16869
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 1.4
@@ -268,8 +407,7 @@
     {
       "@id": "inst:Space_009",
       "@type": [
-        "bot:Space",
-        "bldg:ElevatorShaft"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((18347 17948, 19447 17948, 19897 17948, 19897 16048, 17897 16048, 17897 17948, 18347 17948))",
@@ -294,8 +432,7 @@
     {
       "@id": "inst:Space_010",
       "@type": [
-        "bot:Space",
-        "bldg:ElevatorShaft"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((17697 19248, 17697 19948, 20097 19948, 20097 19248, 20097 18248, 20097 18148, 19447 18148, 18347 18148, 17697 18148, 17697 18248, 17697 19248))",
@@ -318,20 +455,10 @@
           "@id": "inst:Space_009"
         },
         {
-          "@id": "inst:Space_006_Sub_3"
+          "@id": "inst:Space_017"
         },
         {
-          "@id": "inst:Space_017_Sub_1"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "电梯厅",
-          "std_label": "bldg:ElevatorShaft",
-          "coordinates": [
-            18478,
-            19044
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 1.8
@@ -339,8 +466,7 @@
     {
       "@id": "inst:Space_011",
       "@type": [
-        "bot:Space",
-        "bldg:StorageRoom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((20097 15948, 20097 17948, 20197 17948, 20197 18048, 21497 18048, 21497 17648, 21497 16448, 21497 15948, 20097 15948))",
@@ -354,17 +480,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_017_Sub_4"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "储藏",
-          "std_label": "bldg:StorageRoom",
-          "coordinates": [
-            20783,
-            16869
-          ]
+          "@id": "inst:Space_017"
         }
       ],
       "props:hasShortSide": 1.4
@@ -372,8 +488,7 @@
     {
       "@id": "inst:Space_012",
       "@type": [
-        "bot:Space",
-        "bldg:Bedroom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((8297 23048, 8297 26848, 10397 26848, 11197 26848, 11197 24014, 11197 23114, 11197 23048, 8297 23048))",
@@ -387,17 +502,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_006_Sub_5"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "卧室",
-          "std_label": "bldg:Bedroom",
-          "coordinates": [
-            9502,
-            25311
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 2.9
@@ -405,8 +510,7 @@
     {
       "@id": "inst:Space_013",
       "@type": [
-        "bot:Space",
-        "bldg:Bathroom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((12497 23401, 12497 24201, 12497 24248, 14697 24248, 14697 23348, 14697 22448, 12497 22448, 12497 23401))",
@@ -429,17 +533,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_006_Sub_5"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "卫生间",
-          "std_label": "bldg:Bathroom",
-          "coordinates": [
-            13084,
-            23516
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 1.8
@@ -447,8 +541,7 @@
     {
       "@id": "inst:Space_014",
       "@type": [
-        "bot:Space",
-        "bldg:StudyRoom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((11297 26848, 12597 26848, 14697 26848, 14697 24348, 12257 24348, 11357 24348, 11297 24348, 11297 26848))",
@@ -471,17 +564,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_006_Sub_5"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "书房",
-          "std_label": "bldg:StudyRoom",
-          "coordinates": [
-            12404,
-            25509
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 2.5
@@ -489,8 +572,7 @@
     {
       "@id": "inst:Space_015",
       "@type": [
-        "bot:Space",
-        "bldg:Kitchen"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((15697 20248, 15697 21448, 15697 22348, 15757 22348, 16557 22348, 17497 22348, 17497 19448, 15697 19448, 15697 20248))",
@@ -513,17 +595,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_006_Sub_2"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "厨房",
-          "std_label": "bldg:Kitchen",
-          "coordinates": [
-            16208,
-            21015
-          ]
+          "@id": "inst:Space_006"
         }
       ],
       "props:hasShortSide": 1.8
@@ -531,8 +603,7 @@
     {
       "@id": "inst:Space_016",
       "@type": [
-        "bot:Space",
-        "bldg:Stairwell"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((18297 24848, 19497 24848, 20097 24848, 20097 20148, 17697 20148, 17697 24848, 18297 24848))",
@@ -548,10 +619,127 @@
       "props:hasShortSide": 2.4
     },
     {
+      "@id": "inst:Space_017",
+      "@type": [
+        "bot:Space"
+      ],
+      "geo:asWKT": {
+        "@value": "POLYGON ((20297 18148, 20297 18248, 20297 19248, 20297 19348, 22197 19348, 22197 20248, 22197 21448, 22197 22348, 22297 22348, 22897 22348, 25397 22348, 25397 23401, 25397 24201, 25397 24248, 25537 24248, 26437 24248, 26497 24248, 26497 24014, 26497 23114, 26497 22948, 29697 22948, 30597 22948, 30897 22948, 30897 18148, 30047 18148, 27647 18148, 22697 18148, 22697 18001, 22697 17101, 22697 15948, 22646 15948, 21746 15948, 21597 15948, 21597 16448, 21597 17648, 21597 18148, 20297 18148))",
+        "@type": "geo:wktLiteral"
+      },
+      "props:hasArea": 45.97,
+      "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_8"
+        },
+        {
+          "@id": "inst:DOOR_20"
+        },
+        {
+          "@id": "inst:DOOR_17"
+        },
+        {
+          "@id": "inst:DOOR_33"
+        },
+        {
+          "@id": "inst:DOOR_40"
+        },
+        {
+          "@id": "inst:DOOR_73"
+        },
+        {
+          "@id": "inst:DOOR_19"
+        },
+        {
+          "@id": "inst:DOOR_30"
+        },
+        {
+          "@id": "inst:DOOR_10"
+        },
+        {
+          "@id": "inst:DOOR_12"
+        },
+        {
+          "@id": "inst:WINDOW_53"
+        },
+        {
+          "@id": "inst:WINDOW_27"
+        },
+        {
+          "@id": "inst:WINDOW_81"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_65"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_46"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_91"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_68"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_5"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_29"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_41"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_0"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_50"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_4"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_13"
+        },
+        {
+          "@id": "inst:FUNCTIONALELEMENT_2"
+        }
+      ],
+      "bot:adjacentZone": [
+        {
+          "@id": "inst:Space_010"
+        },
+        {
+          "@id": "inst:Space_022"
+        },
+        {
+          "@id": "inst:Space_025"
+        },
+        {
+          "@id": "inst:Space_023"
+        },
+        {
+          "@id": "inst:Space_007"
+        },
+        {
+          "@id": "inst:Space_024"
+        },
+        {
+          "@id": "inst:Space_011"
+        },
+        {
+          "@id": "inst:Space_021"
+        },
+        {
+          "@id": "inst:Space_018"
+        }
+      ],
+      "props:hasShortSide": 7.32
+    },
+    {
       "@id": "inst:Space_018",
       "@type": [
-        "bot:Space",
-        "bldg:Kitchen"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((20297 19448, 20297 22348, 21237 22348, 22037 22348, 22097 22348, 22097 21448, 22097 20248, 22097 19448, 20297 19448))",
@@ -574,17 +762,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_017_Sub_2"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "厨房",
-          "std_label": "bldg:Kitchen",
-          "coordinates": [
-            21315,
-            21015
-          ]
+          "@id": "inst:Space_017"
         }
       ],
       "props:hasShortSide": 1.8
@@ -592,8 +770,7 @@
     {
       "@id": "inst:Space_019",
       "@type": [
-        "bot:Space",
-        "bldg:Balcony"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((22897 10148, 22897 10948, 22897 11648, 23247 11648, 24147 11648, 24697 11648, 24697 9348, 22897 9348, 22897 10148))",
@@ -610,17 +787,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_007_Sub_3"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "阳台",
-          "std_label": "bldg:Balcony",
-          "coordinates": [
-            23620,
-            10045
-          ]
+          "@id": "inst:Space_007"
         }
       ],
       "props:hasShortSide": 1.8
@@ -628,8 +795,7 @@
     {
       "@id": "inst:Space_020",
       "@type": [
-        "bot:Space",
-        "bldg:Bathroom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((22797 13588, 22797 14388, 22797 14448, 24497 14448, 24497 11848, 24147 11848, 23247 11848, 22797 11848, 22797 13588))",
@@ -637,6 +803,9 @@
       },
       "props:hasArea": 4.42,
       "bot:containsElement": [
+        {
+          "@id": "inst:DOOR_42"
+        },
         {
           "@id": "inst:WINDOW_39"
         },
@@ -650,15 +819,9 @@
           "@id": "inst:FUNCTIONALELEMENT_48"
         }
       ],
-      "bot:adjacentZone": [],
-      "props:textAnchors": [
+      "bot:adjacentZone": [
         {
-          "raw_text": "卫生间",
-          "std_label": "bldg:Bathroom",
-          "coordinates": [
-            23335,
-            13267
-          ]
+          "@id": "inst:Space_007"
         }
       ],
       "props:hasShortSide": 1.7
@@ -666,8 +829,7 @@
     {
       "@id": "inst:Space_021",
       "@type": [
-        "bot:Space",
-        "bldg:Bedroom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((22797 17101, 22797 18001, 22797 18048, 26597 18048, 26597 14548, 24697 14548, 22797 14548, 22797 17101))",
@@ -675,9 +837,6 @@
       },
       "props:hasArea": 13.3,
       "bot:containsElement": [
-        {
-          "@id": "inst:DOOR_42"
-        },
         {
           "@id": "inst:DOOR_10"
         },
@@ -687,20 +846,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_007_Sub_1"
-        },
-        {
-          "@id": "inst:Space_017_Sub_4"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "卧室",
-          "std_label": "bldg:Bedroom",
-          "coordinates": [
-            24927,
-            15916
-          ]
+          "@id": "inst:Space_017"
         }
       ],
       "props:hasShortSide": 3.5
@@ -708,8 +854,7 @@
     {
       "@id": "inst:Space_022",
       "@type": [
-        "bot:Space",
-        "bldg:Balcony"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((27647 17948, 30047 17948, 31097 17948, 31097 16148, 26797 16148, 26797 17948, 27647 17948))",
@@ -723,17 +868,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_017_Sub_3"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "阳台",
-          "std_label": "bldg:Balcony",
-          "coordinates": [
-            28933,
-            16739
-          ]
+          "@id": "inst:Space_017"
         }
       ],
       "props:hasShortSide": 1.8
@@ -741,8 +876,7 @@
     {
       "@id": "inst:Space_023",
       "@type": [
-        "bot:Space",
-        "bldg:Bathroom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((23770 23266, 23735 23288, 23698 23306, 23659 23321, 23619 23333, 23579 23341, 23538 23346, 23497 23348, 23097 23348, 23097 24248, 25297 24248, 25297 24201, 25297 23401, 25297 22448, 23997 22448, 23997 22848, 23995 22889, 23990 22930, 23981 22971, 23970 23010, 23955 23049, 23936 23086, 23915 23121, 23891 23155, 23865 23187, 23835 23216, 23804 23242, 23770 23266))",
@@ -765,17 +899,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_017_Sub_5"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "卫生间",
-          "std_label": "bldg:Bathroom",
-          "coordinates": [
-            24312,
-            23516
-          ]
+          "@id": "inst:Space_017"
         }
       ],
       "props:hasShortSide": 1.8
@@ -783,8 +907,7 @@
     {
       "@id": "inst:Space_024",
       "@type": [
-        "bot:Space",
-        "bldg:StudyRoom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((25197 26848, 26497 26848, 26497 24348, 26437 24348, 25537 24348, 23097 24348, 23097 26848, 25197 26848))",
@@ -807,17 +930,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_017_Sub_5"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "书房",
-          "std_label": "bldg:StudyRoom",
-          "coordinates": [
-            25099,
-            25509
-          ]
+          "@id": "inst:Space_017"
         }
       ],
       "props:hasShortSide": 2.5
@@ -825,8 +938,7 @@
     {
       "@id": "inst:Space_025",
       "@type": [
-        "bot:Space",
-        "bldg:Bedroom"
+        "bot:Space"
       ],
       "geo:asWKT": {
         "@value": "POLYGON ((26597 23114, 26597 24014, 26597 26848, 27397 26848, 29497 26848, 29497 23048, 26597 23048, 26597 23114))",
@@ -840,17 +952,7 @@
       ],
       "bot:adjacentZone": [
         {
-          "@id": "inst:Space_017_Sub_5"
-        }
-      ],
-      "props:textAnchors": [
-        {
-          "raw_text": "卧室",
-          "std_label": "bldg:Bedroom",
-          "coordinates": [
-            27986,
-            25311
-          ]
+          "@id": "inst:Space_017"
         }
       ],
       "props:hasShortSide": 2.9
@@ -871,7 +973,7 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_006_Sub_1"
+          "@id": "inst:Space_006"
         },
         {
           "@id": "inst:Space_004"
@@ -898,7 +1000,7 @@
           "@id": "inst:Space_002"
         },
         {
-          "@id": "inst:Space_003_Sub_1"
+          "@id": "inst:Space_003"
         }
       ],
       "props:clearWidth": 1.15
@@ -908,7 +1010,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:KitchenDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "sliding door",
       "props:width": 69,
@@ -919,10 +1021,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_006_Sub_2"
+          "@id": "inst:Space_015"
         },
         {
-          "@id": "inst:Space_015"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 1.2
@@ -932,7 +1034,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:KitchenDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 779,
@@ -943,10 +1045,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_006_Sub_2"
+          "@id": "inst:Space_015"
         },
         {
-          "@id": "inst:Space_015"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 0.8
@@ -956,7 +1058,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:BathroomDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 780,
@@ -970,7 +1072,7 @@
           "@id": "inst:Space_013"
         },
         {
-          "@id": "inst:Space_006_Sub_5"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 0.8
@@ -994,7 +1096,7 @@
           "@id": "inst:Space_008"
         },
         {
-          "@id": "inst:Space_006_Sub_4"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 1.2
@@ -1015,10 +1117,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_001"
+          "@id": "inst:Space_003"
         },
         {
-          "@id": "inst:Space_003_Sub_3"
+          "@id": "inst:Space_001"
         }
       ],
       "props:clearWidth": 0.8
@@ -1039,10 +1141,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_022"
+          "@id": "inst:Space_017"
         },
         {
-          "@id": "inst:Space_017_Sub_3"
+          "@id": "inst:Space_022"
         }
       ],
       "props:clearWidth": 2.4
@@ -1052,7 +1154,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:BedroomDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "sliding door",
       "props:width": 53,
@@ -1063,10 +1165,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_021"
+          "@id": "inst:Space_020"
         },
         {
-          "@id": "inst:Space_007_Sub_1"
+          "@id": "inst:Space_007"
         }
       ],
       "props:clearWidth": 1.15
@@ -1076,7 +1178,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:KitchenDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "sliding door",
       "props:width": 69,
@@ -1087,10 +1189,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_018"
+          "@id": "inst:Space_017"
         },
         {
-          "@id": "inst:Space_017_Sub_2"
+          "@id": "inst:Space_018"
         }
       ],
       "props:clearWidth": 1.2
@@ -1100,7 +1202,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:KitchenDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 779,
@@ -1111,10 +1213,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_018"
+          "@id": "inst:Space_017"
         },
         {
-          "@id": "inst:Space_017_Sub_2"
+          "@id": "inst:Space_018"
         }
       ],
       "props:clearWidth": 0.8
@@ -1124,7 +1226,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:BathroomDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 779,
@@ -1135,10 +1237,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_017_Sub_5"
+          "@id": "inst:Space_023"
         },
         {
-          "@id": "inst:Space_023"
+          "@id": "inst:Space_017"
         }
       ],
       "props:clearWidth": 0.8
@@ -1159,10 +1261,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_011"
+          "@id": "inst:Space_017"
         },
         {
-          "@id": "inst:Space_017_Sub_4"
+          "@id": "inst:Space_011"
         }
       ],
       "props:clearWidth": 1.2
@@ -1183,10 +1285,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_019"
+          "@id": "inst:Space_007"
         },
         {
-          "@id": "inst:Space_007_Sub_3"
+          "@id": "inst:Space_019"
         }
       ],
       "props:clearWidth": 0.8
@@ -1207,10 +1309,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_006_Sub_4"
+          "@id": "inst:Space_003"
         },
         {
-          "@id": "inst:Space_003_Sub_2"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 1.15
@@ -1220,7 +1322,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:BedroomDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 877,
@@ -1231,7 +1333,7 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_006_Sub_4"
+          "@id": "inst:Space_006"
         },
         {
           "@id": "inst:Space_005"
@@ -1244,7 +1346,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:BedroomDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 877,
@@ -1258,7 +1360,7 @@
           "@id": "inst:Space_012"
         },
         {
-          "@id": "inst:Space_006_Sub_5"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 0.9
@@ -1282,7 +1384,7 @@
           "@id": "inst:Space_014"
         },
         {
-          "@id": "inst:Space_006_Sub_5"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 0.9
@@ -1306,7 +1408,7 @@
           "@id": "inst:Space_010"
         },
         {
-          "@id": "inst:Space_006_Sub_3"
+          "@id": "inst:Space_006"
         }
       ],
       "props:clearWidth": 1.0
@@ -1327,10 +1429,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_009"
+          "@id": "inst:Space_010"
         },
         {
-          "@id": "inst:Space_010"
+          "@id": "inst:Space_009"
         }
       ],
       "props:clearWidth": 1.11
@@ -1340,7 +1442,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:BedroomDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 877,
@@ -1351,7 +1453,7 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_017_Sub_5"
+          "@id": "inst:Space_017"
         },
         {
           "@id": "inst:Space_025"
@@ -1375,7 +1477,7 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_017_Sub_5"
+          "@id": "inst:Space_017"
         },
         {
           "@id": "inst:Space_024"
@@ -1399,10 +1501,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_007_Sub_2"
+          "@id": "inst:Space_017"
         },
         {
-          "@id": "inst:Space_017_Sub_4"
+          "@id": "inst:Space_007"
         }
       ],
       "props:clearWidth": 0.9
@@ -1412,7 +1514,7 @@
       "@type": [
         "bot:Element",
         "beo:Door",
-        "bldg:BedroomDoor"
+        "bldg:InteriorDoor"
       ],
       "rdfs:label": "single door",
       "props:width": 877,
@@ -1423,10 +1525,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_021"
+          "@id": "inst:Space_017"
         },
         {
-          "@id": "inst:Space_017_Sub_4"
+          "@id": "inst:Space_021"
         }
       ],
       "props:clearWidth": 0.9
@@ -1447,10 +1549,10 @@
       },
       "bot:interfaceOf": [
         {
-          "@id": "inst:Space_017_Sub_1"
+          "@id": "inst:Space_010"
         },
         {
-          "@id": "inst:Space_010"
+          "@id": "inst:Space_017"
         }
       ],
       "props:clearWidth": 1.0
@@ -2418,619 +2520,6 @@
       }
     },
     {
-      "@id": "inst:Space_003_Sub_1",
-      "@type": [
-        "bot:Space",
-        "bldg:Bedroom"
-      ],
-      "geo:asWKT": "POLYGON ((15097 13588, 15097 14388, 15097 14448, 16197 14448, 16197.55 14448, 18797 14448, 18797 10148, 16397 10148, 15097 10148, 15097 10948, 15097 10948.4, 15097 13588))",
-      "props:hasArea": 15.91,
-      "bot:containsElement": [
-        {
-          "@id": "inst:FUNCTIONALELEMENT_84"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_59"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_88"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_002"
-        },
-        {
-          "@id": "inst:Space_003_Sub_2"
-        },
-        {
-          "@id": "inst:Space_003_Sub_3"
-        }
-      ],
-      "props:roomLabel": "主卧室",
-      "props:labelCoordinates": [
-        17176,
-        12270
-      ],
-      "props:hasShortSide": 3.7
-    },
-    {
-      "@id": "inst:Space_003_Sub_2",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((15097 14448, 15097 15848, 15148 15848, 16048 15848, 16197 15848, 16197 15148, 16197 15147.650000000001, 16197 14448, 15097 14448))",
-      "props:hasArea": 1.54,
-      "bot:containsElement": [
-        {
-          "@id": "inst:DOOR_25"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_003_Sub_1"
-        },
-        {
-          "@id": "inst:Space_003_Sub_4"
-        },
-        {
-          "@id": "inst:Space_006_Sub_4"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.0
-    },
-    {
-      "@id": "inst:Space_003_Sub_3",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((15097 10148, 14897 10148, 14897 10948, 15097 10948, 15097 10148))",
-      "props:hasArea": 0.16,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_001"
-        },
-        {
-          "@id": "inst:Space_003_Sub_1"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.2
-    },
-    {
-      "@id": "inst:Space_003_Sub_4",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor"
-      ],
-      "geo:asWKT": "POLYGON ((16197 15848, 16297 15848, 16297 15148, 16197 15148, 16197 15848))",
-      "props:hasArea": 0.07,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_003_Sub_2"
-        },
-        {
-          "@id": "inst:Space_003_Sub_5"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.1
-    },
-    {
-      "@id": "inst:Space_003_Sub_5",
-      "@type": [
-        "bot:Space",
-        "bldg:Cloakroom"
-      ],
-      "geo:asWKT": "POLYGON ((16297 15848, 18797 15848, 18797 14548, 16297 14548, 16297 15147.650000000001, 16297 15148, 16297 15848))",
-      "props:hasArea": 3.25,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_003_Sub_4"
-        }
-      ],
-      "props:roomLabel": "更衣",
-      "props:labelCoordinates": [
-        17153,
-        15478
-      ],
-      "props:hasShortSide": 1.3
-    },
-    {
-      "@id": "inst:Space_006_Sub_1",
-      "@type": [
-        "bot:Space",
-        "bldg:LivingRoom"
-      ],
-      "geo:asWKT": "POLYGON ((10147 18148, 7747 18148, 6897 18148, 6897 22948, 7197 22948, 8097 22948, 11296.45 22948, 11297 22948, 12397 22948, 12397 22350.100000000002, 12397 22348, 12397 18148, 10147 18148))",
-      "props:hasArea": 26.4,
-      "bot:containsElement": [
-        {
-          "@id": "inst:FUNCTIONALELEMENT_54"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_55"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_38"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_1"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_004"
-        },
-        {
-          "@id": "inst:Space_006_Sub_2"
-        },
-        {
-          "@id": "inst:Space_006_Sub_5"
-        }
-      ],
-      "props:roomLabel": "客厅",
-      "props:labelCoordinates": [
-        8185,
-        20552
-      ],
-      "props:hasShortSide": 4.8
-    },
-    {
-      "@id": "inst:Space_006_Sub_2",
-      "@type": [
-        "bot:Space",
-        "bldg:DiningRoom"
-      ],
-      "geo:asWKT": "POLYGON ((12397 22348, 14897 22348, 15497 22348, 15597 22348, 15597 21448, 15597 20248, 15597 19348.6, 15597 19348, 15597 18148, 15097 18148, 15096.449999999999 18148, 12397 18148, 12397 22348))",
-      "props:hasArea": 13.44,
-      "bot:containsElement": [
-        {
-          "@id": "inst:FUNCTIONALELEMENT_52"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_18"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_92"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_32"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_36"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_37"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_015"
-        },
-        {
-          "@id": "inst:Space_006_Sub_1"
-        },
-        {
-          "@id": "inst:Space_006_Sub_3"
-        },
-        {
-          "@id": "inst:Space_006_Sub_4"
-        }
-      ],
-      "props:roomLabel": "餐厅",
-      "props:labelCoordinates": [
-        14739,
-        19753
-      ],
-      "props:hasShortSide": 3.2
-    },
-    {
-      "@id": "inst:Space_006_Sub_3",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:PublicCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((15597 19348, 17497 19348, 17497 19248, 17497 18248, 17497 18148, 16197.55 18148, 16197 18148, 15597 18148, 15597 19348))",
-      "props:hasArea": 2.28,
-      "bot:containsElement": [
-        {
-          "@id": "inst:DOOR_71"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_010"
-        },
-        {
-          "@id": "inst:Space_006_Sub_2"
-        },
-        {
-          "@id": "inst:Space_006_Sub_4"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.0
-    },
-    {
-      "@id": "inst:Space_006_Sub_4",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((16197 18148, 16197 17648, 16197 16448, 16197 15948, 16048 15948, 15148 15948, 15097 15948, 15097 17101, 15097 18001, 15097 18148, 16197 18148))",
-      "props:hasArea": 2.42,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_008"
-        },
-        {
-          "@id": "inst:Space_003_Sub_2"
-        },
-        {
-          "@id": "inst:Space_005"
-        },
-        {
-          "@id": "inst:Space_006_Sub_2"
-        },
-        {
-          "@id": "inst:Space_006_Sub_3"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.05
-    },
-    {
-      "@id": "inst:Space_006_Sub_5",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:SecondaryCorridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((11297 22948, 11297 23114, 11297 24014, 11297 24248, 11357 24248, 12257 24248, 12397 24248, 12397 24201, 12397 23401, 12397 22948, 11297 22948))",
-      "props:hasArea": 1.43,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_013"
-        },
-        {
-          "@id": "inst:Space_012"
-        },
-        {
-          "@id": "inst:Space_014"
-        },
-        {
-          "@id": "inst:Space_006_Sub_1"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.05
-    },
-    {
-      "@id": "inst:Space_007_Sub_1",
-      "@type": [
-        "bot:Space",
-        "bldg:Bedroom"
-      ],
-      "geo:asWKT": "POLYGON ((18997 10148, 18997 14448, 21596.45 14448, 21597 14448, 22697 14448, 22697 14388, 22697 13588, 22697 10948.4, 22697 10948, 22697 10148, 21397 10148, 18997 10148))",
-      "props:hasArea": 15.91,
-      "bot:containsElement": [
-        {
-          "@id": "inst:FUNCTIONALELEMENT_35"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_80"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_47"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_021"
-        },
-        {
-          "@id": "inst:Space_007_Sub_2"
-        },
-        {
-          "@id": "inst:Space_007_Sub_3"
-        }
-      ],
-      "props:roomLabel": "主卧室",
-      "props:labelCoordinates": [
-        20175,
-        12270
-      ],
-      "props:hasShortSide": 3.7
-    },
-    {
-      "@id": "inst:Space_007_Sub_2",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((21597 14448, 21597 15147.650000000001, 21597 15148, 21597 15848, 21746 15848, 22646 15848, 22697 15848, 22697 14448, 21597 14448))",
-      "props:hasArea": 1.54,
-      "bot:containsElement": [
-        {
-          "@id": "inst:DOOR_30"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_007_Sub_1"
-        },
-        {
-          "@id": "inst:Space_007_Sub_4"
-        },
-        {
-          "@id": "inst:Space_017_Sub_4"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.0
-    },
-    {
-      "@id": "inst:Space_007_Sub_3",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((22697 10948, 22897 10948, 22897 10148, 22697 10148, 22697 10948))",
-      "props:hasArea": 0.16,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_019"
-        },
-        {
-          "@id": "inst:Space_007_Sub_1"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.2
-    },
-    {
-      "@id": "inst:Space_007_Sub_4",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor"
-      ],
-      "geo:asWKT": "POLYGON ((21597 15148, 21497 15148, 21497 15848, 21597 15848, 21597 15148))",
-      "props:hasArea": 0.07,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_007_Sub_2"
-        },
-        {
-          "@id": "inst:Space_007_Sub_5"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.1
-    },
-    {
-      "@id": "inst:Space_007_Sub_5",
-      "@type": [
-        "bot:Space",
-        "bldg:Cloakroom"
-      ],
-      "geo:asWKT": "POLYGON ((21497 15148, 21497 15147.650000000001, 21497 14548, 18997 14548, 18997 15848, 21497 15848, 21497 15148))",
-      "props:hasArea": 3.25,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_007_Sub_4"
-        }
-      ],
-      "props:roomLabel": "更衣",
-      "props:labelCoordinates": [
-        20352,
-        15478
-      ],
-      "props:hasShortSide": 1.3
-    },
-    {
-      "@id": "inst:Space_017_Sub_1",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:PublicCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((20297 18148, 20297 18248, 20297 19248, 20297 19348, 22197 19348, 22197 18148, 21597 18148, 21596.45 18148, 20297 18148))",
-      "props:hasArea": 2.28,
-      "bot:containsElement": [
-        {
-          "@id": "inst:DOOR_12"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_010"
-        },
-        {
-          "@id": "inst:Space_017_Sub_2"
-        },
-        {
-          "@id": "inst:Space_017_Sub_4"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.0
-    },
-    {
-      "@id": "inst:Space_017_Sub_2",
-      "@type": [
-        "bot:Space",
-        "bldg:DiningRoom"
-      ],
-      "geo:asWKT": "POLYGON ((22197 19348, 22197 19348.6, 22197 20248, 22197 21448, 22197 22348, 22297 22348, 22897 22348, 25397 22348, 25397 18148, 22697.55 18148, 22697 18148, 22197 18148, 22197 19348))",
-      "props:hasArea": 13.44,
-      "bot:containsElement": [
-        {
-          "@id": "inst:WINDOW_53"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_29"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_41"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_0"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_50"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_4"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_13"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_2"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_018"
-        },
-        {
-          "@id": "inst:Space_017_Sub_1"
-        },
-        {
-          "@id": "inst:Space_017_Sub_3"
-        },
-        {
-          "@id": "inst:Space_017_Sub_4"
-        }
-      ],
-      "props:roomLabel": "餐厅",
-      "props:labelCoordinates": [
-        22780,
-        19753
-      ],
-      "props:hasShortSide": 3.2
-    },
-    {
-      "@id": "inst:Space_017_Sub_3",
-      "@type": [
-        "bot:Space",
-        "bldg:LivingRoom"
-      ],
-      "geo:asWKT": "POLYGON ((25397 22348, 25397 22350.100000000002, 25397 22948, 26497 22948, 26497.55 22948, 29697 22948, 30597 22948, 30897 22948, 30897 18148, 30047 18148, 27647 18148, 25397 18148, 25397 22348))",
-      "props:hasArea": 26.4,
-      "bot:containsElement": [
-        {
-          "@id": "inst:FUNCTIONALELEMENT_65"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_46"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_91"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_68"
-        },
-        {
-          "@id": "inst:FUNCTIONALELEMENT_5"
-        }
-      ],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_022"
-        },
-        {
-          "@id": "inst:Space_017_Sub_2"
-        },
-        {
-          "@id": "inst:Space_017_Sub_5"
-        }
-      ],
-      "props:roomLabel": "客厅",
-      "props:labelCoordinates": [
-        29327,
-        20552
-      ],
-      "props:hasShortSide": 4.8
-    },
-    {
-      "@id": "inst:Space_017_Sub_4",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((22697 18148, 22697 18001, 22697 17101, 22697 15948, 22646 15948, 21746 15948, 21597 15948, 21597 16448, 21597 17648, 21597 18148, 22697 18148))",
-      "props:hasArea": 2.42,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_011"
-        },
-        {
-          "@id": "inst:Space_007_Sub_2"
-        },
-        {
-          "@id": "inst:Space_021"
-        },
-        {
-          "@id": "inst:Space_017_Sub_1"
-        },
-        {
-          "@id": "inst:Space_017_Sub_2"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.05
-    },
-    {
-      "@id": "inst:Space_017_Sub_5",
-      "@type": [
-        "bot:Space",
-        "bldg:Corridor",
-        "bldg:SecondaryCorridor",
-        "bldg:MainCorridor"
-      ],
-      "geo:asWKT": "POLYGON ((25397 22948, 25397 23401, 25397 24201, 25397 24248, 25537 24248, 26437 24248, 26497 24248, 26497 24014, 26497 23114, 26497 22948, 25397 22948))",
-      "props:hasArea": 1.43,
-      "bot:containsElement": [],
-      "bot:adjacentZone": [
-        {
-          "@id": "inst:Space_023"
-        },
-        {
-          "@id": "inst:Space_025"
-        },
-        {
-          "@id": "inst:Space_024"
-        },
-        {
-          "@id": "inst:Space_017_Sub_3"
-        }
-      ],
-      "props:roomLabel": "过道",
-      "props:clearWidth": 0.05
-    },
-    {
       "@id": "inst:Suite_01",
       "@type": [
         "bot:Zone",
@@ -3039,57 +2528,6 @@
       "bot:hasSpace": [
         {
           "@id": "inst:Space_001"
-        },
-        {
-          "@id": "inst:Space_003_Sub_3"
-        },
-        {
-          "@id": "inst:Space_003_Sub_1"
-        },
-        {
-          "@id": "inst:Space_002"
-        },
-        {
-          "@id": "inst:Space_003_Sub_2"
-        },
-        {
-          "@id": "inst:Space_003_Sub_4"
-        },
-        {
-          "@id": "inst:Space_006_Sub_4"
-        },
-        {
-          "@id": "inst:Space_003_Sub_5"
-        },
-        {
-          "@id": "inst:Space_008"
-        },
-        {
-          "@id": "inst:Space_005"
-        },
-        {
-          "@id": "inst:Space_006_Sub_2"
-        },
-        {
-          "@id": "inst:Space_015"
-        },
-        {
-          "@id": "inst:Space_006_Sub_1"
-        },
-        {
-          "@id": "inst:Space_004"
-        },
-        {
-          "@id": "inst:Space_006_Sub_5"
-        },
-        {
-          "@id": "inst:Space_013"
-        },
-        {
-          "@id": "inst:Space_012"
-        },
-        {
-          "@id": "inst:Space_014"
         }
       ]
     },
@@ -3101,67 +2539,7 @@
       ],
       "bot:hasSpace": [
         {
-          "@id": "inst:Space_011"
-        },
-        {
-          "@id": "inst:Space_017_Sub_4"
-        },
-        {
-          "@id": "inst:Space_007_Sub_2"
-        },
-        {
-          "@id": "inst:Space_021"
-        },
-        {
-          "@id": "inst:Space_017_Sub_2"
-        },
-        {
-          "@id": "inst:Space_007_Sub_1"
-        },
-        {
-          "@id": "inst:Space_007_Sub_4"
-        },
-        {
-          "@id": "inst:Space_018"
-        },
-        {
-          "@id": "inst:Space_017_Sub_3"
-        },
-        {
-          "@id": "inst:Space_007_Sub_3"
-        },
-        {
-          "@id": "inst:Space_007_Sub_5"
-        },
-        {
-          "@id": "inst:Space_022"
-        },
-        {
-          "@id": "inst:Space_017_Sub_5"
-        },
-        {
-          "@id": "inst:Space_019"
-        },
-        {
-          "@id": "inst:Space_023"
-        },
-        {
-          "@id": "inst:Space_025"
-        },
-        {
-          "@id": "inst:Space_024"
-        }
-      ]
-    },
-    {
-      "@id": "inst:Suite_03",
-      "@type": [
-        "bot:Zone",
-        "bldg:Suite"
-      ],
-      "bot:hasSpace": [
-        {
-          "@id": "inst:Space_020"
+          "@id": "inst:Space_002"
         }
       ]
     }

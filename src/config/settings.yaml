@@ -10,6 +10,21 @@ data:
 model:
   save_dir: "models/checkpoints"
 
+runtime:
+  run_mode: "SINGLE"
+  target_dir: "test"
+  target_file: "南阳名门150.svg"
+  output_dir: "output/exp_jsonld"
+  sample_input_jsonld: "apartment_semantic_suites.jsonld"
+  sample_output_jsonld: "apartment_semantic_suites_geo.json"
+  sample_visualization_input: "北京保利140+135.jsonld"
+  sample_visualization_output: "北京保利140+135.png"
+
+llm:
+  api_key: ""
+  base_url: "https://open.bigmodel.cn/api/paas/v4/"
+  model: "glm-4-flash"
+
 output:
   gt_jsonld_dir: "output/gt_jsonld"
   html_dir: "output/html"
@@ -20,7 +35,6 @@ output:
   gt_viz_dir: "output/gt_viz"
   exp_res_dir: "output/exp_res"
   gt_res_dir: "output/gt_res"
-
 
 rules: "rules"
 

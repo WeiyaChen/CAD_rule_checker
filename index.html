@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAD 规则审查可视化工作台</title>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7fb; color: #223; }
+    .hero { padding: 32px; background: linear-gradient(135deg, #0f4c81, #2a8fbd); color: white; }
+    .hero h1 { margin: 0 0 8px; font-size: 2rem; }
+    .hero p { margin: 0; opacity: 0.9; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 24px; }
+    .card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+    .card h3 { margin-top: 0; }
+    a.button { display: inline-block; margin-top: 10px; padding: 10px 14px; background: #0f4c81; color: white; text-decoration: none; border-radius: 8px; }
+    a.button.secondary { background: #16a085; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>CAD 规则审查可视化工作台</h1>
+    <p>为单图/批量流程与算法评估过程提供两个可直接使用的图形界面。</p>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>界面 1：端到端处理工作台</h3>
+      <p>支持设置处理模式、输入图纸、输出目录，并展示输入图纸与审查结果的可视化预览。</p>
+      <a class="button" href="/pipeline_ui.html">进入处理工作台</a>
+    </div>
+    <div class="card">
+      <h3>界面 2：评估分析看板</h3>
+      <p>读取现有评估结果，使用图表展示各项指标的统计情况。</p>
+      <a class="button secondary" href="/evaluation_ui.html">进入评估看板</a>
+    </div>
+  </div>
+</body>
+</html>

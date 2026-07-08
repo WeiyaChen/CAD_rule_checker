@@ -1,9 +1,12 @@
+import argparse
 import json
-import sys
-import os
 import math
+import os
+import sys
+from pathlib import Path
+
+from shapely.geometry import LineString, Polygon
 from shapely.wkt import loads
-from shapely.geometry import Polygon, LineString
 
 from src.config.config import settings
 
@@ -147,15 +150,16 @@ class GeometryEnricher:
 
 
 if __name__ == "__main__":
-    # 兼容独立运行模式（由外部负责读写文件）
-    # 支持命令行传参，方便批处理
-    if len(sys.argv) > 1:
-        input_file = sys.argv[1]
-    else:
-        # 默认使用之前组装好套型的文件进行流水线作业
-        input_file = os.path.join(settings.exp_jsonld_dir, "apartment_semantic_suites.jsonld")
+    parser = argparse.ArgumentParser(description="几何富化器")
+    parser.add_argument("--input", default=str(settings.resolve_project_path(settings.sample_input_jsonld)), help="输入 JSON-LD 文件")
+    parser.add_argument("--output", default=None, help="输出 JSON-LD 文件")
+    args = parser.parse_args()
 
-    if os.path.exists(input_file):
+    input_file = Path(args.input)
+    if not input_file.is_absolute():
+        input_file = settings.resolve_project_path(input_file)
+
+    if input_file.exists():
         print(f"[GeometryEnricher] 独立测试模式：读取 {input_file}")
         with open(input_file, 'r', encoding='utf-8') as f:
             raw_data = json.load(f)
@@ -163,7 +167,10 @@ if __name__ == "__main__":
         enricher = GeometryEnricher(raw_data)
         enriched_data = enricher.enrich()
 
-        out_file = input_file.replace(".json", "_geo.json")
+        out_file = Path(args.output) if args.output else input_file.with_name(input_file.stem + "_geo.json")
+        if not out_file.is_absolute():
+            out_file = settings.resolve_project_path(out_file)
+
         with open(out_file, 'w', encoding='utf-8') as f:
             json.dump(enriched_data, f, ensure_ascii=False, indent=2)
         print(f"[GeometryEnricher] 独立测试模式：保存至 {out_file}")

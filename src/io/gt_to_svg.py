@@ -114,7 +114,7 @@ def convert_gt_to_svg(dxf_path, json_path, svg_path):
 
     # 5. 保存并写入文件
     tree = ET.ElementTree(svg)
-    tree.write(svg_path, xml_declaration=True)
+    tree.write(svg_path, encoding='utf-8', xml_declaration=True)
 
 
 if __name__ == "__main__":

@@ -103,14 +103,13 @@ data/raw/svg/test/
 
 ### 3. 运行主审查流程
 
-编辑 `src/main.py` 中的参数：
+可直接通过配置文件或命令行参数控制输入路径与运行模式：
 
-```python
-RUN_MODE = "BATCH"
-TARGET_FILE_DIR = "test"
+```bash
+python -m src.main --mode SINGLE --target-dir test --target-file 南阳名门150.svg
 ```
 
-执行主入口：
+也可以先修改配置文件 [src/config/settings.yaml](src/config/settings.yaml) 中的 `runtime` 段，然后直接执行：
 
 ```bash
 python -m src.main
@@ -147,13 +146,13 @@ python -m src.experiment.dataset_evaluator
 
 ## 核心配置文件
 
-- `src/config/settings.yaml`：输入、输出、规则和 prompt 路径配置
-- `prompt/prompt_config.txt`：LLM 提示词模板
-- `rules/`：SHACL 规则文件
+- [src/config/settings.yaml](src/config/settings.yaml)：输入、输出、规则和 prompt 路径配置
+- [prompt/prompt_config.txt](prompt/prompt_config.txt)：LLM 提示词模板
+- [rules/](rules/)：SHACL 规则文件
 
 ## 运行模式说明
 
-在 `src/main.py` 中，`RUN_MODE` 支持：
+主入口现在支持通过配置文件或命令行参数控制：
 
 - `SINGLE`：处理单个 SVG 文件
 - `BATCH`：处理指定目录中的所有 SVG 文件
@@ -161,8 +160,11 @@ python -m src.experiment.dataset_evaluator
 
 常用参数：
 
-- `TARGET_FILE_DIR`：指定 SVG 输入目录
-- `FILE_NAME`：单图处理时指定文件名
+- `--mode`：运行模式
+- `--target-dir`：指定 SVG 输入目录
+- `--target-file`：单图处理时指定文件名
+- `--output-dir`：指定结果输出目录
+- 环境变量：`CAD_RULE_CHECKER_RUN_MODE`、`CAD_RULE_CHECKER_TARGET_DIR`、`CAD_RULE_CHECKER_TARGET_FILE`、`CAD_RULE_CHECKER_OUTPUT_DIR`
 
 ## 输出目录说明
 
@@ -182,7 +184,6 @@ python -m src.experiment.dataset_evaluator
 ## 进一步改进建议
 
 - 增加 `requirements.txt` 或 `pyproject.toml`
-- 进一步抽取配置，将 `src/main.py` 中硬编码参数替换为命令行参数
 - 补齐 `rules/` 规则文件的使用说明与样例
 - 添加示例数据和结果展示
 

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>算法评估看板</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7fb; color: #223; }
+    .container { padding: 24px; display: grid; gap: 18px; }
+    .card { background: white; border-radius: 14px; padding: 18px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .metric { background: #f8fafc; border-radius: 10px; padding: 12px; }
+    .metric strong { display: block; font-size: 1.1rem; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>算法评估看板</h2>
+      <p>读取现有评估结果，展示整体指标与样本级统计。</p>
+    </div>
+    <div class="card">
+      <h3>整体指标</h3>
+      <div id="overallMetrics" class="metrics"></div>
+    </div>
+    <div class="card">
+      <h3>指标分布图</h3>
+      <canvas id="metricChart" height="180"></canvas>
+    </div>
+    <div class="card">
+      <h3>样本级结果</h3>
+      <table id="detailTable"></table>
+    </div>
+  </div>
+  <script>
+    async function loadEvaluationData() {
+      const response = await fetch('/api/evaluation-data');
+      const data = await response.json();
+      const metricsContainer = document.getElementById('overallMetrics');
+      const metricEntries = Object.entries(data.overall).filter(([k]) => k !== 'source');
+      metricsContainer.innerHTML = metricEntries.map(([name, value]) => `
+        <div class="metric">
+          <div>${name}</div>
+          <strong>${Number(value).toFixed(4)}</strong>
+        </div>
+      `).join('');
+
+      const chartData = data.chart || [];
+      new Chart(document.getElementById('metricChart'), {
+        type: 'bar',
+        data: {
+          labels: chartData.map(item => item.label),
+          datasets: [{
+            label: '指标数值',
+            data: chartData.map(item => item.value),
+            backgroundColor: ['#0f4c81', '#2a8fbd', '#16a085', '#f59e0b', '#e11d48']
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      const table = document.getElementById('detailTable');
+      const rows = data.individual || [];
+      table.innerHTML = rows.length ? `
+        <thead><tr>${Object.keys(rows[0]).map(k => '<th>' + k + '</th>').join('')}</tr></thead>
+        <tbody>${rows.map(r => '<tr>' + Object.values(r).map(v => '<td>' + v + '</td>').join('') + '</tr>').join('')}</tbody>
+      ` : '<tr><td>暂无样本级数据</td></tr>';
+    }
+
+    loadEvaluationData();
+  </script>
+</body>
+</html>

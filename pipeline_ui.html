@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="appTitle">端到端处理工作台</title>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7fb; color: #223; }
+    .layout { display: grid; grid-template-columns: 360px 1fr; min-height: 100vh; }
+    .sidebar { padding: 24px; background: #fff; border-right: 1px solid #e2e8f0; }
+    .main { padding: 24px; display: grid; gap: 18px; }
+    .card { background: white; border-radius: 14px; padding: 18px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+    label { display: block; font-size: 0.95rem; margin: 8px 0 4px; color: #446; }
+    input, select, button { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
+    button { background: #0f4c81; color: white; border: none; cursor: pointer; margin-top: 10px; }
+    button.secondary { background: #16a085; }
+    button.lang-toggle { background: #6c5ce7; font-size: 0.85rem; padding: 6px 12px; width: auto; float: right; margin-top: 0; }
+    .status { margin-top: 10px; white-space: pre-wrap; font-size: 0.9rem; color: #365; }
+    .preview { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    img { max-width: 100%; border-radius: 10px; border: 1px solid #e2e8f0; background: white; }
+    ul { padding-left: 18px; }
+    .muted { color: #678; font-size: 0.92rem; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <h2 data-i18n="appTitle">端到端处理工作台</h2>
+      <p class="muted" data-i18n="appDesc">配置单图/批量审查流程，触发主处理入口并查看结果概览。</p>
+      <div class="card">
+        <label data-i18n="modeLabel">运行模式</label>
+        <select id="mode">
+          <option value="SINGLE">SINGLE</option>
+          <option value="BATCH">BATCH</option>
+        </select>
+        <label data-i18n="inputDirLabel">输入目录</label>
+        <label data-i18n="dxfSelectLabel">选择 DXF 文件（可多选）</label>
+        <input id="dxfFiles" type="file" accept=".dxf" multiple />
+        
+        <label data-i18n="singleFileLabel">单图文件（可选）</label>
+        <select id="targetFile" onchange="updatePreviewFromSelection()">
+          <option value="" data-i18n="svgPlaceholder">-- 请选择 SVG 输入文件 --</option>
+        </select>
+        <label data-i18n="targetDirLabel">目标目录（服务器）</label>
+        <select id="targetDir"></select>
+        
+        <label data-i18n="outputDirLabel">输出目录</label>
+        <input id="outputDir" value="output/exp_jsonld" />
+        <button onclick="uploadDxf()" data-i18n="uploadBtn">上传选中文件</button>
+        <button onclick="runStep('dxf2svg')" data-i18n="step1Btn">步骤 1：DXF → SVG</button>
+        <button onclick="runStep('extract-elements')" data-i18n="step2Btn">步骤 2：提取元素并可视化</button>
+        <button onclick="runStep('build-topology')" data-i18n="step3Btn">步骤 3：构建拓扑 JSON-LD</button>
+        <button onclick="runStep('enrich-graph')" data-i18n="step4Btn">步骤 4：知识图谱富化</button>
+        <button onclick="runStep('visualize-graph')" data-i18n="step5Btn">步骤 5：生成图谱可视化</button>
+        <button class="secondary" onclick="runPipeline()" data-i18n="fullReviewBtn">完整审查（可选）</button>
+        <button class="secondary" onclick="loadInputs()" data-i18n="refreshBtn">刷新可用输入</button>
+        <div id="status" class="status" data-i18n="waiting">等待开始…</div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="availableInputs">可用输入</h3>
+        <div id="inputList" class="muted" data-i18n="loading">正在加载…</div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 data-i18n="previewTitle" style="margin:0;">输入图纸预览</h3>
+          <button class="lang-toggle" onclick="toggleLang()" id="langToggle">EN</button>
+        </div>
+        <div class="preview">
+          <div>
+            <img id="inputPreview" src="" alt="输入图纸预览" style="visibility:hidden;" />
+            <div id="previewPlaceholder" class="muted" data-i18n="previewPlaceholder">请选择左侧 SVG 输入文件以查看预览。</div>
+            <div id="previewInfo" class="muted" style="margin-top: 10px;"></div>
+          </div>
+          <div>
+            <h4 data-i18n="resultFilesTitle">结果文件</h4>
+            <ul id="resultFiles"></ul>
+            <div id="previewResult" style="margin-top: 10px;">
+              <img id="resultPreview" src="" alt="中间结果预览" style="display:none; max-width:100%; border-radius:10px; border:1px solid #e2e8f0;" />
+              <pre id="resultTextPreview" style="display:none; white-space: pre-wrap; background:#fafbfd; border:1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-top: 10px; color:#334; overflow-x:auto;"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="logTitle">处理日志</h3>
+        <div id="logOutput" class="status"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // ===== i18n =====
+    const i18n = {
+      zh: {
+        appTitle: '智能图纸审查系统',
+        appDesc: '配置单图/批量审查流程，触发主处理入口并查看结果概览。',
+        modeLabel: '运行模式',
+        inputDirLabel: '输入目录',
+        dxfSelectLabel: '选择 DXF 文件（可多选）',
+        singleFileLabel: '单图文件（可选）',
+        svgPlaceholder: '-- 请选择 SVG 输入文件 --',
+        targetDirLabel: '目标目录（服务器）',
+        outputDirLabel: '输出目录',
+        uploadBtn: '上传选中文件',
+        step1Btn: '步骤 1：DXF → SVG',
+        step2Btn: '步骤 2：提取元素并可视化',
+        step3Btn: '步骤 3：构建拓扑 JSON-LD',
+        step4Btn: '步骤 4：知识图谱富化',
+        step5Btn: '步骤 5：生成图谱可视化',
+        fullReviewBtn: '完整审查（可选）',
+        refreshBtn: '刷新可用输入',
+        waiting: '等待开始…',
+        availableInputs: '可用输入',
+        loading: '正在加载…',
+        previewTitle: '输入图纸预览',
+        previewPlaceholder: '请选择左侧 SVG 输入文件以查看预览。',
+        resultFilesTitle: '结果文件',
+        logTitle: '处理日志',
+        runningStep: (s) => `执行步骤：${s}`,
+        stepDone: (s) => `步骤完成：${s}`,
+        stepFailed: (s) => `步骤失败：${s}`,
+        noFileSelected: '请先选择一个 SVG 输入文件，然后再执行该步骤。',
+        noFileDetail: (s) => `未提供 targetFile，无法执行步骤：${s}`,
+        uploadProgress: '上传中…',
+        uploadDone: (f) => `上传完成：${f}`,
+        uploadFailed: '上传失败',
+        processingFull: '正在执行完整流程，请稍候…',
+        processingSuccess: '处理成功。',
+        processingFailed: (e) => `处理失败：${e}`,
+        previewFile: (p) => `预览文件：${p}`,
+        jsonldResult: (p) => `JSON-LD 结果：${p}`,
+        resultFile: (p) => `结果文件：${p}`,
+        fileSaved: (p) => `已保存文件：${p}`,
+        selectDxfFirst: '请先选择一个或多个 DXF 文件',
+        svgLabel: 'SVG:',
+        langToggleEn: 'EN',
+        langToggleZh: '中',
+      },
+      en: {
+        appTitle: 'CAD Rule Checker',
+        appDesc: 'Configure single/batch review pipeline, trigger main processing and view results.',
+        modeLabel: 'Run Mode',
+        inputDirLabel: 'Input Directory',
+        dxfSelectLabel: 'Select DXF Files (multi-select)',
+        singleFileLabel: 'Single SVG File (optional)',
+        svgPlaceholder: '-- Select SVG input file --',
+        targetDirLabel: 'Target Directory (server)',
+        outputDirLabel: 'Output Directory',
+        uploadBtn: 'Upload Selected Files',
+        step1Btn: 'Step 1: DXF → SVG',
+        step2Btn: 'Step 2: Extract Elements & Visualize',
+        step3Btn: 'Step 3: Build Topology JSON-LD',
+        step4Btn: 'Step 4: Enrich Knowledge Graph',
+        step5Btn: 'Step 5: Generate Graph Visualization',
+        fullReviewBtn: 'Full Review (optional)',
+        refreshBtn: 'Refresh Inputs',
+        waiting: 'Waiting…',
+        availableInputs: 'Available Inputs',
+        loading: 'Loading…',
+        previewTitle: 'Drawing Preview',
+        previewPlaceholder: 'Select an SVG file from the left to preview.',
+        resultFilesTitle: 'Result Files',
+        logTitle: 'Processing Log',
+        runningStep: (s) => `Running: ${s}`,
+        stepDone: (s) => `Step complete: ${s}`,
+        stepFailed: (s) => `Step failed: ${s}`,
+        noFileSelected: 'Please select an SVG input file first.',
+        noFileDetail: (s) => `No targetFile provided for step: ${s}`,
+        uploadProgress: 'Uploading…',
+        uploadDone: (f) => `Upload complete: ${f}`,
+        uploadFailed: 'Upload failed',
+        processingFull: 'Running full pipeline, please wait…',
+        processingSuccess: 'Processing succeeded.',
+        processingFailed: (e) => `Processing failed: ${e}`,
+        previewFile: (p) => `Preview: ${p}`,
+        jsonldResult: (p) => `JSON-LD result: ${p}`,
+        resultFile: (p) => `Result file: ${p}`,
+        fileSaved: (p) => `Saved: ${p}`,
+        selectDxfFirst: 'Please select one or more DXF files first.',
+        svgLabel: 'SVG:',
+        langToggleEn: 'EN',
+        langToggleZh: '中',
+      }
+    };
+
+    let currentLang = localStorage.getItem('pipeline_ui_lang') || 'zh';
+
+    function t(key, ...args) {
+      const dict = i18n[currentLang] || i18n.zh;
+      if (typeof dict[key] === 'function') return dict[key](...args);
+      return dict[key] || key;
+    }
+
+    function applyLang() {
+      document.documentElement.lang = currentLang === 'en' ? 'en' : 'zh-CN';
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (key === 'langToggleEn' || key === 'langToggleZh') return;
+        const text = t(key);
+        if (text) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = text;
+          else el.textContent = text;
+        }
+      });
+      document.getElementById('langToggle').textContent = currentLang === 'zh' ? 'EN' : '中';
+      // update dynamic status
+      const statusEl = document.getElementById('status');
+      if (statusEl && !statusEl.textContent.startsWith('执行') && !statusEl.textContent.startsWith('Running') &&
+          !statusEl.textContent.startsWith('步骤') && !statusEl.textContent.startsWith('Step')) {
+        statusEl.textContent = t('waiting');
+      }
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      localStorage.setItem('pipeline_ui_lang', currentLang);
+      applyLang();
+      loadInputs();
+    }
+    async function loadInputs() {
+      const res = await fetch('/api/available-inputs');
+      const data = await res.json();
+      const list = document.getElementById('inputList');
+      list.innerHTML = '<strong>' + t('svgLabel') + '</strong><br/>' + data.svgFiles.join('<br/>');
+      const targetFile = document.getElementById('targetFile');
+      const prevValue = targetFile.value;
+      targetFile.innerHTML = '<option value="">' + t('svgPlaceholder') + '</option>';
+      data.svgFiles.forEach(p => {
+        const rawPath = p.replace(/\\/g, '/');
+        const relativePath = rawPath.replace(/^data\/raw\/svg\//, '');
+        const opt = document.createElement('option');
+        opt.value = relativePath;
+        opt.text = relativePath;
+        targetFile.appendChild(opt);
+      });
+      if (prevValue && Array.from(targetFile.options).some(o => o.value === prevValue)) {
+        targetFile.value = prevValue;
+      }
+      document.getElementById('outputDir').value = data.defaultOutputDir;
+      // populate targetDir select from svgFiles and resultDirs
+      const sel = document.getElementById('targetDir');
+      sel.innerHTML = '';
+      const dirs = new Set();
+      data.svgFiles.forEach(p => {
+        let s = p.replace(/\\/g, '/');
+        s = s.replace(/^data\/raw\/svg\//, '');
+        const parts = s.split('/');
+        parts.pop();
+        if (parts.length) dirs.add(parts.join('/'));
+      });
+      data.resultDirs.forEach(d => {
+        const v = d.replace(/^output\//, '');
+        if (v) dirs.add(v);
+      });
+      if (dirs.size === 0) dirs.add('test');
+      dirs.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.text = d; sel.appendChild(opt); });
+      const preview = document.getElementById('inputPreview');
+      const placeholder = document.getElementById('previewPlaceholder');
+      preview.style.visibility = 'hidden';
+      preview.removeAttribute('src');
+      if (placeholder) placeholder.style.display = 'block';
+    }
+
+    function updatePreviewFromSelection() {
+      const select = document.getElementById('targetFile');
+      const preview = document.getElementById('inputPreview');
+      const path = select.value;
+      const placeholder = document.getElementById('previewPlaceholder');
+      if (!path) {
+        preview.style.visibility = 'hidden';
+        preview.removeAttribute('src');
+        if (placeholder) placeholder.style.display = 'block';
+        return;
+      }
+      syncTargetDirFromSelection(path);
+      const dirVal = document.getElementById('targetDir').value;
+      const built = buildPreviewPath(dirVal, path);
+      preview.style.visibility = 'visible';
+      preview.src = '/api/preview?path=' + encodeURIComponent(built);
+      if (placeholder) placeholder.style.display = 'none';
+    }
+
+    function syncTargetDirFromSelection(path) {
+      const targetDir = document.getElementById('targetDir');
+      if (!path) return;
+      const normalized = path.replace(/\\/g, '/');
+      const parts = normalized.split('/');
+      if (parts.length > 1) {
+        const dir = parts.slice(0, parts.length - 1).join('/');
+        const option = Array.from(targetDir.options).find(o => o.value === dir);
+        if (option) targetDir.value = dir;
+      }
+    }
+
+    function buildPreviewPath(targetDirValue, previewFile) {
+      if (!previewFile) return '';
+      const normalized = previewFile.replace(/\\/g, '/');
+      if (normalized.startsWith('data/raw/svg/')) return normalized;
+      if (normalized.includes('/')) {
+        return 'data/raw/svg/' + normalized;
+      }
+      if (!targetDirValue) targetDirValue = 'test';
+      if (targetDirValue.startsWith('data/raw/svg')) {
+        return targetDirValue.replace(/\\/g,'/') + '/' + normalized;
+      }
+      return 'data/raw/svg/' + targetDirValue.replace(/\\/g,'/') + '/' + normalized;
+    }
+
+    async function uploadDxf() {
+      const files = document.getElementById('dxfFiles').files;
+      const targetDir = document.getElementById('targetDir').value || 'uploads';
+      if (!files || files.length === 0) { alert(t('selectDxfFirst')); return; }
+      const form = new FormData();
+      form.append('targetDir', targetDir);
+      for (const f of files) { form.append('file', f, f.name); }
+      const status = document.getElementById('status');
+      const logOutput = document.getElementById('logOutput');
+      status.textContent = t('uploadProgress');
+      logOutput.textContent = '';
+      const res = await fetch('/api/upload-dxf', { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.ok) {
+        status.textContent = t('uploadDone', data.saved.join(', '));
+        loadInputs();
+      } else {
+        status.textContent = t('uploadFailed');
+      }
+    }
+
+    async function runStep(step) {
+      const mode = document.getElementById('mode').value;
+      const targetDir = document.getElementById('targetDir').value || 'test';
+      const targetFile = document.getElementById('targetFile').value;
+      const outputDir = document.getElementById('outputDir').value || 'output/exp_jsonld';
+      const status = document.getElementById('status');
+      const logOutput = document.getElementById('logOutput');
+
+      if (step !== 'dxf2svg') {
+        if (mode === 'SINGLE' && !targetFile) {
+          status.textContent = t('noFileSelected');
+          logOutput.textContent = t('noFileDetail', step);
+          return;
+        }
+        if (mode === 'BATCH' && !targetDir) {
+          status.textContent = '未选择目标目录。';
+          logOutput.textContent = '请在 BATCH 模式下先选择一个目标目录';
+          return;
+        }
+      }
+
+      status.textContent = t('runningStep', step);
+      logOutput.textContent = '';
+      const res = await fetch('/api/run-step', {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step, mode, targetDir, targetFile, outputDir })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        status.textContent = t('stepDone', step);
+        displayStepResults(data);
+        loadInputs();
+      } else {
+        status.textContent = t('stepFailed', step);
+        displayStepResults(data);
+      }
+    }
+
+    function displayStepResults(data) {
+      const logOutput = document.getElementById('logOutput');
+      const filesList = document.getElementById('resultFiles');
+      const resultPreview = document.getElementById('resultPreview');
+      const resultTextPreview = document.getElementById('resultTextPreview');
+      const previewInfo = document.getElementById('previewInfo');
+
+      logOutput.textContent = (data.messages || []).join('\n') + (data.error ? '\n' + data.error : '');
+      filesList.innerHTML = '';
+      (data.results || []).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        filesList.appendChild(li);
+      });
+
+      resultPreview.style.display = 'none';
+      resultPreview.removeAttribute('src');
+      resultTextPreview.style.display = 'none';
+      resultTextPreview.textContent = '';
+      previewInfo.textContent = '';
+
+      if (data.preview) {
+        const path = data.preview;
+        const ext = path.split('.').pop().toLowerCase();
+        if (ext === 'svg' || ext === 'png' || ext === 'jpg' || ext === 'jpeg') {
+          resultPreview.style.display = 'block';
+          resultPreview.src = '/api/preview?path=' + encodeURIComponent(path);
+          previewInfo.textContent = t('previewFile', path);
+        } else if (ext === 'jsonld' || ext === 'json') {
+          resultTextPreview.style.display = 'block';
+          fetch('/api/preview?path=' + encodeURIComponent(path))
+            .then(r => r.text())
+            .then(text => {
+              resultTextPreview.textContent = text.slice(0, 600);
+              if (text.length > 600) resultTextPreview.textContent += '\n...';
+            })
+            .catch(() => {
+              resultTextPreview.textContent = t('fileSaved', path);
+            });
+          previewInfo.textContent = t('jsonldResult', path);
+        } else {
+          previewInfo.textContent = t('resultFile', path);
+        }
+      }
+    }
+
+    async function runPipeline() {
+      // full processing via existing run-pipeline endpoint
+      const mode = document.getElementById('mode').value;
+      let targetDirValue = document.getElementById('targetDir').value;
+      let targetFileValue = document.getElementById('targetFile').value;
+      const status = document.getElementById('status');
+      const logOutput = document.getElementById('logOutput');
+
+      // input validation
+      if (mode === 'SINGLE' && !targetFileValue) {
+        status.textContent = t('noFileSelected');
+        logOutput.textContent = t('noFileDetail', 'full-review');
+        return;
+      }
+      if (mode === 'BATCH' && !targetDirValue) {
+        status.textContent = '未选择目标目录，无法执行完整审查。';
+        logOutput.textContent = '未选择目标目录，无法执行完整审查。';
+        return;
+      }
+
+      if (targetFileValue.startsWith('data/raw/svg/')) {
+        targetFileValue = targetFileValue.substring('data/raw/svg/'.length);
+      }
+      if (targetDirValue.startsWith('data/raw/svg/')) {
+        targetDirValue = targetDirValue.substring('data/raw/svg/'.length);
+      }
+      if (targetFileValue.includes('/')) {
+        const parts = targetFileValue.split('/');
+        const basename = parts.pop();
+        const dirname = parts.join('/');
+        if (!targetDirValue || targetDirValue === dirname) {
+          targetDirValue = dirname;
+          targetFileValue = basename;
+        }
+      }
+      const payload = {
+        mode: document.getElementById('mode').value,
+        targetDir: targetDirValue,
+        targetFile: targetFileValue,
+        outputDir: document.getElementById('outputDir').value
+      };
+      status.textContent = t('processingFull');
+      logOutput.textContent = '';
+      logOutput.textContent = '';
+      const res = await fetch('/api/run-pipeline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      status.textContent = data.ok ? t('processingSuccess') : t('processingFailed', data.error || data.returnCode);
+      logOutput.textContent = `${data.stdout}\n${data.stderr}`;
+      const filesList = document.getElementById('resultFiles');
+      filesList.innerHTML = '';
+      (data.files || []).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        filesList.appendChild(li);
+      });
+      const previewPath = document.getElementById('targetFile').value;
+      const dirVal = document.getElementById('targetDir').value;
+      const built = buildPreviewPath(dirVal, previewPath);
+      const preview = document.getElementById('inputPreview');
+      const placeholder = document.getElementById('previewPlaceholder');
+      if (built) {
+        preview.style.visibility = 'visible';
+        preview.src = '/api/preview?path=' + encodeURIComponent(built);
+        if (placeholder) placeholder.style.display = 'none';
+      } else if (placeholder) {
+        preview.style.visibility = 'hidden';
+        preview.removeAttribute('src');
+        placeholder.style.display = 'block';
+      }
+    }
+
+    // init
+    applyLang();
+    loadInputs();
+  </script>
+</body>
+</html>

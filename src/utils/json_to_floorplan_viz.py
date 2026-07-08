@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 from pathlib import Path
@@ -272,16 +273,24 @@ class JSONLDVisualizer:
 
 
 if __name__ == "__main__":
-    # 使用示例
-    # 请将此处替换为您的 JSON-LD 文件路径
-    TARGET_JSONLD = os.path.join(settings.exp_jsonld_dir, "北京保利140+135.jsonld")
+    parser = argparse.ArgumentParser(description="JSON-LD 可视化器")
+    parser.add_argument("--input", default=str(settings.resolve_project_path(settings.sample_visualization_input)), help="输入 JSON-LD 文件")
+    parser.add_argument("--output", default=str(settings.resolve_project_path(settings.sample_visualization_output)), help="输出图片文件")
+    args = parser.parse_args()
 
-    # 确保输出目录存在
-    os.makedirs(settings.exp_viz_dir, exist_ok=True)
+    target_jsonld = Path(args.input)
+    if not target_jsonld.is_absolute():
+        target_jsonld = settings.resolve_project_path(target_jsonld)
 
-    if os.path.exists(TARGET_JSONLD):
-        visualizer = JSONLDVisualizer(TARGET_JSONLD)
+    output_path = Path(args.output)
+    if not output_path.is_absolute():
+        output_path = settings.resolve_project_path(output_path)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if target_jsonld.exists():
+        visualizer = JSONLDVisualizer(str(target_jsonld))
         visualizer.parse_graph()
-        visualizer.draw("北京保利140+135.png")
+        visualizer.draw(str(output_path))
     else:
-        print(f"❌ 找不到输入文件: {TARGET_JSONLD}")
+        print(f"❌ 找不到输入文件: {target_jsonld}")

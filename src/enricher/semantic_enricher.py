@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import re
@@ -16,7 +17,7 @@ from src.config.config import settings
 
 
 class SemanticEnricher:
-    def __init__(self, bot_graph_dict, room_texts, llm_client=None):
+    def __init__(self, bot_graph_dict, room_texts, llm_client=None, llm_model=None):
         """
         初始化语义富化引擎
         Args:
@@ -27,6 +28,7 @@ class SemanticEnricher:
         self.graph = bot_graph_dict
         self.room_texts = room_texts or []
         self.llm_client = llm_client
+        self.llm_model = llm_model or settings.llm_model
 
         # 建立全局字典缓存，加速查询
         self.element_cache = {}
@@ -122,7 +124,7 @@ class SemanticEnricher:
                 start_time = time.time()
 
                 response = self.llm_client.chat.completions.create(
-                    model="glm-4-flash",
+                    model=self.llm_model,
                     messages=[
                         {"role": "system",
                          "content": "你是一位顶级的建筑信息模型（BIM）数据合规审查专家。请必须以严格的JSON格式输出结果。"},
@@ -271,29 +273,35 @@ class SemanticEnricher:
 # 独立测试区域
 # =====================================================================
 if __name__ == "__main__":
-    test_file = os.path.join(settings.exp_jsonld_dir, "apartment.jsonld")
-    if len(sys.argv) > 1:
-        test_file = sys.argv[1]
+    parser = argparse.ArgumentParser(description="语义富化器")
+    parser.add_argument("--input", default=str(settings.resolve_project_path(settings.sample_input_jsonld)), help="输入 JSON-LD 文件")
+    parser.add_argument("--output", default=None, help="输出 JSON-LD 文件")
+    parser.add_argument("--api-key", default=settings.llm_api_key, help="大模型 API Key")
+    parser.add_argument("--base-url", default=settings.llm_base_url, help="大模型接口地址")
+    parser.add_argument("--model", default=settings.llm_model, help="大模型模型名")
+    args = parser.parse_args()
 
-    if not os.path.exists(test_file):
+    test_file = Path(args.input)
+    if not test_file.is_absolute():
+        test_file = settings.resolve_project_path(test_file)
+
+    if not test_file.exists():
         print(f"❌ 错误: 找不到测试数据文件 '{test_file}'")
         sys.exit(1)
 
     with open(test_file, "r", encoding="utf-8") as f:
         parsed_graph_dict = json.load(f)
 
-    # 模拟从前端元素解析出的离散文本坐标
     mock_room_texts = [
         {"text": "主卧室", "point": (100, 200)},
         {"text": "Kitchen", "point": (4500, 2100)}
     ]
 
-    my_client = openai.Client(
-        api_key="68c58c6b481a4d328d2fdf295240c1fb.Zt1Itx9ICDK5VIGB",
-        base_url="https://open.bigmodel.cn/api/paas/v4/"
-    )
+    my_client = None
+    if args.api_key:
+        my_client = openai.Client(api_key=args.api_key, base_url=args.base_url)
 
-    enricher = SemanticEnricher(parsed_graph_dict, mock_room_texts, my_client)
+    enricher = SemanticEnricher(parsed_graph_dict, mock_room_texts, my_client, llm_model=args.model)
     final_kg_dict = enricher.execute_enrichment()
 
     print("\n===== 最终房间语义结果 =====")
@@ -301,6 +309,8 @@ if __name__ == "__main__":
         if "bot:Space" in node.get("@type", []) or any(t.startswith("bldg:") for t in node.get("@type", [])):
             print(f"房间检测 -> ID: {node['@id']}, 类型: {node.get('@type')}")
 
-    output_filename = test_file.replace(".json", "_semantic.json")
+    output_filename = Path(args.output) if args.output else test_file.with_name(test_file.stem + "_semantic.json")
+    if not output_filename.is_absolute():
+        output_filename = settings.resolve_project_path(output_filename)
     with open(output_filename, "w", encoding="utf-8") as f:
         json.dump(final_kg_dict, f, ensure_ascii=False, indent=2)
