@@ -39,14 +39,14 @@ class PipelineEvaluator:
         self._parse_system_output()
 
     def debug_parsed_data(self):
-        """打印解析后的内部数据结构，用于验证 GT 和 Sys 输出的解析效果"""
+        """Print parsed internal data structures for validation."""
         print("=" * 60)
-        print("🛠️ [Debug] 数据解析结果验证 (Data Parsing Validation)")
+        print("🛠️ [Debug] Data Parsing Validation")
         print("=" * 60)
 
-        # 1. GT 房间数据
-        print("\n[1] Ground Truth (GT) 房间解析结果:")
-        print(f"  - 成功提取的房间总数: {len(self.gt_rooms)}")
+        # 1. GT Room Data
+        print("\n[1] Ground Truth (GT) Room Parsing Results:")
+        print(f"  - Total rooms extracted: {len(self.gt_rooms)}")
         for i, (gt_id, info) in enumerate(list(self.gt_rooms.items())[:3]):
             wkt_short = info['wkt'][:50] + "..." if info['wkt'] else "None"
             print(f"    * ID: {gt_id}")
@@ -54,20 +54,20 @@ class PipelineEvaluator:
             print(f"      Area: {info['area']}, ShortSide: {info['short_side']}")
             print(f"      WKT: {wkt_short}")
         if len(self.gt_rooms) > 3:
-            print(f"    * ... (省略另外 {len(self.gt_rooms) - 3} 个房间)")
+            print(f"    * ... (omitting {len(self.gt_rooms) - 3} rooms)")
 
-        # 2. GT 拓扑边
-        print(f"\n[2] Ground Truth (GT) 拓扑连通边:")
-        print(f"  - 成功提取去重后的边数: {len(self.gt_edges)}")
+        # 2. GT Topology Edges
+        print(f"\n[2] Ground Truth (GT) Topology Edges:")
+        print(f"  - Unique edges extracted: {len(self.gt_edges)}")
         for i, edge in enumerate(list(self.gt_edges)[:3]):
             print(f"    * Edge: {edge[0]} <---> {edge[1]}")
         if len(self.gt_edges) > 3:
-            print(f"    * ... (省略另外 {len(self.gt_edges) - 3} 条边)")
+            print(f"    * ... (omitting {len(self.gt_edges) - 3} edges)")
 
-        # 3. System Output 节点
+        # 3. System Output Nodes
         sys_spaces = {k: v for k, v in self.sys_nodes.items() if "bot:Space" in v.get("@type", [])}
-        print(f"\n[3] System Output (Sys) 空间节点解析结果:")
-        print(f"  - 成功提取的空间节点数: {len(sys_spaces)}")
+        print(f"\n[3] System Output (Sys) Space Node Parsing Results:")
+        print(f"  - Space nodes extracted: {len(sys_spaces)}")
         for i, (sys_id, node) in enumerate(list(sys_spaces.items())[:3]):
             wkt_val = node.get("geo:asWKT", "")
             wkt_short = wkt_val[:50] + "..." if wkt_val else "None"
@@ -76,7 +76,7 @@ class PipelineEvaluator:
             print(f"      Adjacencies (bot:adjacentZone): {node.get('bot:adjacentZone')}")
             print(f"      WKT: {wkt_short}")
         if len(sys_spaces) > 3:
-            print(f"    * ... (省略另外 {len(sys_spaces) - 3} 个空间节点)")
+            print(f"    * ... (omitting {len(sys_spaces) - 3} space nodes)")
 
         print("\n" + "=" * 60 + "\n")
 
@@ -157,7 +157,7 @@ class PipelineEvaluator:
     # ==========================================
     def evaluate_geometry_extraction(self):
         print("\n" + "=" * 50)
-        print("📊 [实验一] 底层房间轮廓提取精度 (Geometry Extraction)")
+        print("📊 [Exp 1] Room Contour Extraction Accuracy (Geometry Extraction)")
         print("=" * 50)
 
         total_gt = len(self.gt_rooms)
@@ -262,17 +262,17 @@ class PipelineEvaluator:
 
         mean_iou_1to1 = np.mean(self.iou_scores) if self.iou_scores else 0
 
-        print(f"  [+] 真实房间总数 (Ground Truth): {total_gt} 个")
-        print(f"  [+] 一对一完美匹配数量: {count_1to1} 个")
-        print(f"  [+] 过分割 (1 GT 被切碎为 N Sys): {count_over} 个")
-        print(f"  [+] 欠分割 (N GT 被合并为 1 Sys): {count_under} 个")
-        print(f"  [+] 完全漏检数量: {count_missed} 个")
+        print(f"  [+] Total GT rooms: {total_gt}")
+        print(f"  [+] 1-to-1 matches: {count_1to1}")
+        print(f"  [+] Over-segmentation (1 GT split into N Sys): {count_over}")
+        print(f"  [+] Under-segmentation (N GT merged into 1 Sys): {count_under}")
+        print(f"  [+] Missed detections: {count_missed}")
         print("-" * 30)
-        print(f"  [+] 严格一对一匹配率 (1-to-1 Match Rate): {rate_1to1 * 100:.2f}%")
-        print(f"  [+] 过分割比率 (Over-segmentation Rate): {rate_over * 100:.2f}%")
-        print(f"  [+] 欠分割比率 (Under-segmentation Rate): {rate_under * 100:.2f}%")
-        print(f"  [+] 完全漏检率 (Miss Rate): {rate_miss * 100:.2f}%")
-        print(f"  [+] 一对一房间平均交并比 (1-to-1 mIoU): {mean_iou_1to1:.4f}")
+        print(f"  [+] 1-to-1 Match Rate: {rate_1to1 * 100:.2f}%")
+        print(f"  [+] Over-segmentation Rate: {rate_over * 100:.2f}%")
+        print(f"  [+] Under-segmentation Rate: {rate_under * 100:.2f}%")
+        print(f"  [+] Miss Rate: {rate_miss * 100:.2f}%")
+        print(f"  [+] 1-to-1 mIoU: {mean_iou_1to1:.4f}")
 
         return rate_1to1, mean_iou_1to1
 
@@ -281,7 +281,7 @@ class PipelineEvaluator:
     # ==========================================
     def evaluate_topological_similarity(self, max_hops=1):
         print("\n" + "=" * 50)
-        print(f"🕸️ [实验二] 空间拓扑关系提取精度 (严格区域可达性 - N={max_hops})")
+        print(f"🕸️ [Exp 2] Spatial Topology Extraction Accuracy (Strict Reachability - N={max_hops})")
         print("=" * 50)
 
         from shapely.wkt import loads as wkt_loads
@@ -417,14 +417,14 @@ class PipelineEvaluator:
                                                                                     true_positives + false_negatives) > 0 else 0
         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
-        print(f"  [+] Ground Truth 拓扑边数: {len(gt_edges)}")
-        print(f"  [+] 区域可达性成功验证的边数: {true_positives} (松弛跳数 N={max_hops})")
+        print(f"  [+] GT topology edges: {len(gt_edges)}")
+        print(f"  [+] Reachability-verified edges: {true_positives} (hops N={max_hops})")
         print(
-            f"  [+] 正确连通 (TP): {true_positives} | 无效误报 (FP): {false_positives} | 物理断链 (FN): {false_negatives}")
+            f"  [+] Correct (TP): {true_positives} | False Positive: {false_positives} | False Negative: {false_negatives}")
         print("-" * 30)
-        print(f"  [+] 拓扑连通精确率 (Edge Precision): {precision * 100:.2f}%")
-        print(f"  [+] 拓扑连通召回率 (Edge Recall): {recall * 100:.2f}%")
-        print(f"  [+] 拓扑连通综合相似度 (Edge F1-Score): {f1 * 100:.2f}%")
+        print(f"  [+] Edge Precision: {precision * 100:.2f}%")
+        print(f"  [+] Edge Recall: {recall * 100:.2f}%")
+        print(f"  [+] Edge F1-Score: {f1 * 100:.2f}%")
 
         return precision, recall, f1
 
@@ -433,7 +433,7 @@ class PipelineEvaluator:
     # ==========================================
     def evaluate_geometric_computation(self):
         print("\n" + "=" * 50)
-        print("📐 [实验三] 基础几何特征计算误差 (Geometric Computation)")
+        print("📐 [Exp 3] Geometric Computation Error")
         print("=" * 50)
 
         self.area_errors = []
@@ -459,17 +459,17 @@ class PipelineEvaluator:
         mae_area = np.mean(self.area_errors) if self.area_errors else 0
         mae_width = np.mean(self.width_errors) if self.width_errors else 0
 
-        print(f"  [+] 评估样本对数量: {len(self.area_errors)} 个房间")
-        print(f"  [+] 面积计算平均绝对误差 (MAE_Area): {mae_area:.4f} ㎡")
-        print(f"  [+] 短边计算平均绝对误差 (MAE_Width): {mae_width:.4f} m")
+        print(f"  [+] Sample count: {len(self.area_errors)} rooms")
+        print(f"  [+] MAE_Area: {mae_area:.4f} ㎡")
+        print(f"  [+] MAE_Width: {mae_width:.4f} m")
         return mae_area, mae_width
 
     # ==========================================
-    # 实验四: 大模型语义推理性能及误差级联分析
+    # Exp 4: LLM Semantic Reasoning & Error Cascade Analysis
     # ==========================================
     def evaluate_semantic_enrichment(self):
         print("\n" + "=" * 50)
-        print("🧠 [实验四] 大模型语义推理性能与误差级联分析")
+        print("🧠 [Exp 4] LLM Semantic Reasoning & Error Cascade Analysis")
         print("=" * 50)
 
         self.y_true = []
@@ -523,41 +523,41 @@ class PipelineEvaluator:
                 })
 
         if not self.y_true:
-            print("  [-] 样本不足无法评估。")
+            print("  [-] Insufficient samples for evaluation.")
             return None
 
         acc = accuracy_score(self.y_true, self.y_pred)
         precision, recall, f1, _ = precision_recall_fscore_support(self.y_true, self.y_pred, average='macro',
                                                                    zero_division=0)
 
-        print(f"  [+] 整体准确率 (Accuracy): {acc:.4f}")
-        print(f"  [+] 宏平均 F1-Score (Macro F1): {f1:.4f}")
+        print(f"  [+] Accuracy: {acc:.4f}")
+        print(f"  [+] Macro F1-Score: {f1:.4f}")
 
-        print("\n  🔍 误差级联归因分析 (Error Cascade Analysis):")
+        print("\n  🔍 Error Cascade Analysis:")
         total_errors = len(failed_samples)
         if total_errors == 0:
-            print("     ✅ 完美预测，无误差！")
+            print("     ✅ Perfect prediction, zero errors!")
         else:
             geo_miss_count = sum(1 for s in failed_samples if "Geometry" in s["reason"])
             topo_break_count = sum(1 for s in failed_samples if "Topology" in s["reason"])
             llm_error_count = sum(1 for s in failed_samples if "LLM" in s["reason"])
 
-            print(f"     共发现 {total_errors} 个语义分类失败的实例：")
+            print(f"     Total {total_errors} semantic classification failures:")
             print(
-                f"     ❌ 底层几何漏检导致无语义 (Geometry Miss): {geo_miss_count} 例 ({geo_miss_count / total_errors * 100:.1f}%)")
+                f"     ❌ Geometry miss (no semantics): {geo_miss_count} ({geo_miss_count / total_errors * 100:.1f}%)")
             print(
-                f"     ❌ 拓扑断链致使上下文缺失 (Topology Breakage): {topo_break_count} 例 ({topo_break_count / total_errors * 100:.1f}%)")
+                f"     ❌ Topology breakage (missing context): {topo_break_count} ({topo_break_count / total_errors * 100:.1f}%)")
             print(
-                f"     ❌ 大语言模型自身理解偏差 (LLM Misunderstanding): {llm_error_count} 例 ({llm_error_count / total_errors * 100:.1f}%)")
+                f"     ❌ LLM misunderstanding: {llm_error_count} ({llm_error_count / total_errors * 100:.1f}%)")
 
         return acc, f1
 
     # ==========================================
-    # 实验五: SHACL 合规审查端到端效能
+    # Exp 5: SHACL Compliance Checking
     # ==========================================
     def evaluate_compliance_checking(self):
         print("\n" + "=" * 50)
-        print("⚖️ [实验五] SHACL 合规审查端到端效能 (Compliance Checking)")
+        print("⚖️ [Exp 5] SHACL Compliance Checking")
         print("=" * 50)
 
         gt_set = set([(v["node_id"], v["rule"]) for v in self.gt_violations])
@@ -581,13 +581,13 @@ class PipelineEvaluator:
         recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
-        print(f"  [+] Ground Truth 违规总数: {len(gt_set)}")
-        print(f"  [+] 系统报警总数: {len(sys_set)}")
-        print(f"  [+] 正确命中 (TP): {true_positives} | 误报 (FP): {false_positives} | 漏报 (FN): {false_negatives}")
+        print(f"  [+] GT total violations: {len(gt_set)}")
+        print(f"  [+] System alerts: {len(sys_set)}")
+        print(f"  [+] True Positives: {true_positives} | False Positives: {false_positives} | False Negatives: {false_negatives}")
         print("-" * 30)
-        print(f"  [+] 审查精确率 (Precision): {precision * 100:.2f}%")
-        print(f"  [+] 审查召回率 (Recall): {recall * 100:.2f}%")
-        print(f"  [+] 综合审查分 (F1-Score): {f1 * 100:.2f}%")
+        print(f"  [+] Precision: {precision * 100:.2f}%")
+        print(f"  [+] Recall: {recall * 100:.2f}%")
+        print(f"  [+] F1-Score: {f1 * 100:.2f}%")
         return precision, recall, f1
 
     def run_all(self):
@@ -596,7 +596,7 @@ class PipelineEvaluator:
         self.evaluate_geometric_computation()
         self.evaluate_semantic_enrichment()
         self.evaluate_compliance_checking()
-        print("\n🎉 全量实验评估完毕！数据可直接填入学术论文的 Result 表格中。")
+        print("\n🎉 All experiments complete! Results ready for paper tables.")
 
     # ==========================================
     # 面向 DatasetEvaluator 的批量数据提取接口

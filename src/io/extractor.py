@@ -26,23 +26,23 @@ class ElementExtractor:
 
         # 1. Loading strategy (可以根据 source_type 切换)
         if self.source_type == 'svg':
-            print("[svg_loader] 正在加载原始svg...")
+            print("[svg_loader] Loading raw SVG...")
             tree, primitives = load_svg(file_path)  # 获取xml树和图元列表
-            print("[svg_loader] 加载完成!")
+            print("[svg_loader] Load complete!")
 
-            print("[svg_modifier] 正在修改...")
+            print("[svg_modifier] Modifying...")
             output_svg_path = modify_svg(file_path, tree, primitives)  # 运行修改器
-            print("[svg_modifier] 修改完成!")
-            print(f"[svg_modifier] 文件保存至{output_svg_path}")
+            print("[svg_modifier] Modification complete!")
+            print(f"[svg_modifier] File saved to {output_svg_path}")
 
-            print("[svg_parser] 正在转换")
-            print("[svg_loader] 正在加载有标签的svg")
+            print("[svg_parser] Parsing...")
+            print("[svg_loader] Loading tagged SVG...")
             tree, primitives = load_svg(output_svg_path)
-            print("[svg_loader] 加载完成")
+            print("[svg_loader] Load complete")
             elements = parse_svg(tree, primitives)
             texts_elements = parse_svg_texts(tree)
             elements.extend(texts_elements)
-            print("[svg_parser] 转换完成")
+            print("[svg_parser] Parse complete")
             return elements
         else:
             raise ValueError(f"Unsupported type: {self.source_type}")

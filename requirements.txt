@@ -1,0 +1,27 @@
+# Core dependencies
+ezdxf>=1.4
+openai>=2.0
+pyyaml>=6.0
+rdflib>=7.0
+pyshacl>=0.30
+matplotlib>=3.8
+lxml>=5.0
+numpy>=2.0
+pandas>=2.0
+svgpathtools>=1.6
+opencv-python>=5.0
+triangle>=2024
+networkx>=3.0
+pyvis>=0.3
+shapely>=2.0
+scikit-learn>=1.5
+
+# Additional dependencies
+scipy>=1.14
+owlrl>=7.0
+svgwrite>=1.4
+jsonpickle>=4.0
+httpx>=0.28
+
+# Python 3.13+ compatibility (cgi/cgitb removed in 3.13 per PEP 594)
+legacy-cgi>=2.6; python_version >= "3.13"

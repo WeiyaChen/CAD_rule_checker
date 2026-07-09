@@ -19,7 +19,7 @@ def plot_floor_plan(builder, room_results, save_dir, filename):
     if points is not None and len(points) > 0:
         points = np.array(points)
     else:
-        print("没有有效的点云数据，无法绘图。")
+        print("No valid point cloud data, cannot plot.")
         return
 
     # --- 字体设置 ---
@@ -101,5 +101,5 @@ def plot_floor_plan(builder, room_results, save_dir, filename):
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches='tight', dpi=300)
-    print(f"✅ 空间重建可视化结果已保存至: {save_path}")
+    print(f"✅ Spatial reconstruction visualization saved to: {save_path}")
     plt.close(fig)  # 释放内存

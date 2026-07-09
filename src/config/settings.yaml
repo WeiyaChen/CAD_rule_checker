@@ -5,14 +5,14 @@ data:
   raw_pickle_dir: "data/raw/pickle"
   raw_svg_dir: "data/raw/svg"
   dxf_extend_dir: "data/raw/dxf_extend"
-  processed_svg_dir: "data/processed/svg"
+  processed_svg_dir: "data/processed"
 
 model:
   save_dir: "models/checkpoints"
 
 runtime:
   run_mode: "SINGLE"
-  target_dir: "test"
+  target_dir: ""
   target_file: "南阳名门150.svg"
   output_dir: "output/exp_jsonld"
   sample_input_jsonld: "apartment_semantic_suites.jsonld"
@@ -21,7 +21,7 @@ runtime:
   sample_visualization_output: "北京保利140+135.png"
 
 llm:
-  api_key: ""
+  api_key: "68c58c6b481a4d328d2fdf295240c1fb.Zt1Itx9ICDK5VIGB"
   base_url: "https://open.bigmodel.cn/api/paas/v4/"
   model: "glm-4-flash"
 

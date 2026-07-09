@@ -90,17 +90,17 @@ class BatchDatasetEvaluator:
         return precision, recall, f1
 
     def run_evaluation(self):
-        """执行批量评估核心逻辑"""
+        """Run the batch evaluation core logic."""
         file_pairs = self._match_files()
         if not file_pairs:
-            print(f"[-] 在指定目录未找到配对的测试数据。")
+            print(f"[-] No matched test data found in the specified directory.")
             return
 
-        print(f"[+] 开始全量评估，共发现 {len(file_pairs)} 组有效样本...")
+        print(f"[+] Starting full evaluation, found {len(file_pairs)} valid samples...")
 
         for pair in file_pairs:
             base_name = pair["base_name"]
-            print(f"\n>>> 正在评估: {base_name}")
+            print(f"\n>>> Evaluating: {base_name}")
 
             # 加载数据
             with open(pair["gt_path"], 'r', encoding='utf-8') as f:
@@ -123,7 +123,7 @@ class BatchDatasetEvaluator:
                 y_true, y_pred = evaluator.get_semantic_labels()
                 comp_tp, comp_fp, comp_fn = evaluator.get_compliance_raw_counts()
             except Exception as e:
-                print(f"[-] 文件 {base_name} 评估异常: {e}")
+                print(f"[-] Evaluation error for {base_name}: {e}")
                 continue
 
             # --- 1. 记录单文件独立结果 ---
@@ -181,7 +181,7 @@ class BatchDatasetEvaluator:
         df = pd.DataFrame(self.individual_results)
         ind_csv_path = os.path.join(self.output_dir, "individual_results.csv")
         df.to_csv(ind_csv_path, index=False, encoding='utf-8-sig')
-        print(f"\n[+] 单文件独立评估结果已保存至: {ind_csv_path}")
+        print(f"\n[+] Individual evaluation results saved to: {ind_csv_path}")
 
         # 2. 计算全局指标
         g_1to1_rate = self.global_data["1to1_rooms"] / self.global_data["gt_rooms"] if self.global_data[
@@ -235,12 +235,12 @@ class BatchDatasetEvaluator:
         overall_json_path = os.path.join(self.output_dir, "overall_results.json")
         with open(overall_json_path, 'w', encoding='utf-8') as f:
             json.dump(overall_results, f, ensure_ascii=False, indent=4)
-        print(f"[+] 数据集全局汇总结果已保存至: {overall_json_path}")
+        print(f"[+] Dataset overall results saved to: {overall_json_path}")
 
 
 if __name__ == "__main__":
     # 配置您的实际目录路径
-    FILE_DIR = "test"
+    FILE_DIR = ""
     GT_DIR = os.path.join(settings.gt_jsonld_dir, FILE_DIR) # 人工标注目录
     SYS_OUT_DIR = os.path.join(settings.exp_jsonld_dir, FILE_DIR)  # 系统生成图谱目录
     VIO_DIR = None

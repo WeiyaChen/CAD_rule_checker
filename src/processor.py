@@ -23,29 +23,25 @@ def process_single_drawing(input_svg_path, output_json_dir, validator, llm_clien
     svg_name = os.path.basename(input_svg_path)
     base_name = os.path.splitext(svg_name)[0]
 
-    # 获取文件夹名称
-    input_svg_path_parse = Path(input_svg_path)
-    folder_name = input_svg_path_parse.parent.name
-
-    # 路径构造兼容 pathlib.Path 和 str
-    raw_jsonld_path = os.path.join(str(output_json_dir), folder_name, f"{base_name}_raw.jsonld") # 原始jsonld文件
-    enriched_jsonld_path = os.path.join(str(output_json_dir), folder_name, f"{base_name}.jsonld") # 属性富化后的jsonld文件
-    violations_json_path = os.path.join(settings.exp_res_dir, folder_name, f"{base_name}_exp_violations.json")  # 新增违规独立保存路径
-    exp_viz_path = os.path.join(settings.exp_viz_dir, folder_name, f"{base_name}_exp.png") # 可视化
+    # 路径构造
+    raw_jsonld_path = os.path.join(str(output_json_dir), f"{base_name}_raw.jsonld")
+    enriched_jsonld_path = os.path.join(str(output_json_dir), f"{base_name}.jsonld")
+    violations_json_path = os.path.join(settings.exp_res_dir, f"{base_name}_exp_violations.json")
+    exp_viz_path = os.path.join(settings.exp_viz_dir, f"{base_name}_exp.png")
     # annotated_image_path = os.path.join(str(output_html_dir), f"{base_name}_compliance_report.html")
 
     print("\n" + "=" * 60)
-    print(f"📐 正在处理并审查图纸: {svg_name}")
+    print(f"📐 Processing drawing: {svg_name}")
     print("=" * 60)
 
     try:
         # ==========================================
-        # 阶段 1 & 2: 基础解析与白模图谱构建
+        # Phase 1 & 2: Basic parsing & white-model graph construction
         # ==========================================
-        print(">>> 阶段 1: 正在识别图纸元素...")
+        print(">>> Phase 1: Recognizing drawing elements...")
         extractor = ElementExtractor()
         elements = extractor.process(str(input_svg_path))
-        save_dir = os.path.join(settings.svg_ins_dir, folder_name)
+        save_dir = str(settings.svg_ins_dir)
         filename = base_name + ".png"
         visualize_elements(elements, get_color(), save_dir, filename)
 
@@ -59,14 +55,14 @@ def process_single_drawing(input_svg_path, output_json_dir, validator, llm_clien
                     "point": (cord[0], cord[1])
                 })
 
-        print(">>> 阶段 2: 正在构建基础拓扑知识图谱(纯几何白模)...")
+        print(">>> Phase 2: Building base topological knowledge graph (geometric white model)...")
         topology_builder = TopologyBuilder()
         topology_builder.build(elements, raw_jsonld_path)
 
         # ==========================================
-        # 阶段 2.5: 统一执行全链路富化流水线
+        # Phase 2.5: Full-chain enrichment pipeline
         # ==========================================
-        print(">>> 阶段 2.5: 启动全链路知识图谱富化流水线...")
+        print(">>> Phase 2.5: Starting full-chain graph enrichment pipeline...")
         with open(raw_jsonld_path, 'r', encoding='utf-8') as f:
             raw_graph_data = json.load(f)
 
@@ -80,7 +76,7 @@ def process_single_drawing(input_svg_path, output_json_dir, validator, llm_clien
         # 保存富化后的终极图谱
         with open(enriched_jsonld_path, 'w', encoding='utf-8') as f:
             json.dump(enriched_graph_data, f, ensure_ascii=False, indent=2)
-        print(f"✅ 富化完成！终极图谱已保存至: {enriched_jsonld_path}")
+        print(f"✅ Enrichment complete! Final graph saved to: {enriched_jsonld_path}")
 
         # # ==========================================
         # # 阶段 3: 多层级自动化合规审查
@@ -152,14 +148,14 @@ def process_single_drawing(input_svg_path, output_json_dir, validator, llm_clien
         #     json.dump(enriched_graph_data, f, ensure_ascii=False, indent=2)
         # print(f"✅ 图谱文件已更新并集成违规字段: {enriched_jsonld_path}")
 
-        print(">>> 阶段 3: 正在生成知识图谱拓扑可视化...")
+        print(">>> Phase 3: Generating knowledge graph topology visualization...")
         try:
             viz = JSONLDVisualizer(enriched_jsonld_path)
             viz.parse_graph()
             viz.draw(output_path=exp_viz_path)
             plt.close('all')  # 强制释放画布，防止批量处理时引发内存溢出 (OOM)
         except Exception as e:
-            print(f"  ⚠️ 图谱可视化生成失败: {e}")
+            print(f"  ⚠️ Graph visualization generation failed: {e}")
 
         # # ==========================================
         # # 阶段 4: 图纸反向批注 (违规可视化)
@@ -177,7 +173,7 @@ def process_single_drawing(input_svg_path, output_json_dir, validator, llm_clien
 
     except Exception as e:
         error_details = traceback.format_exc()
-        print(f"\n⚠️ 🚨 图纸 {svg_name} 在处理流水线中发生严重异常，已跳过该文件。")
+        print(f"\n⚠️ 🚨 Drawing {svg_name} encountered a critical error in pipeline, skipping.")
         print("=" * 60)
         print(error_details)
         print("=" * 60 + "\n")
@@ -191,10 +187,10 @@ def process_directory(svg_dir, output_json_dir, validator, llm_client):
     svg_files = [f for f in os.listdir(svg_dir) if f.endswith('.svg')]
 
     if not svg_files:
-        print(f"🛑 在目录 {svg_dir} 中未找到任何 SVG 文件，程序退出。")
+        print(f"🛑 No SVG files found in directory {svg_dir}, exiting.")
         return
 
-    print(f"🔍 共发现 {len(svg_files)} 份待审查的图纸，正在启动自动化批处理流水线...\n")
+    print(f"🔍 Found {len(svg_files)} drawings to review, starting automated batch pipeline...\n")
 
     total_files = len(svg_files)
     passed_files = 0
@@ -216,10 +212,10 @@ def process_directory(svg_dir, output_json_dir, validator, llm_client):
 
     # 输出全局汇总统计报告
     print("\n" + "★" * 60)
-    print("📊 批量审查任务全部完成！")
-    print(f"共计处理图纸: {total_files} 份")
-    print(f"✅ 完全合规图纸: {passed_files} 份")
-    print(f"❌ 存在违规图纸: {failed_files} 份")
+    print("📊 Batch review complete!")
+    print(f"Total drawings processed: {total_files}")
+    print(f"✅ Passed: {passed_files}")
+    print(f"❌ Violations found: {failed_files}")
     if error_files > 0:
-        print(f"⚠️ 解析异常图纸: {error_files} 份")
+        print(f"⚠️ Errors: {error_files}")
     print("★" * 60)

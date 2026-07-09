@@ -113,35 +113,33 @@ class SemanticEnricher:
             clean_text = re.sub(pattern, r'\1', raw_text, flags=re.DOTALL).strip()
             return json.loads(clean_text)
         except json.JSONDecodeError as e:
-            print(f"大模型返回的 JSON 格式解析失败！原始内容:\n{raw_text}")
+            print(f"Failed to parse LLM JSON response! Raw content:\n{raw_text}")
             return {}
 
     def _call_real_llm(self, prompt, fallback_result):
-        """封装调用真实大模型的逻辑，并计算执行耗时"""
+        """Wrapper for real LLM API call with execution time tracking."""
         if self.llm_client:
             try:
-                # 记录调用前的时间戳
                 start_time = time.time()
 
                 response = self.llm_client.chat.completions.create(
                     model=self.llm_model,
                     messages=[
                         {"role": "system",
-                         "content": "你是一位顶级的建筑信息模型（BIM）数据合规审查专家。请必须以严格的JSON格式输出结果。"},
+                         "content": "You are a top-tier BIM data compliance review expert. You must output results in strict JSON format."},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.1,
                     response_format={"type": "json_object"}
                 )
 
-                # 记录调用后的时间戳并计算耗时
                 end_time = time.time()
                 elapsed_time = end_time - start_time
-                print(f"  [+] 大模型调用成功，推理耗时: {elapsed_time:.2f} 秒")
+                print(f"  [+] LLM call successful, inference time: {elapsed_time:.2f}s")
 
                 return response.choices[0].message.content
             except Exception as e:
-                print(f"  ⚠️ API 调用失败: {e}，将降级使用沙盒数据。")
+                print(f"  ⚠️ API call failed: {e}, falling back to sandbox data.")
         return fallback_result
 
     # =======================================================
@@ -156,14 +154,14 @@ class SemanticEnricher:
         if not unique_texts:
             return []
 
-        print("[Stage 1] 正在请求大模型清洗原始文本标注...")
+        print("[Stage 1] Requesting LLM to clean raw text labels...")
         prompt = self._build_prompt(unique_texts, is_cleaning_task=True)
         # 降级兜底的清洗字典
         fallback_json = '{"次卧": "Bedroom", "主卫": "Bathroom", "餐客厅": "LivingRoom"}'
 
         raw_result = self._call_real_llm(prompt, fallback_json)
         # 👇 加上这一行，强制打印大模型的原始输出
-        print(f"  [Debug] 大模型真实返回内容: {raw_result}")
+        print(f"  [Debug] Raw LLM response: {raw_result}")
         text_mapping = self._parse_llm_response(raw_result)
 
         cleaned_texts = []
@@ -183,7 +181,7 @@ class SemanticEnricher:
     # =======================================================
     def _stage2_spatial_matching(self, cleaned_texts):
         """遍历图谱房间多边形，判断文字坐标是否落在其内部"""
-        print("[Stage 2] 开始执行几何坐标与房间多边形的空间相交匹配...")
+        print("[Stage 2] Performing geometric spatial intersection matching...")
         matched_spaces = set()
 
         for space_id, node in self.space_cache.items():
@@ -219,7 +217,7 @@ class SemanticEnricher:
                         })
 
                         matched_spaces.add(space_id)
-                        print(f"  [+] 空间挂载成功: {space_id} -> {label} (基于坐标命中文字 '{txt_item['raw_text']}')")
+                        print(f"  [+] Spatial mount successful: {space_id} -> {label} (hit text '{txt_item['raw_text']}')")
             except Exception as e:
                 pass  # 忽略畸形的 WKT 解析错误
 
@@ -229,9 +227,9 @@ class SemanticEnricher:
     # 主管线执行
     # =======================================================
     def execute_enrichment(self):
-        """主引擎执行函数 (三段式流水线)"""
+        """Main pipeline execution (three-stage pipeline)."""
         print("\n" + "=" * 50)
-        print("🚀 [SemanticEnricher] 多模态语义富化管线启动")
+        print("🚀 [SemanticEnricher] Multi-modal semantic enrichment pipeline started")
         print("=" * 50)
 
         # 阶段 1 & 2：精确匹配
@@ -242,7 +240,7 @@ class SemanticEnricher:
         unmatched_space_ids = [sid for sid in self.space_cache.keys() if sid not in matched_space_ids]
 
         if unmatched_space_ids:
-            print(f"\n[Stage 3] 发现 {len(unmatched_space_ids)} 个无文本空间，准备启动常识推理...")
+            print(f"\n[Stage 3] Found {len(unmatched_space_ids)} spaces without text labels, starting commonsense reasoning...")
             context_data = self._extract_context_for_llm(target_space_ids=unmatched_space_ids)
 
             prompt = self._build_prompt(context_data, is_cleaning_task=False)
@@ -263,9 +261,9 @@ class SemanticEnricher:
                         semantic_label = f"bldg:{bldg_type}"
                         if semantic_label not in target_node["@type"]:
                             target_node["@type"].append(semantic_label)
-                            print(f"  [+] 模糊推理补全: {room_id} -> {semantic_label}")
+                            print(f"  [+] Fuzzy inference completed: {room_id} -> {semantic_label}")
 
-        print("\n[SemanticEnricher] 数据富化流水线执行完毕！")
+        print("\n[SemanticEnricher] Data enrichment pipeline complete!")
         return self.graph
 
 
@@ -273,12 +271,12 @@ class SemanticEnricher:
 # 独立测试区域
 # =====================================================================
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="语义富化器")
-    parser.add_argument("--input", default=str(settings.resolve_project_path(settings.sample_input_jsonld)), help="输入 JSON-LD 文件")
-    parser.add_argument("--output", default=None, help="输出 JSON-LD 文件")
-    parser.add_argument("--api-key", default=settings.llm_api_key, help="大模型 API Key")
-    parser.add_argument("--base-url", default=settings.llm_base_url, help="大模型接口地址")
-    parser.add_argument("--model", default=settings.llm_model, help="大模型模型名")
+    parser = argparse.ArgumentParser(description="Semantic Enricher")
+    parser.add_argument("--input", default=str(settings.resolve_project_path(settings.sample_input_jsonld)), help="Input JSON-LD file")
+    parser.add_argument("--output", default=None, help="Output JSON-LD file")
+    parser.add_argument("--api-key", default=settings.llm_api_key, help="LLM API Key")
+    parser.add_argument("--base-url", default=settings.llm_base_url, help="LLM API base URL")
+    parser.add_argument("--model", default=settings.llm_model, help="LLM model name")
     args = parser.parse_args()
 
     test_file = Path(args.input)
@@ -286,7 +284,7 @@ if __name__ == "__main__":
         test_file = settings.resolve_project_path(test_file)
 
     if not test_file.exists():
-        print(f"❌ 错误: 找不到测试数据文件 '{test_file}'")
+        print(f"❌ ERROR: Test data file not found '{test_file}'")
         sys.exit(1)
 
     with open(test_file, "r", encoding="utf-8") as f:
@@ -304,10 +302,10 @@ if __name__ == "__main__":
     enricher = SemanticEnricher(parsed_graph_dict, mock_room_texts, my_client, llm_model=args.model)
     final_kg_dict = enricher.execute_enrichment()
 
-    print("\n===== 最终房间语义结果 =====")
+    print("\n===== Final Room Semantic Results =====")
     for node in final_kg_dict["@graph"]:
         if "bot:Space" in node.get("@type", []) or any(t.startswith("bldg:") for t in node.get("@type", [])):
-            print(f"房间检测 -> ID: {node['@id']}, 类型: {node.get('@type')}")
+            print(f"Room -> ID: {node['@id']}, Type: {node.get('@type')}")
 
     output_filename = Path(args.output) if args.output else test_file.with_name(test_file.stem + "_semantic.json")
     if not output_filename.is_absolute():

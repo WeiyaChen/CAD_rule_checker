@@ -1,192 +1,222 @@
 # CAD Rule Checker
 
-`CAD Rule Checker` 是一个用于建筑 CAD / 平面图审查的 Python 工具箱。它支持从 DXF 转换为 SVG、提取空间元素、构建拓扑图谱、进行语义富化，并生成 JSON-LD 结果与可视化输出。
+`CAD Rule Checker` is a Python toolkit for reviewing architectural CAD drawings / floor plans. It supports DXF-to-SVG conversion, spatial element extraction, topological graph construction, semantic enrichment, and generation of JSON-LD results with visualizations.
 
-## 亮点
+## Highlights
 
-- ✅ 支持 DXF → SVG 转换
-- ✅ 结构化提取图纸元素与文本标签
-- ✅ 构建基础几何和拓扑知识图谱
-- ✅ 语义富化与 LLM 推断（可选）
-- ✅ 支持批量处理与单图处理模式
-- ✅ 支持真值构建与模型评估
+- ✅ DXF → SVG conversion
+- ✅ Structured extraction of drawing elements and text labels
+- ✅ Construction of geometric and topological knowledge graphs
+- ✅ Semantic enrichment with optional LLM inference
+- ✅ Batch and single-file processing modes
+- ✅ Ground truth generation and model evaluation
 
-## 项目目录
+## Project Structure
 
 ```text
 cad_rule_checker/
 ├── data/
 │   ├── processed/
-│   │   └── svg/             # 经过深度学习模型图元识别后的文件
+│   │   └── svg/             # Files after primitive recognition by deep learning models
 │   └── raw/
-│       ├── dxf/             # 原始 DXF 文件
-│       ├── dxf_extend/      # 人工标注或扩展 DXF 文件
-│       ├── pickle/          # 中间 pickle 数据
-│       └── svg/             # DXF 转换后生成的 SVG 文件
+│       ├── dxf/             # Raw DXF files
+│       ├── dxf_extend/      # Manually annotated or extended DXF files
+│       ├── pickle/          # Intermediate pickle data
+│       └── svg/             # SVG files converted from DXF
 ├── output/
 │   ├── cdt/
-│   ├── exp_jsonld/          # 语义富化后的 JSON-LD
-│   ├── exp_res/             # 规则审查结果
-│   ├── exp_viz/             # 可视化输出
-│   ├── gt_jsonld/           # 真值 JSON-LD
-│   ├── gt_res/              # 真值评估结果
+│   ├── exp_jsonld/          # Semantic-enriched JSON-LD output
+│   ├── exp_res/             # Rule checking results
+│   ├── exp_viz/             # Visualization output
+│   ├── gt_jsonld/           # Ground truth JSON-LD
+│   ├── gt_res/              # Ground truth evaluation results
 │   ├── gt_viz/
-│   └── svg_ins/             # SVG 元素识别可视化
+│   └── svg_ins/             # Instance recognition visualization
 ├── prompt/
-│   └── prompt_config.txt    # LLM 提示词配置
+│   └── prompt_config.txt    # LLM prompt configuration
 ├── rules/
 │   ├── exp.ttl
 │   ├── l1_semantic_check.ttl
 │   ├── l2_geometric_check.ttl
 │   └── l3_topological_check.ttl
 ├── src/
-│   ├── compliance/          # SHACL 校验引擎
-│   ├── config/              # 配置与目录常量
-│   ├── core/                # 核心几何与空间对象
-│   ├── enricher/            # 图谱富化与语义扩展
-│   ├── experiment/          # 评估与真值构建脚本
-│   ├── io/                  # DXF/SVG 读写与转换
-│   ├── topology/            # 拓扑构建与图分析
-│   ├── utils/               # 可视化与辅助工具
-│   ├── main.py              # 主运行入口
-│   └── processor.py         # 图纸处理流程
+│   ├── compliance/          # SHACL validation engine
+│   ├── config/              # Configuration and directory constants
+│   ├── core/                # Core geometry and spatial objects
+│   ├── enricher/            # Graph enrichment and semantic extensions
+│   ├── experiment/          # Evaluation and ground truth scripts
+│   ├── io/                  # DXF/SVG reading, writing, and conversion
+│   ├── topology/            # Topology construction and graph analysis
+│   ├── utils/               # Visualization and utility tools
+│   ├── main.py              # Main entry point
+│   └── processor.py         # Drawing processing pipeline
 └── README.md
 ```
 
-## 环境与依赖
+## Environment and Dependencies
 
-推荐使用 Python 3.10+。
+### Setting Up a Virtual Environment
 
-安装必要依赖：
+It is **highly recommended** to use a virtual environment to isolate project dependencies. Create and activate one as follows:
+
+```bash
+# Create a virtual environment (e.g., named myvenv or cadruler)
+python -m venv myvenv
+
+# Activate it
+# On Windows:
+venv\Scripts\activate
+# On macOS / Linux:
+source venv/bin/activate
+```
+
+After activation, install the required packages (see below). To deactivate the virtual environment later, simply run `deactivate`.
+
+### Python Version
+
+Python **3.10+** is recommended. The project has been tested with **Python 3.13**.
+
+### Important: Python 3.13 Removed the `cgi` Module
+
+Starting from **Python 3.13**, the standard library modules `cgi` and `cgitb` have been **removed** (as per [PEP 594](https://peps.python.org/pep-0594/)). This project's `src/web_ui_server.py` imports `cgi`, so **if you are using Python 3.13 or later**, you must install the `legacy-cgi` compatibility package:
+
+```bash
+pip install legacy-cgi
+```
+
+The existing `cadruler/` virtual environment in this repository already has `legacy-cgi` installed.
+
+### Installing Dependencies
+
+Install the necessary packages:
 
 ```bash
 pip install ezdxf openai pyyaml rdflib pyshacl matplotlib lxml numpy pandas svgpathtools opencv-python triangle networkx pyvis shapely scikit-learn
 ```
 
-如果需要运行真值生成与评估脚本，还需安装：
+If you plan to run ground truth generation and evaluation scripts, you may also need:
 
 ```bash
 pip install shapely
 ```
 
-> 注意：当前仓库没有提供 `requirements.txt`，请根据项目需求手动安装依赖。
+> **Note**: A [`requirements.txt`](requirements.txt) is provided at the project root. You can install all dependencies at once with:
+>
+> ```bash
+> pip install -r requirements.txt
+> ```
 
-## 快速开始
+## Quick Start
 
-### 1. 准备 DXF 输入
+### 1. Prepare DXF Input
 
-将待处理 DXF 文件放入：
+Place the DXF files to be processed in:
 
 ```text
-data/raw/dxf/test/
+data/raw/dxf/
 ```
 
-### 2. DXF 转 SVG
+### 2. Convert DXF to SVG
 
-在 `src/io/dxf_to_svg.py` 中设置目录：
+The conversion script reads DXF files from `data/raw/dxf/` and outputs SVG to `data/raw/svg/`.
 
-```python
-file_dir = "test"
-```
-
-在项目根目录中，运行转换脚本：
+From the project root, run the conversion script:
 
 ```bash
 python -m src.io.dxf_to_svg
 ```
 
-转换结果会输出到：
+The converted SVG files will be output to:
 
 ```text
-data/raw/svg/test/
+data/raw/svg/
 ```
 
-### 3. 运行主审查流程
+### 3. Run the Main Checking Pipeline
 
-可直接通过配置文件或命令行参数控制输入路径与运行模式：
+You can control the input path and run mode via command-line arguments:
 
 ```bash
-python -m src.main --mode SINGLE --target-dir test --target-file 南阳名门150.svg
+python -m src.main --mode SINGLE --target-file nanyangmingmen150.svg
 ```
 
-也可以先修改配置文件 [src/config/settings.yaml](src/config/settings.yaml) 中的 `runtime` 段，然后直接执行：
+Alternatively, modify the `runtime` section in the configuration file [src/config/settings.yaml](src/config/settings.yaml) and then run:
 
 ```bash
 python -m src.main
 ```
 
-程序会执行：
+The program will execute:
 
-- 图元抽取与元素可视化
-- 拓扑图谱构建
-- 语义富化与 JSON-LD 输出
-- 可视化结果生成
+- Primitive extraction and element visualization
+- Topological graph construction
+- Semantic enrichment and JSON-LD output
+- Visualization generation
 
-### 4. 生成真值数据
+### 4. Generate Ground Truth Data
 
-将人工标注或扩展后的 DXF 放入：
+Place manually annotated or extended DXF files in:
 
 ```text
-data/raw/dxf_extend/test/
+data/raw/dxf_extend/
 ```
 
-运行真值构建脚本：
+Run the ground truth creation script:
 
 ```bash
 python -m src.experiment.ground_truth_creator
 ```
 
-### 5. 评估模型与数据集
+### 5. Evaluate Models and Datasets
 
-根据 `src/experiment/dataset_evaluator.py` 中的目录设置，运行：
+Configure the directory settings in `src/experiment/dataset_evaluator.py` and run:
 
 ```bash
 python -m src.experiment.dataset_evaluator
 ```
 
-## 核心配置文件
+## Key Configuration Files
 
-- [src/config/settings.yaml](src/config/settings.yaml)：输入、输出、规则和 prompt 路径配置
-- [prompt/prompt_config.txt](prompt/prompt_config.txt)：LLM 提示词模板
-- [rules/](rules/)：SHACL 规则文件
+- [src/config/settings.yaml](src/config/settings.yaml) — Input, output, rule, and prompt path settings
+- [prompt/prompt_config.txt](prompt/prompt_config.txt) — LLM prompt template
+- [rules/](rules/) — SHACL rule files
 
-## 运行模式说明
+## Run Modes
 
-主入口现在支持通过配置文件或命令行参数控制：
+The main entry point supports the following modes, configurable via the settings file or command-line arguments:
 
-- `SINGLE`：处理单个 SVG 文件
-- `BATCH`：处理指定目录中的所有 SVG 文件
-- `DEFAULT`：处理 `settings.yaml` 中配置的默认目录
+- `SINGLE` — Process a single SVG file
+- `BATCH` — Process all SVG files in a specified directory
+- `DEFAULT` — Process the default directory configured in `settings.yaml`
 
-常用参数：
+### Common Arguments
 
-- `--mode`：运行模式
-- `--target-dir`：指定 SVG 输入目录
-- `--target-file`：单图处理时指定文件名
-- `--output-dir`：指定结果输出目录
-- 环境变量：`CAD_RULE_CHECKER_RUN_MODE`、`CAD_RULE_CHECKER_TARGET_DIR`、`CAD_RULE_CHECKER_TARGET_FILE`、`CAD_RULE_CHECKER_OUTPUT_DIR`
+- `--mode` — Run mode
+- `--target-dir` — SVG input directory name
+- `--target-file` — File name for single-file mode
+- `--output-dir` — Output directory name
+- Environment variables: `CAD_RULE_CHECKER_RUN_MODE`, `CAD_RULE_CHECKER_TARGET_DIR`, `CAD_RULE_CHECKER_TARGET_FILE`, `CAD_RULE_CHECKER_OUTPUT_DIR`
 
-## 输出目录说明
+## Output Directory Overview
 
-- `output/exp_jsonld/`：实验输出的富化 JSON-LD 文件
-- `output/exp_viz/`：知识图谱可视化图像
-- `output/svg_ins/`：SVG 元素识别结果
-- `output/gt_jsonld/`：真值 JSON-LD
-- `output/gt_res/`：真值评估结果
-- `output/exp_res/`：规则审查违规结果
+- `output/exp_jsonld/` — Enriched JSON-LD files from experiments
+- `output/exp_viz/` — Knowledge graph visualization images
+- `output/svg_ins/` — Instance recognition results
+- `output/gt_jsonld/` — Ground truth JSON-LD files
+- `output/gt_res/` — Ground truth evaluation results
+- `output/exp_res/` — Rule checking violation results
 
-## 注意事项
+## Notes
 
-- `src/main.py` 内部包含 LLM 客户端初始化代码，请自行替换或改造为安全的 API Key 管理方式。
-- 如果 `pyshacl` 或 `rdflib` 未安装，相关审查功能将无法正常运行。
-- 项目当前主要面向实验性规则审查与结果可视化，具体流程可根据业务需求进一步扩展。
+- `src/main.py` contains LLM client initialization code. Replace or refactor it to use a secure API key management approach before deployment.
+- The SHACL-based rule checking will not work without `pyshacl` and `rdflib` installed.
+- This project is currently designed for **experimental** rule checking and result visualization. The pipeline can be extended for production use cases as needed.
 
-## 进一步改进建议
+## Suggested Improvements
 
-- 增加 `requirements.txt` 或 `pyproject.toml`
-- 补齐 `rules/` 规则文件的使用说明与样例
-- 添加示例数据和结果展示
+- Add usage documentation and examples for the `rules/` SHACL files
+- Add sample data and result demonstrations
 
-## 版权与许可证
+## License
 
-本项目未指定许可证。使用前请根据实际需要补充 LICENSE 文件。
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

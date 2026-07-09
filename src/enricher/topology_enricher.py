@@ -95,8 +95,8 @@ class TopologyEnricher:
         return list(types)
 
     def _classify_public_spaces(self):
-        """3.1 识别公共外部空间与内部走廊 (基于拓扑深度的公私裁决法)"""
-        print("[TopologyEnricher] 开始基于拓扑深度裁决公私空间属性...")
+        """3.1 Identify public vs private spaces (topology-depth-based ruling)."""
+        print("[TopologyEnricher] Classifying public/private spaces based on topology depth...")
         PUBLIC_SEEDS = {"ElevatorShaft", "Stairwell", "WaterRoom", "ElectricalRoom", "VentilationRoom", "EquipmentRoom",
                         "Exterior"}
         PRIVATE_SEEDS = {"Bedroom", "LivingRoom", "Kitchen", "Bathroom", "DiningRoom", "Cloakroom", "StudyRoom",
@@ -126,8 +126,8 @@ class TopologyEnricher:
                     node["@type"] = types
 
     def _enrich_doors(self):
-        """3.2 门洞类型判定 (结合公私空间判定入户门)"""
-        print("[TopologyEnricher] 开始基于公私边界定性门洞(Entrance/Interior)...")
+        """3.2 Door type classification (Entrance/Interior based on public/private boundaries)."""
+        print("[TopologyEnricher] Classifying doors (Entrance/Interior) based on public/private boundary...")
         for d_id, door in self.doors_cache.items():
             interfaces = door.get("bot:interfaceOf", [])
             if not isinstance(interfaces, list): interfaces = [interfaces]
@@ -163,11 +163,11 @@ class TopologyEnricher:
 
             clear_width = door.get("props:clearWidth", door.get("props:length", "未知"))
             width_str = f"{clear_width}m" if isinstance(clear_width, (int, float)) else "未知"
-            print(f"  [+] 成功定性门洞 {d_id} -> {door_type} (净宽: {width_str})")
+            print(f"  [+] Door classified: {d_id} -> {door_type} (clear width: {width_str})")
 
     def _enrich_corridors(self):
-        """3.3 细化内部私有过道及公共过道类型"""
-        print("[TopologyEnricher] 开始基于拓扑动线细化过道(Corridor)等级...")
+        """3.3 Refine internal and public corridor types."""
+        print("[TopologyEnricher] Refining corridor types based on topological paths...")
         for r_id, room in self.space_cache.items():
             sems = self._get_room_semantics(r_id)
 
@@ -205,11 +205,11 @@ class TopologyEnricher:
                         if ct not in types:
                             types.append(ct)
                     room["@type"] = types
-                    print(f"  [+] 细化过道 {r_id} -> {composite_types}")
+                    print(f"  [+] Corridor refined: {r_id} -> {composite_types}")
 
     def _check_bathroom_kitchen_doors(self):
-        """3.4 硬核拓扑检查：精准识别卫生间的门是否直接开向厨房"""
-        print("[TopologyEnricher] 开始严格审查卫生间-厨房连通拓扑...")
+        """3.4 Hard topological check: detect bathroom doors opening directly into kitchen."""
+        print("[TopologyEnricher] Checking bathroom-kitchen connectivity topology...")
         for d_id, door in self.doors_cache.items():
             interfaces = door.get("bot:interfaceOf", [])
             if not isinstance(interfaces, list): interfaces = [interfaces]
@@ -230,11 +230,11 @@ class TopologyEnricher:
 
                     if bathroom_node:
                         bathroom_node["props:doorOpensIntoKitchen"] = True
-                        print(f"  [-] 警报: 发现门洞 {d_id} 导致卫生间 {bathroom_id} 直接开向厨房！")
+                        print(f"  [-] ALERT: Door {d_id} connects bathroom {bathroom_id} directly to kitchen!")
 
     def _assemble_suites(self):
-        """3.5 广度优先搜索 (BFS) 识别独立套型 (Suite)，支持多入户门聚合"""
-        print("[TopologyEnricher] 开始基于公共空间隔离的套型划分...")
+        """3.5 BFS-based suite identification supporting multiple entrance doors."""
+        print("[TopologyEnricher] Partitioning suites based on public space isolation...")
         suites = []
 
         # 建立严格的公共隔离带黑名单（包含所有非套内私有空间）
@@ -286,16 +286,16 @@ class TopologyEnricher:
                         "@type": ["bot:Zone", "bldg:Suite"],
                         "bot:hasSpace": [{"@id": sid} for sid in current_suite]
                     })
-                    print(f"  [+] 成功剥离出套型 {suite_id}，包含 {len(current_suite)} 个私有功能空间。")
+                    print(f"  [+] Suite extracted: {suite_id} containing {len(current_suite)} private spaces.")
                     suite_counter += 1
 
         if suites:
             self.graph.setdefault("@graph", []).extend(suites)
 
     def execute_enrichment(self):
-        """统一执行拓扑图论推理"""
+        """Execute topological graph reasoning pipeline."""
         print("\n" + "=" * 50)
-        print("🚀 [TopologyEnricher] 拓扑动线富化引擎启动...")
+        print("🚀 [TopologyEnricher] Topology enrichment engine started...")
         print("=" * 50)
 
         self._classify_public_spaces()
@@ -304,7 +304,7 @@ class TopologyEnricher:
         self._check_bathroom_kitchen_doors()
         self._assemble_suites()
 
-        print("[TopologyEnricher] 拓扑富化与动线检查全部完成！\n")
+        print("[TopologyEnricher] Topology enrichment and connectivity check complete!\n")
         return self.graph
 
 
@@ -324,6 +324,6 @@ if __name__ == "__main__":
         out_file = target_file.replace(".json", "_topo.json")
         with open(out_file, "w", encoding="utf-8") as f:
             json.dump(final_data, f, ensure_ascii=False, indent=2)
-            print(f"[TopologyEnricher] 拓扑富化结果已保存至: {out_file}")
+            print(f"[TopologyEnricher] Topology enrichment results saved to: {out_file}")
     else:
-        print(f"[TopologyEnricher] 错误：找不到输入文件 {target_file}")
+        print(f"[TopologyEnricher] ERROR: Input file not found {target_file}")

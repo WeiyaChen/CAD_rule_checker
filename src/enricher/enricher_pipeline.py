@@ -13,8 +13,8 @@ class GraphEnrichmentPipeline:
 
 
     def run_all(self):
-        """一键执行所有富化管线，严格保证顺序"""
-        print("=== 开始知识图谱全链路富化 ===")
+        """Execute all enrichment steps in strict order."""
+        print("=== Starting full-chain graph enrichment ===")
 
         # 1. 语义富化
         sem_engine = SemanticEnricher(self.graph_data, self.room_texts, self.llm_client)
@@ -37,5 +37,5 @@ class GraphEnrichmentPipeline:
         topology_enricher = TopologyEnricher(self.graph_data)
         self.graph_data = topology_enricher.execute_enrichment()
 
-        print("=== 全链路富化完成 ===")
+        print("=== Full-chain enrichment complete ===")
         return self.graph_data

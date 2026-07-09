@@ -500,12 +500,16 @@
 
     <!-- 顶部导航 -->
     <header class="navbar">
-        <h1>交互式合规审查原型</h1>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <h1 style="margin:0;">交互式合规审查原型</h1>
+            <a href="/" style="text-decoration:none; font-size:0.8rem; color:#0f4c81; border:1px solid #0f4c81; padding:3px 10px; border-radius:4px;">⌂ Home</a>
+        </div>
         <div class="sys-actions">
             <!-- 跳转至交互修正界面的导航按钮 -->
             <button class="btn-nav" onclick="window.open('interactive_graph_editor.html', '_blank')" title="前往图谱可视交互修正原型处理底层几何偏差">
                 ✏️ 交互式图谱修正
             </button>
+            <button id="langToggleReview" onclick="toggleLangReview()" style="background:#f8f9fa; border:1px solid var(--border-color); padding:4px 12px; border-radius:4px; cursor:pointer; font-size:0.85rem; color:var(--primary); font-weight:bold;">EN</button>
             <div class="sys-status">
                 <div class="status-dot"></div>
                 内核引擎: 就绪 (Neuro-Symbolic V1.0)
@@ -1227,6 +1231,21 @@
             showModal("报告导出成功", "带有动态可视化批注及溯源属性的合规报告已生成。");
         }
 
+        // i18n toggle
+        function toggleLangReview() {
+            const btn = document.getElementById('langToggleReview');
+            const isEn = btn.textContent === '中';
+            btn.textContent = isEn ? 'EN' : '中';
+            const h1 = document.querySelector('.navbar h1');
+            h1.textContent = isEn ? '交互式合规审查原型' : 'Interactive Compliance Review';
+            const statusText = document.querySelector('.sys-status');
+            statusText.innerHTML = '<div class="status-dot"></div>' + (isEn ? '内核引擎: 就绪 (Neuro-Symbolic V1.0)' : 'Engine: Ready (Neuro-Symbolic V1.0)');
+            const sectionHeaders = document.querySelectorAll('.section-header');
+            if (sectionHeaders.length >= 2) {
+                sectionHeaders[0].textContent = isEn ? '数据流管线' : 'Pipeline';
+                sectionHeaders[1].textContent = isEn ? '操作日志与违规视图' : 'Logs & Violations';
+            }
+        }
     </script>
 </body>
 </html>

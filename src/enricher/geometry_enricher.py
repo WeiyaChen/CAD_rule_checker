@@ -109,12 +109,12 @@ class GeometryEnricher:
                 return area, length, width
 
         except Exception as e:
-            print(f"  [-] WKT 解析出错: 节点 {node_id} - {e}")
+            print(f"  [-] WKT parse error: node {node_id} - {e}")
             return None, None, None
 
     def enrich(self):
-        """执行全图谱几何特征计算"""
-        print("[GeometryEnricher] 启动几何计算引擎 (基于语义反馈调度的差异化特征提取)...")
+        """Execute full-graph geometric feature computation."""
+        print("[GeometryEnricher] Starting geometry computation engine...")
         enrich_count = 0
 
         for node_id, node in self.nodes.items():
@@ -145,14 +145,14 @@ class GeometryEnricher:
                 node["props:clearWidth"] = length  # 门的开口长度通常被识别为 length
                 enrich_count += 1
 
-        print(f"[GeometryEnricher] 几何计算完毕！共为 {enrich_count} 个物理构件挂载了数学尺寸。")
+        print(f"[GeometryEnricher] Geometry computation complete! Attached dimensions to {enrich_count} components.")
         return self.data
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="几何富化器")
-    parser.add_argument("--input", default=str(settings.resolve_project_path(settings.sample_input_jsonld)), help="输入 JSON-LD 文件")
-    parser.add_argument("--output", default=None, help="输出 JSON-LD 文件")
+    parser = argparse.ArgumentParser(description="Geometry Enricher")
+    parser.add_argument("--input", default=str(settings.resolve_project_path(settings.sample_input_jsonld)), help="Input JSON-LD file")
+    parser.add_argument("--output", default=None, help="Output JSON-LD file")
     args = parser.parse_args()
 
     input_file = Path(args.input)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         input_file = settings.resolve_project_path(input_file)
 
     if input_file.exists():
-        print(f"[GeometryEnricher] 独立测试模式：读取 {input_file}")
+        print(f"[GeometryEnricher] Standalone test mode: reading {input_file}")
         with open(input_file, 'r', encoding='utf-8') as f:
             raw_data = json.load(f)
 
@@ -173,6 +173,6 @@ if __name__ == "__main__":
 
         with open(out_file, 'w', encoding='utf-8') as f:
             json.dump(enriched_data, f, ensure_ascii=False, indent=2)
-        print(f"[GeometryEnricher] 独立测试模式：保存至 {out_file}")
+        print(f"[GeometryEnricher] Standalone test mode: saved to {out_file}")
     else:
-        print(f"[GeometryEnricher] 错误：找不到文件 {input_file}")
+        print(f"[GeometryEnricher] ERROR: File not found {input_file}")

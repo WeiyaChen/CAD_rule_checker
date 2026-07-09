@@ -56,7 +56,7 @@ class BotGraphVisualizer:
         try:
             return wkt.loads(raw_wkt)
         except Exception as e:
-            print(f"⚠️ WKT 解析失败: {e}")
+            print(f"⚠️ WKT parse failed: {e}")
             return None
 
     def save_json(self, filepath):
@@ -65,7 +65,7 @@ class BotGraphVisualizer:
             os.makedirs(folder)
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(self.data, f, ensure_ascii=False, indent=2)
-        print(f"✅ 知识图谱 JSON 已保存: {filepath}")
+        print(f"✅ Knowledge graph JSON saved: {filepath}")
 
     def draw_topology(self, filepath="output/topology_view.html"):
         """画拓扑结构图 (圆圈连线)"""
@@ -76,4 +76,4 @@ class BotGraphVisualizer:
         net.from_nx(self.G)
         net.toggle_physics(True)
         net.save_graph(filepath)
-        print(f"✅ 拓扑结构图已生成: {filepath}")
+        print(f"✅ Topology graph generated: {filepath}")

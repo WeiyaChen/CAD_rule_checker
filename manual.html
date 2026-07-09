@@ -240,7 +240,11 @@
     <div id="main-wrapper">
         <div class="header">
             <div>
-                <h2>交互式图谱可视修正系统</h2>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h2 style="margin:0 0 5px 0;">交互式图谱可视修正系统</h2>
+                    <a href="/" style="text-decoration:none; font-size:0.8rem; color:#0f4c81; border:1px solid #0f4c81; padding:3px 10px; border-radius:4px;">⌂ Home</a>
+                    <button id="langToggleManual" onclick="toggleLangManual()" style="background:none; border:1px solid #bdc3c7; padding:3px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem; color:#555;">EN</button>
+                </div>
                 <p>操作提示：支持空间几何重塑与设施节点增补；质心连线可自动确立相邻拓扑或包含关联。</p>
             </div>
         </div>
@@ -1184,6 +1188,21 @@
 
         setTimeout(resizeCanvas, 100);
 
+        // i18n toggle for manual page
+        function toggleLangManual() {
+            const btn = document.getElementById('langToggleManual');
+            const isEn = btn.textContent === '中';
+            btn.textContent = isEn ? 'EN' : '中';
+            document.querySelector('.header p').textContent = isEn
+                ? '操作提示：支持空间几何重塑与设施节点增补；质心连线可自动确立相邻拓扑或包含关联。'
+                : 'Tip: Supports spatial geometry remodeling and facility node augmentation; centroid connections can auto-establish adjacency or containment relations.';
+            // update section titles
+            const sections = document.querySelectorAll('.panel-section h3');
+            const zhTitles = ['视图与交互控制 (Controls)', '数据接入 (Data Input)', '几何重塑与设施增补', '节点属性覆写 (Node Override)', '图谱同步 (Synchronization)'];
+            const enTitles = ['View & Controls', 'Data Input', 'Geometry & Facilities', 'Node Override', 'Synchronization'];
+            const titles = isEn ? zhTitles : enTitles;
+            sections.forEach((h3, i) => { if (i < titles.length) h3.textContent = titles[i]; });
+        }
     </script>
 </body>
 </html>

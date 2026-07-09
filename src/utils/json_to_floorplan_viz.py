@@ -83,7 +83,7 @@ class JSONLDVisualizer:
             try:
                 geom = wkt_loads(wkt_str)
             except Exception as e:
-                print(f"解析节点 {node_id} 的 WKT 失败: {e}")
+                print(f"Failed to parse WKT for node {node_id}: {e}")
                 continue
 
             # 提取空间节点 (Space)
@@ -149,7 +149,7 @@ class JSONLDVisualizer:
 
     def draw(self, output_path):
         """绘制房间轮廓与拓扑关系图 (严格对齐 Ground Truth 风格)"""
-        print(f"🎨 正在渲染图谱: {len(self.spaces)} 个空间, {len(self.doors)} 扇门, {len(self.facilities)} 个设施...")
+        print(f"🎨 Rendering graph: {len(self.spaces)} spaces, {len(self.doors)} doors, {len(self.facilities)} facilities...")
 
         # 设置全局字体以支持中文
         plt.rcParams['font.sans-serif'] = ['SimHei', 'Songti SC', 'Arial Unicode MS']
@@ -269,7 +269,7 @@ class JSONLDVisualizer:
         # 确保父目录存在，不存在则自动创建
         save_dest.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(save_dest, bbox_inches='tight')
-        print(f"✅ 可视化结果已对齐保存至: {save_dest}")
+        print(f"✅ Visualization saved to: {save_dest}")
 
 
 if __name__ == "__main__":
@@ -293,4 +293,4 @@ if __name__ == "__main__":
         visualizer.parse_graph()
         visualizer.draw(str(output_path))
     else:
-        print(f"❌ 找不到输入文件: {target_jsonld}")
+        print(f"❌ Input file not found: {target_jsonld}")

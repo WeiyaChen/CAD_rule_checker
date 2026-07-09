@@ -154,5 +154,5 @@ def visualize_elements(elements, SVG_CATEGORIES, save_dir, filename, alpha=0.25)
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, filename)
     plt.savefig(save_path, bbox_inches='tight', dpi=300)
-    print(f"✅ 元素可视化结果已保存至: {save_path}")
+    print(f"✅ Element visualization saved to: {save_path}")
     plt.close(fig)  # 释放内存

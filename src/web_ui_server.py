@@ -146,6 +146,47 @@ class UIHandler(BaseHTTPRequestHandler):
                 self._send_json({'ok': False, 'error': 'timeout', 'stdout': (exc.stdout or ''), 'stderr': (exc.stderr or '')}, 504)
             return
 
+        if parsed.path == '/api/run-evaluation':
+            length = int(self.headers.get('Content-Length', '0'))
+            body = self.rfile.read(length).decode('utf-8') if length else '{}'
+            try:
+                data = json.loads(body or '{}')
+            except json.JSONDecodeError:
+                self._send_json({'ok': False, 'error': 'invalid_json'}, 400)
+                return
+
+            sys_out_dir = data.get('sysOutDir') or 'output/exp_jsonld'
+            gt_dir = data.get('gtDir') or 'output/gt_jsonld'
+            violation_dir = data.get('violationDir') or ''
+            eval_output_dir = data.get('evalOutputDir') or 'output/html'
+
+            sys_out_path = (ROOT / sys_out_dir).resolve()
+            gt_path = (ROOT / gt_dir).resolve()
+            violation_path = (ROOT / violation_dir).resolve() if violation_dir else None
+            eval_out_path = (ROOT / eval_output_dir).resolve()
+            eval_out_path.mkdir(parents=True, exist_ok=True)
+
+            try:
+                from src.experiment.dataset_evaluator import BatchDatasetEvaluator
+
+                evaluator = BatchDatasetEvaluator(
+                    gt_dir=str(gt_path),
+                    sys_out_dir=str(sys_out_path),
+                    violation_dir=str(violation_path) if violation_path else None,
+                    output_dir=str(eval_out_path)
+                )
+                evaluator.run_evaluation()
+
+                # Load and return the overall results
+                overall_file = eval_out_path / 'overall_results.json'
+                msg = ''
+                if overall_file.exists():
+                    msg = f'Results saved to {_repo_rel(eval_out_path)}'
+                self._send_json({'ok': True, 'message': msg})
+            except Exception as ex:
+                self._send_json({'ok': False, 'error': str(ex)}, 500)
+            return
+
         # Upload DXF files via multipart/form-data
         if parsed.path == '/api/upload-dxf':
             # parse multipart
@@ -176,7 +217,7 @@ class UIHandler(BaseHTTPRequestHandler):
 
             step = str(data.get('step') or '').strip()
             mode = str(data.get('mode') or 'SINGLE').upper()
-            target_dir = data.get('targetDir') or 'test'
+            target_dir = data.get('targetDir') or ''
             target_file = data.get('targetFile') or ''
             output_dir = data.get('outputDir') or 'output/exp_jsonld'
             supported_steps = {'dxf2svg', 'extract-elements', 'build-topology', 'enrich-graph', 'visualize-graph'}
@@ -210,16 +251,15 @@ class UIHandler(BaseHTTPRequestHandler):
                 return (settings.raw_svg_data_path / candidate).resolve()
 
             def build_step_paths(svg_path):
-                folder_name = svg_path.parent.name
                 base_name = svg_path.stem
                 output_dir_path = Path(output_dir)
                 if not output_dir_path.is_absolute():
                     output_dir_path = (ROOT / output_dir_path).resolve()
                 return {
-                    'raw_jsonld_path': output_dir_path / folder_name / f"{base_name}_raw.jsonld",
-                    'enriched_jsonld_path': output_dir_path / folder_name / f"{base_name}.jsonld",
-                    'exp_viz_path': settings.exp_viz_dir / folder_name / f"{base_name}_exp.png",
-                    'svg_ins_path': settings.svg_ins_dir / folder_name / f"{base_name}.png"
+                    'raw_jsonld_path': output_dir_path / f"{base_name}_raw.jsonld",
+                    'enriched_jsonld_path': output_dir_path / f"{base_name}.jsonld",
+                    'exp_viz_path': settings.exp_viz_dir / f"{base_name}_exp.png",
+                    'svg_ins_path': settings.svg_ins_dir / f"{base_name}.png"
                 }
 
             def _run_single_step(step, svg_path, msg_list, res_list):
@@ -383,7 +423,7 @@ class UIHandler(BaseHTTPRequestHandler):
 
         if not rows:
             rows = [{
-                'source': 'output/html/test/overall_results.json',
+                'source': 'output/html/overall_results.json',
                 'Global_1to1_Match_Rate': 0,
                 'Global_mIoU': 0,
                 'Global_Precision': 0,
@@ -395,10 +435,10 @@ class UIHandler(BaseHTTPRequestHandler):
                 'Global_Macro_F1': 0,
             }]
 
-        individual_path = ROOT / 'output' / 'html' / 'test' / 'individual_results.csv'
+        individual_files = list((ROOT / 'output' / 'html').rglob('individual_results.csv'))
         individual_rows = []
-        if individual_path.exists():
-            with open(individual_path, 'r', encoding='utf-8') as fh:
+        if individual_files:
+            with open(individual_files[0], 'r', encoding='utf-8') as fh:
                 reader = csv.DictReader(fh)
                 individual_rows = list(reader)
 

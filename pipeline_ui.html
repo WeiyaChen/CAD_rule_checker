@@ -6,38 +6,53 @@
   <title data-i18n="appTitle">端到端处理工作台</title>
   <style>
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7fb; color: #223; }
-    .layout { display: grid; grid-template-columns: 360px 1fr; min-height: 100vh; }
-    .sidebar { padding: 24px; background: #fff; border-right: 1px solid #e2e8f0; }
-    .main { padding: 24px; display: grid; gap: 18px; }
-    .card { background: white; border-radius: 14px; padding: 18px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-    label { display: block; font-size: 0.95rem; margin: 8px 0 4px; color: #446; }
-    input, select, button { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
-    button { background: #0f4c81; color: white; border: none; cursor: pointer; margin-top: 10px; }
+    .layout { display: grid; grid-template-columns: 300px 1fr; height: 100vh; overflow: hidden; }
+    .sidebar { padding: 12px; background: #fff; border-right: 1px solid #e2e8f0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .main { padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+    .main-preview-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .main-log-wrap { flex-shrink: 0; }
+    .card { background: white; border-radius: 10px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .card-btn-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .card-btn-group button { flex: 1; min-width: 80px; margin: 0; padding: 6px 8px; font-size: 0.8rem; }
+    label { display: block; font-size: 0.82rem; margin: 4px 0 2px; color: #446; }
+    input, select, button { width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem; }
+    button { background: #0f4c81; color: white; border: none; cursor: pointer; margin-top: 6px; }
     button.secondary { background: #16a085; }
-    button.lang-toggle { background: #6c5ce7; font-size: 0.85rem; padding: 6px 12px; width: auto; float: right; margin-top: 0; }
-    .status { margin-top: 10px; white-space: pre-wrap; font-size: 0.9rem; color: #365; }
-    .preview { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    img { max-width: 100%; border-radius: 10px; border: 1px solid #e2e8f0; background: white; }
-    ul { padding-left: 18px; }
-    .muted { color: #678; font-size: 0.92rem; }
+    button.lang-toggle { background: #6c5ce7; font-size: 0.8rem; padding: 4px 10px; width: auto; float: right; margin-top: 0; }
+    .status { margin-top: 6px; white-space: pre-wrap; font-size: 0.82rem; color: #365; }
+    .preview { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; min-height: 0; }
+    .preview > div { display: flex; flex-direction: column; min-height: 0; }
+    .img-viewer { position: relative; overflow: hidden; border-radius: 8px; border: 1px solid #e2e8f0; background: #fafbfd; cursor: grab; touch-action: none; flex: 1; min-height: 120px; }
+    .img-viewer img { position: absolute; top: 0; left: 0; transform-origin: 0 0; max-width: none; border: none; border-radius: 0; pointer-events: none; }
+    .viewer-controls { position: absolute; bottom: 6px; right: 6px; display: flex; gap: 4px; z-index: 10; }
+    .viewer-controls button { width: auto; margin: 0; padding: 3px 8px; font-size: 0.7rem; background: rgba(15,76,129,0.85); color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .viewer-controls button:hover { background: rgba(15,76,129,1); }
+    .zoom-level { position: absolute; bottom: 6px; left: 6px; font-size: 0.7rem; color: #668; background: rgba(255,255,255,0.85); padding: 2px 6px; border-radius: 4px; z-index: 10; pointer-events: none; }
+    ul { padding-left: 16px; margin: 4px 0; font-size: 0.82rem; }
+    .muted { color: #678; font-size: 0.85rem; }
+    h2 { font-size: 1.1rem; }
+    h3 { font-size: 0.95rem; margin: 0 0 6px 0; }
+    h4 { font-size: 0.9rem; margin: 4px 0; }
+    .sidebar-title { display:flex; justify-content:space-between; align-items:center; }
+    .sidebar-title h2 { margin:0; font-size:1rem; }
+    .sidebar-title a { text-decoration:none; font-size:0.75rem; color:#0f4c81; border:1px solid #0f4c81; padding:2px 8px; border-radius:4px; }
+    .sidebar-ctrl { flex-shrink: 0; }
+    .sidebar-inputs { flex: 1; overflow-y: auto; min-height: 0; }
   </style>
 </head>
 <body>
   <div class="layout">
     <div class="sidebar">
-      <h2 data-i18n="appTitle">端到端处理工作台</h2>
-      <p class="muted" data-i18n="appDesc">配置单图/批量审查流程，触发主处理入口并查看结果概览。</p>
-      <div class="card">
-        <label data-i18n="modeLabel">运行模式</label>
-        <select id="mode">
-          <option value="SINGLE">SINGLE</option>
-          <option value="BATCH">BATCH</option>
-        </select>
-        <label data-i18n="inputDirLabel">输入目录</label>
+      <div class="sidebar-title">
+        <h2 data-i18n="appTitle">端到端处理工作台</h2>
+        <a href="/" data-i18n="homeLink">⌂ 主页</a>
+      </div>
+      <p class="muted" data-i18n="appDesc" style="margin:0; font-size:0.8rem;">选择单张图纸，触发处理步骤并查看结果概览。</p>
+      <div class="card sidebar-ctrl">
         <label data-i18n="dxfSelectLabel">选择 DXF 文件（可多选）</label>
-        <input id="dxfFiles" type="file" accept=".dxf" multiple />
+        <input id="dxfFiles" type="file" accept=".dxf" multiple style="padding:4px 6px; font-size:0.8rem;" />
         
-        <label data-i18n="singleFileLabel">单图文件（可选）</label>
+        <label data-i18n="svgFileLabel">选择 SVG 输入文件</label>
         <select id="targetFile" onchange="updatePreviewFromSelection()">
           <option value="" data-i18n="svgPlaceholder">-- 请选择 SVG 输入文件 --</option>
         </select>
@@ -46,46 +61,60 @@
         
         <label data-i18n="outputDirLabel">输出目录</label>
         <input id="outputDir" value="output/exp_jsonld" />
-        <button onclick="uploadDxf()" data-i18n="uploadBtn">上传选中文件</button>
-        <button onclick="runStep('dxf2svg')" data-i18n="step1Btn">步骤 1：DXF → SVG</button>
-        <button onclick="runStep('extract-elements')" data-i18n="step2Btn">步骤 2：提取元素并可视化</button>
-        <button onclick="runStep('build-topology')" data-i18n="step3Btn">步骤 3：构建拓扑 JSON-LD</button>
-        <button onclick="runStep('enrich-graph')" data-i18n="step4Btn">步骤 4：知识图谱富化</button>
-        <button onclick="runStep('visualize-graph')" data-i18n="step5Btn">步骤 5：生成图谱可视化</button>
-        <button class="secondary" onclick="runPipeline()" data-i18n="fullReviewBtn">完整审查（可选）</button>
-        <button class="secondary" onclick="loadInputs()" data-i18n="refreshBtn">刷新可用输入</button>
+        <div class="card-btn-group" style="margin-top:6px;">
+          <button onclick="uploadDxf()" data-i18n="uploadBtn">上传选中文件</button>
+          <button onclick="runStep('dxf2svg')" data-i18n="step1Btn">DXF→SVG</button>
+          <button onclick="runStep('extract-elements')" data-i18n="step2Btn">提取元素</button>
+          <button onclick="runStep('build-topology')" data-i18n="step3Btn">拓扑 JSON-LD</button>
+          <button onclick="runStep('enrich-graph')" data-i18n="step4Btn">图谱富化</button>
+          <button onclick="runStep('visualize-graph')" data-i18n="step5Btn">可视化</button>
+          <button class="secondary" onclick="runPipeline()" data-i18n="fullReviewBtn">完整审查</button>
+          <button class="secondary" onclick="loadInputs()" data-i18n="refreshBtn">刷新输入</button>
+        </div>
         <div id="status" class="status" data-i18n="waiting">等待开始…</div>
       </div>
-      <div class="card">
+      <div class="card sidebar-inputs">
         <h3 data-i18n="availableInputs">可用输入</h3>
-        <div id="inputList" class="muted" data-i18n="loading">正在加载…</div>
+        <div id="inputList" class="muted" data-i18n="loading" style="font-size:0.8rem;">正在加载…</div>
       </div>
     </div>
     <div class="main">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3 data-i18n="previewTitle" style="margin:0;">输入图纸预览</h3>
+      <div class="card main-preview-wrap">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <h3 data-i18n="previewTitle" style="margin:0; font-size:0.95rem;">输入图纸预览</h3>
           <button class="lang-toggle" onclick="toggleLang()" id="langToggle">EN</button>
         </div>
         <div class="preview">
           <div>
-            <img id="inputPreview" src="" alt="输入图纸预览" style="visibility:hidden;" />
-            <div id="previewPlaceholder" class="muted" data-i18n="previewPlaceholder">请选择左侧 SVG 输入文件以查看预览。</div>
-            <div id="previewInfo" class="muted" style="margin-top: 10px;"></div>
+            <div class="img-viewer" id="inputViewer">
+              <img id="inputPreview" src="" alt="输入图纸预览" style="visibility:hidden;" />
+              <div class="zoom-level" id="inputZoomLevel">100%</div>
+              <div class="viewer-controls">
+                <button onclick="resetView('input')" data-i18n="resetBtn">重置</button>
+              </div>
+            </div>
+            <div id="previewPlaceholder" class="muted" data-i18n="previewPlaceholder" style="font-size:0.8rem; padding:4px 0;">请选择左侧 SVG 输入文件以查看预览。</div>
+            <div id="previewInfo" class="muted" style="margin-top: 4px; font-size:0.8rem;"></div>
           </div>
           <div>
             <h4 data-i18n="resultFilesTitle">结果文件</h4>
-            <ul id="resultFiles"></ul>
-            <div id="previewResult" style="margin-top: 10px;">
-              <img id="resultPreview" src="" alt="中间结果预览" style="display:none; max-width:100%; border-radius:10px; border:1px solid #e2e8f0;" />
-              <pre id="resultTextPreview" style="display:none; white-space: pre-wrap; background:#fafbfd; border:1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-top: 10px; color:#334; overflow-x:auto;"></pre>
+            <ul id="resultFiles" style="max-height:60px; overflow-y:auto;"></ul>
+            <div id="previewResult" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+              <div class="img-viewer" id="resultViewer">
+                <img id="resultPreview" src="" alt="中间结果预览" style="display:none;" />
+                <div class="zoom-level" id="resultZoomLevel">100%</div>
+                <div class="viewer-controls">
+                  <button onclick="resetView('result')" data-i18n="resetBtn">重置</button>
+                </div>
+              </div>
+              <pre id="resultTextPreview" style="display:none; white-space: pre-wrap; background:#fafbfd; border:1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-top: 6px; color:#334; overflow-x:auto; font-size:0.8rem;"></pre>
             </div>
           </div>
         </div>
       </div>
-      <div class="card">
-        <h3 data-i18n="logTitle">处理日志</h3>
-        <div id="logOutput" class="status"></div>
+      <div class="card main-log-wrap">
+        <h3 data-i18n="logTitle" style="margin:0 0 4px 0; font-size:0.9rem;">处理日志</h3>
+        <div id="logOutput" class="status" style="max-height:80px; overflow-y:auto;"></div>
       </div>
     </div>
   </div>
@@ -94,22 +123,21 @@
     const i18n = {
       zh: {
         appTitle: '智能图纸审查系统',
-        appDesc: '配置单图/批量审查流程，触发主处理入口并查看结果概览。',
-        modeLabel: '运行模式',
-        inputDirLabel: '输入目录',
+        appDesc: '选择单张图纸，触发处理步骤并查看结果概览。',
+        homeLink: '主页',
         dxfSelectLabel: '选择 DXF 文件（可多选）',
-        singleFileLabel: '单图文件（可选）',
+        svgFileLabel: '选择 SVG 输入文件',
         svgPlaceholder: '-- 请选择 SVG 输入文件 --',
         targetDirLabel: '目标目录（服务器）',
         outputDirLabel: '输出目录',
         uploadBtn: '上传选中文件',
-        step1Btn: '步骤 1：DXF → SVG',
-        step2Btn: '步骤 2：提取元素并可视化',
-        step3Btn: '步骤 3：构建拓扑 JSON-LD',
-        step4Btn: '步骤 4：知识图谱富化',
-        step5Btn: '步骤 5：生成图谱可视化',
-        fullReviewBtn: '完整审查（可选）',
-        refreshBtn: '刷新可用输入',
+        step1Btn: 'DXF → SVG',
+        step2Btn: '提取元素',
+        step3Btn: '拓扑 JSON-LD',
+        step4Btn: '图谱富化',
+        step5Btn: '可视化',
+        fullReviewBtn: '完整审查',
+        refreshBtn: '刷新输入',
         waiting: '等待开始…',
         availableInputs: '可用输入',
         loading: '正在加载…',
@@ -136,25 +164,25 @@
         svgLabel: 'SVG:',
         langToggleEn: 'EN',
         langToggleZh: '中',
+        resetBtn: '重置',
       },
       en: {
         appTitle: 'CAD Rule Checker',
-        appDesc: 'Configure single/batch review pipeline, trigger main processing and view results.',
-        modeLabel: 'Run Mode',
-        inputDirLabel: 'Input Directory',
+        appDesc: 'Select a single drawing, run processing steps and preview results.',
+        homeLink: 'Home',
         dxfSelectLabel: 'Select DXF Files (multi-select)',
-        singleFileLabel: 'Single SVG File (optional)',
+        svgFileLabel: 'Select SVG Input File',
         svgPlaceholder: '-- Select SVG input file --',
         targetDirLabel: 'Target Directory (server)',
         outputDirLabel: 'Output Directory',
         uploadBtn: 'Upload Selected Files',
-        step1Btn: 'Step 1: DXF → SVG',
-        step2Btn: 'Step 2: Extract Elements & Visualize',
-        step3Btn: 'Step 3: Build Topology JSON-LD',
-        step4Btn: 'Step 4: Enrich Knowledge Graph',
-        step5Btn: 'Step 5: Generate Graph Visualization',
-        fullReviewBtn: 'Full Review (optional)',
-        refreshBtn: 'Refresh Inputs',
+        step1Btn: 'DXF → SVG',
+        step2Btn: 'Extract',
+        step3Btn: 'Topology',
+        step4Btn: 'Enrich',
+        step5Btn: 'Visualize',
+        fullReviewBtn: 'Full Review',
+        refreshBtn: 'Refresh',
         waiting: 'Waiting…',
         availableInputs: 'Available Inputs',
         loading: 'Loading…',
@@ -181,6 +209,7 @@
         svgLabel: 'SVG:',
         langToggleEn: 'EN',
         langToggleZh: '中',
+        resetBtn: 'Reset',
       }
     };
 
@@ -205,7 +234,6 @@
         }
       });
       document.getElementById('langToggle').textContent = currentLang === 'zh' ? 'EN' : '中';
-      // update dynamic status
       const statusEl = document.getElementById('status');
       if (statusEl && !statusEl.textContent.startsWith('执行') && !statusEl.textContent.startsWith('Running') &&
           !statusEl.textContent.startsWith('步骤') && !statusEl.textContent.startsWith('Step')) {
@@ -254,7 +282,7 @@
         const v = d.replace(/^output\//, '');
         if (v) dirs.add(v);
       });
-      if (dirs.size === 0) dirs.add('test');
+      if (dirs.size === 0) dirs.add('');
       dirs.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.text = d; sel.appendChild(opt); });
       const preview = document.getElementById('inputPreview');
       const placeholder = document.getElementById('previewPlaceholder');
@@ -301,7 +329,7 @@
       if (normalized.includes('/')) {
         return 'data/raw/svg/' + normalized;
       }
-      if (!targetDirValue) targetDirValue = 'test';
+      if (!targetDirValue) targetDirValue = '';
       if (targetDirValue.startsWith('data/raw/svg')) {
         return targetDirValue.replace(/\\/g,'/') + '/' + normalized;
       }
@@ -330,24 +358,16 @@
     }
 
     async function runStep(step) {
-      const mode = document.getElementById('mode').value;
-      const targetDir = document.getElementById('targetDir').value || 'test';
+      const targetDir = document.getElementById('targetDir').value || '';
       const targetFile = document.getElementById('targetFile').value;
       const outputDir = document.getElementById('outputDir').value || 'output/exp_jsonld';
       const status = document.getElementById('status');
       const logOutput = document.getElementById('logOutput');
 
-      if (step !== 'dxf2svg') {
-        if (mode === 'SINGLE' && !targetFile) {
-          status.textContent = t('noFileSelected');
-          logOutput.textContent = t('noFileDetail', step);
-          return;
-        }
-        if (mode === 'BATCH' && !targetDir) {
-          status.textContent = '未选择目标目录。';
-          logOutput.textContent = '请在 BATCH 模式下先选择一个目标目录';
-          return;
-        }
+      if (step !== 'dxf2svg' && !targetFile) {
+        status.textContent = t('noFileSelected');
+        logOutput.textContent = t('noFileDetail', step);
+        return;
       }
 
       status.textContent = t('runningStep', step);
@@ -356,7 +376,7 @@
         method: 'POST',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step, mode, targetDir, targetFile, outputDir })
+        body: JSON.stringify({ step, mode: 'SINGLE', targetDir, targetFile, outputDir })
       });
       const data = await res.json();
       if (data.ok) {
@@ -416,22 +436,14 @@
     }
 
     async function runPipeline() {
-      // full processing via existing run-pipeline endpoint
-      const mode = document.getElementById('mode').value;
       let targetDirValue = document.getElementById('targetDir').value;
       let targetFileValue = document.getElementById('targetFile').value;
       const status = document.getElementById('status');
       const logOutput = document.getElementById('logOutput');
 
-      // input validation
-      if (mode === 'SINGLE' && !targetFileValue) {
+      if (!targetFileValue) {
         status.textContent = t('noFileSelected');
         logOutput.textContent = t('noFileDetail', 'full-review');
-        return;
-      }
-      if (mode === 'BATCH' && !targetDirValue) {
-        status.textContent = '未选择目标目录，无法执行完整审查。';
-        logOutput.textContent = '未选择目标目录，无法执行完整审查。';
         return;
       }
 
@@ -451,13 +463,12 @@
         }
       }
       const payload = {
-        mode: document.getElementById('mode').value,
+        mode: 'SINGLE',
         targetDir: targetDirValue,
         targetFile: targetFileValue,
         outputDir: document.getElementById('outputDir').value
       };
       status.textContent = t('processingFull');
-      logOutput.textContent = '';
       logOutput.textContent = '';
       const res = await fetch('/api/run-pipeline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json();
@@ -485,6 +496,112 @@
         placeholder.style.display = 'block';
       }
     }
+
+    // ===== Zoom / Pan / Reset for image viewers =====
+    const viewerState = {
+      input: { scale: 1, tx: 0, ty: 0, ready: false, center: null },
+      result: { scale: 1, tx: 0, ty: 0, ready: false, center: null }
+    };
+
+    function setupViewer(name) {
+      const viewer = document.getElementById(name + 'Viewer');
+      const img = document.getElementById(name + 'Preview');
+      const state = viewerState[name];
+      let dragging = false, startX, startY, startTx, startTy;
+
+      function render() {
+        img.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+        document.getElementById(name + 'ZoomLevel').textContent = Math.round(state.scale * 100) + '%';
+      }
+
+      function center() {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h) { if (img.src) setTimeout(center, 50); return; }
+        state.ready = true;
+        img.style.display = 'block';
+        img.style.visibility = 'visible';
+        const vw = viewer.clientWidth, vh = viewer.clientHeight;
+        if (!vw || !vh) { setTimeout(center, 50); return; }
+        const s = Math.min(vw / w, vh / h, 1);
+        state.scale = s;
+        state.tx = (vw - w * s) / 2;
+        state.ty = (vh - h * s) / 2;
+        render();
+      }
+
+      state.center = center;
+      img.addEventListener('load', center);
+
+      if (window.ResizeObserver) {
+        new ResizeObserver(() => { if (state.ready) center(); }).observe(viewer);
+      }
+
+      viewer.addEventListener('wheel', e => {
+        if (!state.ready) return;
+        e.preventDefault();
+        const rect = viewer.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const f = e.deltaY > 0 ? 0.88 : 1 / 0.88;
+        const ns = Math.min(Math.max(state.scale * f, 0.1), 20);
+        state.tx = mx - (mx - state.tx) * (ns / state.scale);
+        state.ty = my - (my - state.ty) * (ns / state.scale);
+        state.scale = ns;
+        render();
+      }, { passive: false });
+
+      viewer.addEventListener('pointerdown', e => {
+        if (e.button !== 0 || !state.ready) return;
+        dragging = true;
+        startX = e.clientX; startY = e.clientY;
+        startTx = state.tx; startTy = state.ty;
+        viewer.setPointerCapture(e.pointerId);
+        viewer.style.cursor = 'grabbing';
+      });
+      viewer.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        e.preventDefault();
+        state.tx = startTx + (e.clientX - startX);
+        state.ty = startTy + (e.clientY - startY);
+        render();
+      });
+      viewer.addEventListener('pointerup', e => {
+        if (!dragging) return;
+        dragging = false; viewer.releasePointerCapture(e.pointerId); viewer.style.cursor = 'grab';
+      });
+      viewer.addEventListener('pointercancel', e => {
+        if (!dragging) return;
+        dragging = false; viewer.releasePointerCapture(e.pointerId); viewer.style.cursor = 'grab';
+      });
+    }
+
+    function resetView(name) {
+      const img = document.getElementById(name + 'Preview');
+      const viewer = document.getElementById(name + 'Viewer');
+      const st = viewerState[name];
+      if (!img || !viewer || !st) return;
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return;
+      st.ready = true;
+      img.style.display = 'block';
+      img.style.visibility = 'visible';
+      const vw = viewer.clientWidth, vh = viewer.clientHeight;
+      if (!vw || !vh) return;
+      const s = Math.min(vw / w, vh / h, 1);
+      st.scale = s;
+      st.tx = (vw - w * s) / 2;
+      st.ty = (vh - h * s) / 2;
+      img.style.transform = `translate(${st.tx}px, ${st.ty}px) scale(${st.scale})`;
+      document.getElementById(name + 'ZoomLevel').textContent = Math.round(st.scale * 100) + '%';
+    }
+
+    // On page load, check if input preview already has a valid image (restored from browser cache)
+    document.addEventListener('DOMContentLoaded', function() {
+      const ip = document.getElementById('inputPreview');
+      if (ip.src && ip.complete && ip.naturalWidth > 0) viewerState.input.center();
+    });
+
+    setupViewer('input');
+    setupViewer('result');
 
     // init
     applyLang();

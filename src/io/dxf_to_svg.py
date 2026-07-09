@@ -152,7 +152,7 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                     # ==========================================================
                     process_entities(e.virtual_entities(), override_layer=current_layer)
                 except Exception as ex:
-                    print(f"  [-] 展开块 {e.dxf.name} 失败: {ex}")
+                    print(f"  [-] Failed to explode block {e.dxf.name}: {ex}")
                 continue
 
             # 处理标注线实体 (自动拆解为线段、文字与箭头)
@@ -160,7 +160,7 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                 try:
                     process_entities(e.virtual_entities(), override_layer=current_layer)
                 except Exception as ex:
-                    print(f"  [-] 解析标注 {e.dxftype()} 失败: {ex}")
+                    print(f"  [-] Failed to parse dimension {e.dxftype()}: {ex}")
                 continue
 
             # 获取图元最终所属图层的分组
@@ -207,7 +207,7 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                             d_path += " Z"
                         ET.SubElement(g, 'path', d=d_path, **common_attr)
                 except Exception as ex:
-                    print(f"  [-] 解析 LWPOLYLINE 失败: {ex}")
+                    print(f"  [-] Failed to parse LWPOLYLINE: {ex}")
 
             elif e.dxftype() == 'SPLINE':
                 try:
@@ -223,7 +223,7 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                             d_path += " Z"
                         ET.SubElement(g, 'path', d=d_path, **common_attr)
                 except Exception as ex:
-                    print(f"  [-] 离散化解析 SPLINE 失败: {ex}")
+                    print(f"  [-] Failed to flatten SPLINE: {ex}")
                 continue
 
             elif e.dxftype() == 'ARC':
@@ -245,7 +245,7 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                         d_path = f"M {x1:.4f},{y1:.4f} A {r:.4f},{r:.4f} 0 {large_arc} {sweep_flag} {x2:.4f},{y2:.4f}"
                         ET.SubElement(g, 'path', d=d_path, **common_attr)
                 except Exception as ex:
-                    print(f"  [-] 解析 ARC 失败: {ex}")
+                    print(f"  [-] Failed to parse ARC: {ex}")
                 continue
 
             elif e.dxftype() == 'CIRCLE':
@@ -314,7 +314,7 @@ def convert_dxf_to_svg(dxf_path, svg_path):
 
                             ET.SubElement(g, 'path', d=d_path, **common_attr)
                 except Exception as ex:
-                    print(f"  [-] 解析 ELLIPSE 失败: {ex}")
+                    print(f"  [-] Failed to parse ELLIPSE: {ex}")
                 continue
 
     # 设置viewbox
@@ -341,26 +341,26 @@ def write_svg_tree(tree, svg_path):
 
 
 def main():
-    file_dir = "test"
+    file_dir = ""
     dxf_dir = os.path.join(settings.dxf_data_path, file_dir)
     svg_dir = os.path.join(settings.raw_svg_data_path, file_dir)
 
     os.makedirs(svg_dir, exist_ok=True)
 
     if not os.path.exists(dxf_dir):
-        print(f"❌ 找不到输入文件夹: {dxf_dir}")
+        print(f"❌ Input folder not found: {dxf_dir}")
         return
 
     dxf_files = [f for f in os.listdir(dxf_dir) if f.lower().endswith('.dxf')]
 
     if not dxf_files:
-        print(f"⚠️ 在 {dxf_dir} 中未找到任何 .dxf 文件。")
+        print(f"⚠️ No .dxf files found in {dxf_dir}.")
         return
 
-    print(f"🚀 开始批量转换，共发现 {len(dxf_files)} 个 DXF 文件...\n")
+    print(f"🚀 Starting batch conversion, found {len(dxf_files)} DXF files...\n")
 
     for idx, file_name in enumerate(dxf_files, 1):
-        print(f"[{idx}/{len(dxf_files)}] 🔄 正在处理: {file_name}")
+        print(f"[{idx}/{len(dxf_files)}] 🔄 Processing: {file_name}")
         input_path = os.path.join(dxf_dir, file_name)
         base_name = os.path.splitext(file_name)[0]
 
@@ -371,11 +371,11 @@ def main():
 
         # try:
         convert_dxf_to_svg(input_path, str(output_path))
-        print(f"✅ 转换成功: {output_path}\n")
+        print(f"✅ Conversion successful: {output_path}\n")
         # except Exception as e:
         #     print(f"❌ 转换失败 {file_name}: {e}\n")
 
-    print("🎉 批量转换任务全部完成！")
+    print("🎉 Batch conversion complete!")
 
 
 if __name__ == "__main__":

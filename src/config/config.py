@@ -22,7 +22,7 @@ class Settings:
 
         # 加载 YAML (需要 pip install PyYAML)
         if not self.config_path.exists():
-            raise FileNotFoundError(f"配置文件未找到: {self.config_path}")
+            raise FileNotFoundError(f"Config file not found: {self.config_path}")
 
         with open(self.config_path, 'r', encoding='utf-8') as f:
             self._cfg = yaml.safe_load(f) or {}
@@ -84,7 +84,7 @@ class Settings:
     @property
     def processed_svg_data_path(self):
         """返回 processed svg 的绝对路径"""
-        path_str = self._get_value('data', 'processed_svg_dir', 'data/processed/svg')
+        path_str = self._get_value('data', 'processed_svg_dir', 'data/processed')
         return self._resolve_path(path_str)
 
     @property
@@ -148,7 +148,7 @@ class Settings:
 
     @property
     def runtime_target_dir(self):
-        return self._read_env('CAD_RULE_CHECKER_TARGET_DIR', self._get_value('runtime', 'target_dir', 'test'))
+        return self._read_env('CAD_RULE_CHECKER_TARGET_DIR', self._get_value('runtime', 'target_dir', ''))
 
     @property
     def runtime_target_file(self):

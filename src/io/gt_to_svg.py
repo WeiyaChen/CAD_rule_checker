@@ -6,7 +6,7 @@ try:
     import ezdxf
     from ezdxf import bbox
 except ImportError:
-    print("❌ 缺少 ezdxf 库。请先运行: pip install ezdxf")
+    print("❌ ezdxf library not found. Please run: pip install ezdxf")
 
 
 def convert_gt_to_svg(dxf_path, json_path, svg_path):
@@ -30,7 +30,7 @@ def convert_gt_to_svg(dxf_path, json_path, svg_path):
         sy = 140 / (ymax - ymin)
         s = min(sx, sy)
     except Exception as e:
-        print(f"获取 DXF 参数失败: {e}")
+        print(f"Failed to get DXF parameters: {e}")
         return
 
     # 2. 读取 JSON 文件
@@ -38,7 +38,7 @@ def convert_gt_to_svg(dxf_path, json_path, svg_path):
         with open(json_path, 'r', encoding='utf-8') as f:
             gt_data = json.load(f)
     except Exception as e:
-        print(f"读取标注文件失败: {e}")
+        print(f"Failed to read annotation file: {e}")
         return
 
     # 3. 创建半透明的可视化 SVG 根节点
@@ -110,7 +110,7 @@ def convert_gt_to_svg(dxf_path, json_path, svg_path):
                 ET.SubElement(g, 'path', d=d_str, fill=fill_color, stroke="rgb(50,50,50)", **{"stroke-width": "0.15"})
 
         except Exception as e:
-            print(f"解析 {r_id} 的 WKT 时出错: {e}")
+            print(f"Error parsing WKT for {r_id}: {e}")
 
     # 5. 保存并写入文件
     tree = ET.ElementTree(svg)
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     import os
 
     if os.path.exists(sample_dxf) and os.path.exists(sample_json):
-        print(f"正在转换 {sample_json} -> {sample_svg}...")
+        print(f"Converting {sample_json} -> {sample_svg}...")
         convert_gt_to_svg(sample_dxf, sample_json, sample_svg)
-        print("转换完成！")
+        print("Conversion complete!")
     else:
-        print("💡 提示: 这是一个独立模块。若需测试运行，请提供真实存在的 DXF 和 JSON 文件路径。")
+        print("💡 Tip: This is a standalone module. Provide valid DXF and JSON file paths for testing.")

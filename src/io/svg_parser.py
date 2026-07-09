@@ -72,7 +72,7 @@ def fix_wall(raw_elements):
     backgrounds = [e for e in raw_elements if "background" in e["type"]]
 
     # 将墙体转为 Shapely 几何对象，作为初始的“引力源”
-    print(f"  [+] 图元连通性开始，初始确权墙体数量: {len(walls)}")
+    print(f"  [+] Primitive connectivity start, initial wall count: {len(walls)}")
     wall_geoms = []
     for w in walls:
         coords = w.get('coords', [])
@@ -84,7 +84,7 @@ def fix_wall(raw_elements):
     max_overlap_len = 15.0  # 最大允许的绝对重叠长度 (防止贴墙家具线被误吸)
     tol_sq = tolerance ** 2  # 预计算容差平方，用于极速距离判定
 
-    print(">>> 启动防污染预处理：隔离贴墙家具图元碎片...")
+    print(">>> Starting anti-contamination preprocess: isolating furniture fragments adjacent to walls...")
     polluted_indices = set()
     bg_geoms = []
     bg_endpoints = []
@@ -126,7 +126,7 @@ def fix_wall(raw_elements):
 
     # 彻底剔除所有污染图元
     backgrounds = [bg for i, bg in enumerate(backgrounds) if i not in polluted_indices]
-    print(f"  [-] 成功通过拓扑传染拦截并隔离贴墙污染碎片: {len(polluted_indices)} 个")
+    print(f"  [-] Successfully intercepted and isolated wall-adjacent contaminated fragments: {len(polluted_indices)}")
 
     # ====================================================================
     # 4. 迭代扩散算法：端点点对点吸附纯净的缺失墙体
@@ -188,7 +188,7 @@ def fix_wall(raw_elements):
 
         backgrounds = remaining_backgrounds
 
-    print(f"  [+] 端点连通性吸附完成，最终确权墙体数量: {len(walls)}")
+    print(f"  [+] Endpoint connectivity adsorption complete, final wall count: {len(walls)}")
     return raw_elements
 
 def parse_svg_texts(tree):
@@ -262,7 +262,7 @@ def parse_svg_texts(tree):
             text_element.append(element)
 
         except (ValueError, TypeError) as e:
-            print(f"[Warning] 解析文字坐标失败，内容: '{content}', 错误: {e}")
+            print(f"[Warning] Failed to parse text coordinates, content: '{content}', error: {e}")
             continue
 
     return text_element
@@ -463,19 +463,19 @@ def _apply_transform(coords, transform_str):
 #     # 测试示例
 #     input_svg_name = "apartment.svg"  # svg文件名
 #     input_svg_path = os.path.join(settings.raw_svg_data_path, input_svg_name)
-#     print("[svg_loader] 正在加载原始svg...")
+#     print("[svg_loader] Loading raw SVG...")
 #     tree, primitives = load_svg(input_svg_path)  # 获取xml树和图元列表
-#     print("[svg_loader] 加载完成!")
-#     print("[svg_modifier] 正在修改...")
+#     print("[svg_loader] Load complete!")
+#     print("[svg_modifier] Modifying...")
 #     output_svg_path = modify_svg(input_svg_path, tree, primitives)  # 运行修改器
-#     print("[svg_modifier] 修改完成!")
-#     print(f"[svg_modifier] 文件保存至{output_svg_path}")
+#     print("[svg_modifier] Modification complete!")
+#     print(f"[svg_modifier] File saved to {output_svg_path}")
 #
-#     print(f"[svg_parser] 正在转换")
-#     print(f"[svg_loader] 正在加载有标签的svg")
+#     print(f"[svg_parser] Converting...")
+#     print(f"[svg_loader] Loading tagged SVG...")
 #     tree, primitives = load_svg(output_svg_path)
-#     print(f"[svg_loader] 加载完成")
+#     print(f"[svg_loader] Load complete")
 #     elements = parse_svg(tree, primitives)
-#     print(f"[svg_parser] 转换完成")
+#     print(f"[svg_parser] Conversion complete")
 
 
