@@ -26,8 +26,8 @@ def process_single_drawing(input_svg_path, output_json_dir, validator, llm_clien
     # 路径构造
     raw_jsonld_path = os.path.join(str(output_json_dir), f"{base_name}_raw.jsonld")
     enriched_jsonld_path = os.path.join(str(output_json_dir), f"{base_name}.jsonld")
-    violations_json_path = os.path.join(settings.exp_res_dir, f"{base_name}_exp_violations.json")
-    exp_viz_path = os.path.join(settings.exp_viz_dir, f"{base_name}_exp.png")
+    violations_json_path = os.path.join(settings.violations_dir, f"{base_name}_violations.json")
+    exp_viz_path = os.path.join(settings.viz_dir, f"{base_name}_topology.png")
     # annotated_image_path = os.path.join(str(output_html_dir), f"{base_name}_compliance_report.html")
 
     print("\n" + "=" * 60)
@@ -41,8 +41,8 @@ def process_single_drawing(input_svg_path, output_json_dir, validator, llm_clien
         print(">>> Phase 1: Recognizing drawing elements...")
         extractor = ElementExtractor()
         elements = extractor.process(str(input_svg_path))
-        save_dir = str(settings.svg_ins_dir)
-        filename = base_name + ".png"
+        save_dir = str(settings.viz_dir)
+        filename = base_name + "_instance.png"
         visualize_elements(elements, get_color(), save_dir, filename)
 
         # 提取文本标注及坐标

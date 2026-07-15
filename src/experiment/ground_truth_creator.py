@@ -15,14 +15,14 @@ try:
     import ezdxf
     from ezdxf import bbox
 except ImportError:
-    print("❌ 缺少 ezdxf 库。请先运行: pip install ezdxf")
+    print("❌ Missing ezdxf library. Please run: pip install ezdxf")
     sys.exit(1)
 
 try:
     from rdflib import Graph
     from pyshacl import validate
 except ImportError:
-    print("❌ 缺少 rdflib 或 pyshacl 库。请先运行: pip install rdflib pyshacl")
+    print("❌ Missing rdflib or pyshacl library. Please run: pip install rdflib pyshacl")
     sys.exit(1)
 
 # =====================================================================
@@ -82,7 +82,7 @@ def auto_calculate_deltas(doc):
     ext = bbox.extents(msp)
 
     if not ext.has_data:
-        raise ValueError("DXF 图纸为空或无法获取边界框。")
+        raise ValueError("DXF drawing is empty or bounding box cannot be obtained.")
 
     xmin, xmax = ext.extmin[0], ext.extmax[0]
     ymin, ymax = ext.extmin[1], ext.extmax[1]
@@ -201,20 +201,20 @@ def get_min_topology_distance(start_node, target_semantics, rooms_data):
 # =====================================================================
 def build_graph_from_dxf():
     print("=====================================================")
-    print("🏗️  BIM 知识图谱全自动构建引擎 (几何+拓扑+设施挂载+语义)")
+    print("🏗️  BIM Knowledge Graph Auto-Construction Engine (Geometry + Topology + Component instances + Semantics)")
     print("=====================================================\n")
 
-    dxf_input = input("👉 请拖入已经画好图层的 DXF 文件: ").strip().strip("'\"")
+    dxf_input = input("👉 Drag in a DXF file with layers already drawn: ").strip().strip("'\"")
     if not os.path.exists(dxf_input):
-        print(f"\n❌ 找不到文件: {dxf_input}")
+        print(f"\n❌ File not found: {dxf_input}")
         return
 
     try:
         doc = ezdxf.readfile(dxf_input)
         delta_x, delta_y, scale_factor = auto_calculate_deltas(doc)
-        print(f"✅ [校准成功] Delta X: {delta_x:.2f} | Delta Y: {delta_y:.2f}\n")
+        print(f"✅ [Calibration OK] Delta X: {delta_x:.2f} | Delta Y: {delta_y:.2f}\n")
     except Exception as e:
-        print(f"\n❌ DXF 读取或校准失败: {e}")
+        print(f"\n❌ DXF read or calibration failed: {e}")
         return
 
     msp = doc.modelspace()
@@ -225,7 +225,7 @@ def build_graph_from_dxf():
 
     room_counter, door_counter, facility_counter = 1, 1, 1
 
-    print("🔍 阶段 1/4: 扫描并重建多边形实体 (执行差异化几何核算)...")
+    print("🔍 Phase 1/4: Scanning and reconstructing polygon entities (performing differentiated geometry calculation)...")
 
     # 1. 扫描提取图元
     for entity in msp:
@@ -302,9 +302,9 @@ def build_graph_from_dxf():
             }
             facility_counter += 1
 
-    print(f"  [+] 成功提取 {len(rooms_data)} 个房间, {len(doors_data)} 扇门, {len(facilities_data)} 个内部设施。")
+    print(f"  [+] Successfully extracted {len(rooms_data)} rooms, {len(doors_data)} doors, {len(facilities_data)} facilities.")
 
-    print("🔍 阶段 2/4: 自动计算空间底层拓扑网络与设施挂载...")
+    print("🔍 Phase 2/4: Computing spatial topology network and facility mounting...")
     room_ids = list(rooms_data.keys())
 
     # 2.1 房间之间的拓扑提取
@@ -394,9 +394,9 @@ def build_graph_from_dxf():
                 room['contained_facilities'].add(f_id)
                 mounted_count += 1
                 break
-    print(f"  [+] 设施拓扑挂载完毕，成功将 {mounted_count}/{len(facilities_data)} 个设施关联至所在房间。")
+    print(f"  [+] Facility topology mounting complete. Successfully associated {mounted_count}/{len(facilities_data)} facilities to their rooms.")
 
-    print("🔍 阶段 3/4: 外部区域检测、高级语义推断与套型组装...")
+    print("🔍 Phase 3/4: External area detection, advanced semantic inference, and suite assembly...")
     # 3.1 识别公共外部空间与内部走廊
     PUBLIC_SEEDS = {"ElevatorShaft", "Stairwell", "WaterRoom", "ElectricalRoom", "VentilationRoom", "EquipmentRoom"}
     PRIVATE_SEEDS = {"Bedroom", "LivingRoom", "Kitchen", "Bathroom", "DiningRoom", "Cloakroom", "StudyRoom", "Balcony",
@@ -479,7 +479,7 @@ def build_graph_from_dxf():
                 })
                 suite_counter += 1
 
-    print("📝 阶段 4/4: 序列化为 JSON-LD 知识图谱 (对齐 EXP 格式)...")
+    print("📝 Phase 4/4: Serializing to JSON-LD knowledge graph (aligned with EXP format)...")
 
     graph_nodes = []
     graph_nodes.extend(suites)
@@ -569,23 +569,15 @@ def build_graph_from_dxf():
     base_name = os.path.splitext(os.path.basename(dxf_input))[0].replace("_已标注", "")
     out_filename = f"{base_name}_gt.jsonld"
 
-    # 上一级目录
-    abs_input_path = os.path.abspath(dxf_input)
-    parent_dir_name = os.path.basename(os.path.dirname(abs_input_path))
+    ground_truth_dir = settings.gt_dir
+    os.makedirs(ground_truth_dir, exist_ok=True)
 
-    # 输出目录
-    ground_truth_dir = settings.gt_jsonld_dir
-
-    # 防止重创建
-    target_dir = os.path.join(ground_truth_dir, parent_dir_name)
-    os.makedirs(target_dir, exist_ok=True)  # exist_ok=True 防止目录已存在时报错
-
-    out_path = os.path.join(target_dir, out_filename)
+    out_path = os.path.join(ground_truth_dir, out_filename)
 
     # =====================================================================
     # 阶段 4.5: 自动执行 SHACL 规则审查生成违规 GT
     # =====================================================================
-    print("⚖️ 阶段 4.5: 自动执行 SHACL 规则审查，固化违规 Ground Truth...")
+    print("⚖️ Phase 4.5: Auto-executing SHACL rule validation, generating violation Ground Truth...")
     violations_list = []
     try:
         data_graph = Graph()
@@ -637,9 +629,9 @@ def build_graph_from_dxf():
                         "rule": v_rule
                     })
 
-        print(f"  [+] 成功提取 {len(violations_list)} 个规范违规项作为实验基准。")
+        print(f"  [+] Successfully extracted {len(violations_list)} compliance violations as experimental baseline.")
     except Exception as e:
-        print(f"  [-] SHACL 审查引擎执行发生异常: {e}")
+        print(f"  [-] SHACL validation engine execution error: {e}")
 
     jsonld_output["violations"] = violations_list
 
@@ -648,8 +640,8 @@ def build_graph_from_dxf():
 
     out_vio_filename = f"{base_name}_gt_violations.json"
 
-    target_dir = os.path.join(settings.gt_res_dir, parent_dir_name)
-    os.makedirs(target_dir, exist_ok=True)  # exist_ok=True 防止目录已存在时报错
+    target_dir = settings.violations_dir
+    os.makedirs(target_dir, exist_ok=True)
 
     out_vio_path = os.path.join(target_dir, out_vio_filename)
     with open(out_vio_path, 'w', encoding='utf-8') as f:
@@ -659,13 +651,13 @@ def build_graph_from_dxf():
     total_edges = sum(len(room['adjacencies']) for room in rooms_data.values()) // 2
 
     print("\n" + "=" * 50)
-    print("📊 数据集核心特征统计:")
-    print(f"  - 独立空间节点数 (Rooms):     {len(rooms_data)}")
-    print(f"  - 门构件数 (Doors):           {len(doors_data)}")
-    print(f"  - 拓扑联通边数 (Edges):       {total_edges}")
-    # print(f"  - 内部设施数 (Facilities):    {len(facilities_data)}")
-    print(f"  - 提取独立套型数 (Suites):    {len(suites)}")
-    # print(f"  - 确认真实违规数 (Violations):{len(violations_list)}")
+    print("📊 Dataset Core Feature Statistics:")
+    print(f"  - Room Nodes:                   {len(rooms_data)}")
+    print(f"  - Door Elements:                {len(doors_data)}")
+    print(f"  - Topology Edges:               {total_edges}")
+    # print(f"  - Facilities:                   {len(facilities_data)}")
+    print(f"  - Extracted Suites:             {len(suites)}")
+    # print(f"  - Violations:                   {len(violations_list)}")
     print("=" * 50 + "\n")
 
     # =====================================================================
@@ -694,7 +686,7 @@ def build_graph_from_dxf():
     }
 
     # 绘制房间
-    print("🎨 正在生成彩色拓扑预览图...")
+    print("🎨 Generating colored topology preview...")
     for r_id, room in rooms_data.items():
         poly = room['geom']
         x, y = poly.exterior.xy
@@ -716,7 +708,7 @@ def build_graph_from_dxf():
                     ha='center', va='center', fontsize=12, fontweight='bold',
                     color='#2C3E50', zorder=10)  # 确保文字在最上层
         else:
-            print(f"警告：发现空几何体，语义标签为: {semantic}")
+            print(f"Warning: Empty geometry found, semantic label: {semantic}")
 
     # 绘制门 (保持原样，高亮显示)
     for d_id, door in doors_data.items():
@@ -771,20 +763,18 @@ def build_graph_from_dxf():
     # 界面美化设置
     ax.set_aspect('equal')
     ax.axis('off')  # 关闭坐标轴
-    plt.title("全局拓扑与彩色分区解析预览", pad=20, fontsize=14, fontweight='bold')
+    plt.title("Global Topology & Colored Zone Analysis Preview", pad=20, fontsize=14, fontweight='bold')
 
     # 保存图片
-    img_dir = settings.gt_viz_dir
+    img_dir = settings.viz_dir
     if not os.path.exists(img_dir): os.makedirs(img_dir)
 
-    target_dir = os.path.join(img_dir, parent_dir_name)
-    os.makedirs(target_dir, exist_ok=True)  # exist_ok=True 防止目录已存在时报错
-    out_img_filename = f"{base_name}_gt.png"
-    out_img_path = os.path.join(target_dir, out_img_filename)
+    out_img_filename = f"{base_name}_gt_topology.png"
+    out_img_path = os.path.join(img_dir, out_img_filename)
 
     plt.tight_layout()
     plt.savefig(out_img_path, bbox_inches='tight', dpi=300)
-    print(f"✅ 彩色拓扑预览图已保存至: {out_img_path}")
+    print(f"✅ Colored topology preview saved to: {out_img_path}")
 
     plt.close(fig)
 

@@ -1,4 +1,5 @@
 import json
+import os
 import numpy as np
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Polygon
@@ -8,10 +9,13 @@ import re
 
 
 class PipelineEvaluator:
-    def __init__(self, ground_truth_data, system_output_data, system_violations):
+    def __init__(self, ground_truth_data, system_output_data, system_violations,
+                 gt_svg_path=None, sys_svg_path=None):
         self.gt_raw = ground_truth_data
         self.sys_out = system_output_data
         self.sys_violations = system_violations
+        self.gt_svg_path = gt_svg_path      # 可选：GT SVG 路径，用于几何验证
+        self.sys_svg_path = sys_svg_path    # 可选：系统输入 SVG 路径，用于几何验证
 
         # 内部标准化的系统输出与真实标注数据容器
         self.sys_nodes = {}
@@ -153,6 +157,61 @@ class PipelineEvaluator:
             self.gt_violations = self.gt_raw.get("violations", [])
 
     # ==========================================
+    # SVG 几何提取：从 SVG 文件中提取房间多边形
+    # ==========================================
+    def _extract_rooms_from_svg(self, svg_path):
+        """
+        使用系统管线从 SVG 文件提取房间多边形。
+        返回: {room_id: {"wkt": str, "area": float, "semantic_type": str}, ...}
+        """
+        from src.io.svg_loader import load_svg
+        from src.io.svg_parser import parse_svg
+
+        tree, primitives = load_svg(str(svg_path))
+        elements = parse_svg(tree, primitives)
+
+        # 通过 TopologyBuilder 构建房间几何
+        from src.topology.builder import TopologyBuilder
+        import tempfile
+
+        builder = TopologyBuilder()
+        with tempfile.NamedTemporaryFile(suffix=".jsonld", delete=False, mode="w") as tmp:
+            tmp_path = tmp.name
+        try:
+            builder.build(elements, tmp_path)
+            import json
+            with open(tmp_path, "r", encoding="utf-8") as f:
+                graph_data = json.load(f)
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+        rooms = {}
+        for node in graph_data.get("@graph", []):
+            types = node.get("@type", [])
+            if isinstance(types, str):
+                types = [types]
+            if "bot:Space" not in types:
+                continue
+
+            node_id = node.get("@id")
+            wkt_val = node.get("geo:asWKT", "")
+            if isinstance(wkt_val, dict):
+                wkt_val = wkt_val.get("@value", "")
+
+            bldg_types = [t.replace("bldg:", "") for t in types
+                          if t.startswith("bldg:") and t != "bldg:Suite"]
+            sem_type = bldg_types[0] if bldg_types else "Unknown"
+
+            rooms[node_id] = {
+                "wkt": wkt_val,
+                "area": node.get("props:hasArea"),
+                "short_side": node.get("props:hasShortSide") or node.get("props:clearWidth"),
+                "semantic_type": sem_type
+            }
+        return rooms
+
+    # ==========================================
     # 实验一: 底层房间轮廓提取精度
     # ==========================================
     def evaluate_geometry_extraction(self):
@@ -160,26 +219,58 @@ class PipelineEvaluator:
         print("📊 [Exp 1] Room Contour Extraction Accuracy (Geometry Extraction)")
         print("=" * 50)
 
+        # ---- 可选：从 SVG 文件提取几何代替 JSON-LD 数据 ----
+        svg_rooms_gt = None
+        if self.gt_svg_path and os.path.exists(self.gt_svg_path):
+            print(f"  [+] Loading GT geometry from SVG: {self.gt_svg_path}")
+            svg_rooms_gt = self._extract_rooms_from_svg(self.gt_svg_path)
+
+        svg_rooms_sys = None
+        if self.sys_svg_path and os.path.exists(self.sys_svg_path):
+            print(f"  [+] Loading system geometry from SVG: {self.sys_svg_path}")
+            svg_rooms_sys = self._extract_rooms_from_svg(self.sys_svg_path)
+
         total_gt = len(self.gt_rooms)
 
+        # 系统多边形来源：SVG 优先，否则用 JSON-LD
         sys_polys = {}
-        for node_id, node in self.sys_nodes.items():
-            if "bot:Space" in node.get("@type", []) and node.get("geo:asWKT"):
+        if svg_rooms_sys:
+            for node_id, info in svg_rooms_sys.items():
                 try:
-                    sys_polys[node_id] = wkt_loads(node["geo:asWKT"])
+                    poly = wkt_loads(info["wkt"])
+                    if poly.is_valid:
+                        sys_polys[node_id] = poly
                 except:
                     pass
+        else:
+            for node_id, node in self.sys_nodes.items():
+                if "bot:Space" in node.get("@type", []) and node.get("geo:asWKT"):
+                    try:
+                        sys_polys[node_id] = wkt_loads(node["geo:asWKT"])
+                    except:
+                        pass
 
+        # GT 多边形来源：SVG 优先，否则用 JSON-LD
         gt_polys = {}
-        for gt_id, gt_info in self.gt_rooms.items():
-            try:
-                wkt_str = gt_info.get("wkt", "")
-                if not wkt_str: continue
-                poly = wkt_loads(wkt_str)
-                if poly.is_valid:
-                    gt_polys[gt_id] = poly
-            except:
-                continue
+        if svg_rooms_gt:
+            for gt_id, info in svg_rooms_gt.items():
+                try:
+                    poly = wkt_loads(info["wkt"])
+                    if poly.is_valid:
+                        gt_polys[gt_id] = poly
+                except:
+                    pass
+            total_gt = len(svg_rooms_gt)
+        else:
+            for gt_id, gt_info in self.gt_rooms.items():
+                try:
+                    wkt_str = gt_info.get("wkt", "")
+                    if not wkt_str: continue
+                    poly = wkt_loads(wkt_str)
+                    if poly.is_valid:
+                        gt_polys[gt_id] = poly
+                except:
+                    continue
 
         self.gt_status = {k: "unmatched" for k in gt_polys.keys()}
         sys_status = {k: "unmatched" for k in sys_polys.keys()}
@@ -631,67 +722,73 @@ class PipelineEvaluator:
 
 
 # =====================================================================
-# [沙盒测试区] 模拟实验数据结构
+# CLI 入口：单文件评估（从配置文件读取路径）
 # =====================================================================
 if __name__ == "__main__":
-    # 使用 JSON-LD 格式的 mock 数据
-    mock_ground_truth_jsonld = {
-        "@graph": [
-            {
-                "@id": "GT_Room_Bed",
-                "@type": ["bot:Space", "bldg:Bedroom"],
-                "geo:asWKT": "POLYGON ((0 0, 0 3, 4 3, 4 0, 0 0))",
-                "props:hasArea": 12.0,
-                "props:hasShortSide": 3.0,
-                "bot:adjacentZone": [{"@id": "GT_Room_Bath"}]
-            },
-            {
-                "@id": "GT_Room_Bath",
-                "@type": ["bot:Space", "bldg:Bathroom"],
-                "geo:asWKT": "POLYGON ((4 0, 4 2, 6 2, 6 0, 4 0))",
-                "props:hasArea": 4.0,
-                "props:hasShortSide": 2.0,
-                "bot:adjacentZone": [{"@id": "GT_Room_Bed"}]
-            },
-            {
-                "@id": "GT_Room_Kitchen",
-                "@type": ["bot:Space", "bldg:Kitchen"],
-                "geo:asWKT": "POLYGON ((6 0, 6 2, 8 2, 8 0, 6 0))",
-                "props:hasArea": 4.0,
-                "props:hasShortSide": 2.0
-            }
-        ],
-        "violations": [
-            {"node_id": "GT_Room_Bath", "rule": "4.1.6"},
-            {"node_id": "GT_Room_Bed", "rule": "4.1.1"}
-        ]
-    }
+    import sys
 
-    mock_system_output = {
-        "@graph": [
-            {
-                "@id": "SYS_Node_873",
-                "@type": ["bot:Space", "bldg:Bedroom"],
-                "geo:asWKT": "POLYGON ((0.1 0.1, 0.1 2.9, 3.9 2.9, 3.9 0.1, 0.1 0.1))",
-                "props:hasArea": 11.8,
-                "props:hasShortSide": 2.8,
-                "bot:adjacentZone": []  # 模拟断链
-            },
-            {
-                "@id": "SYS_Node_120",
-                "@type": ["bot:Space", "bldg:StorageRoom"],  # 模拟误判
-                "geo:asWKT": "POLYGON ((4 0, 4 2, 6 2, 6 0, 4 0))",
-                "props:hasArea": 4.0,
-                "props:hasShortSide": 2.0,
-                "bot:adjacentZone": []
-            }
-        ]
-    }
+    from src.config.config import settings
 
-    mock_system_violations = [
-        {"node_id": "SYS_Node_120", "message": "【违规 4.1.6】严重动线冲突：卫生间不应与厨房直接连通！"}
-    ]
+    # 1. 从配置读取所有路径
+    gt_jsonld_path = settings.eval_gt_jsonld
+    sys_jsonld_path = settings.eval_sys_jsonld
+    gt_svg_path = settings.eval_gt_svg
+    sys_svg_path = settings.eval_sys_svg
+    violations_path = settings.eval_violations_json
 
-    # 实例化并调用 Debug 函数验证解析效果
-    evaluator = PipelineEvaluator(mock_ground_truth_jsonld, mock_system_output, mock_system_violations)
-    evaluator.debug_parsed_data()
+    # 2. 检查必填路径
+    missing = []
+    if not gt_jsonld_path or not os.path.exists(str(gt_jsonld_path)):
+        missing.append(f"GT JSON-LD: {gt_jsonld_path or '(not configured)'}")
+    if not sys_jsonld_path or not os.path.exists(str(sys_jsonld_path)):
+        missing.append(f"System JSON-LD: {sys_jsonld_path or '(not configured)'}")
+
+    if missing:
+        print("❌ Missing required evaluation files. Please set in settings.yaml [evaluation]:")
+        for m in missing:
+            print(f"    - {m}")
+        print("\n   Example configuration:")
+        print('''  evaluation:
+    gt_jsonld: "output/gt/nanyangmingmen150_gt.jsonld"
+    sys_jsonld: "output/jsonld/nanyangmingmen150.jsonld"
+    gt_svg: "output/processed/nanyangmingmen150_gt.svg"    # optional
+    sys_svg: "input_data/svg/nanyangmingmen150.svg"              # optional
+    violations_json: "output/violations/nanyangmingmen150_violations.json"  # optional''')
+        sys.exit(1)
+
+    # 3. Load ground truth
+    with open(str(gt_jsonld_path), "r", encoding="utf-8") as f:
+        ground_truth_data = json.load(f)
+    print(f"  [+] Loaded GT JSON-LD from: {gt_jsonld_path}")
+
+    # 4. Load system output
+    with open(str(sys_jsonld_path), "r", encoding="utf-8") as f:
+        system_output_data = json.load(f)
+    print(f"  [+] Loaded system JSON-LD from: {sys_jsonld_path}")
+
+    # 5. Load system violations (optional)
+    system_violations = []
+    if violations_path and os.path.exists(str(violations_path)):
+        with open(str(violations_path), "r", encoding="utf-8") as f:
+            system_violations = json.load(f)
+        print(f"  [+] Loaded violations from: {violations_path}")
+    else:
+        print(f"  [-] Violations file not configured or not found, using empty list.")
+
+    # 6. Summary
+    print("=" * 50)
+    print("📋 Evaluation Configuration:")
+    print(f"  - GT JSON-LD:      {gt_jsonld_path}")
+    print(f"  - System JSON-LD:  {sys_jsonld_path}")
+    print(f"  - GT SVG:          {gt_svg_path or '(not provided)'}")
+    print(f"  - System SVG:      {sys_svg_path or '(not provided)'}")
+    print(f"  - Violations:      {violations_path or '(not provided)'}")
+    print("=" * 50)
+
+    # 7. Run evaluation
+    evaluator = PipelineEvaluator(
+        ground_truth_data, system_output_data, system_violations,
+        gt_svg_path=str(gt_svg_path) if gt_svg_path else None,
+        sys_svg_path=str(sys_svg_path) if sys_svg_path else None,
+    )
+    evaluator.run_all()

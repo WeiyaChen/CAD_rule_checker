@@ -342,8 +342,8 @@ def write_svg_tree(tree, svg_path):
 
 def main():
     file_dir = ""
-    dxf_dir = os.path.join(settings.dxf_data_path, file_dir)
-    svg_dir = os.path.join(settings.raw_svg_data_path, file_dir)
+    dxf_dir = os.path.join(settings.dxf_dir, file_dir)
+    svg_dir = os.path.join(settings.svg_dir, file_dir)
 
     os.makedirs(svg_dir, exist_ok=True)
 

@@ -118,7 +118,7 @@ class UIHandler(BaseHTTPRequestHandler):
             mode = str(data.get('mode', 'SINGLE')).upper()
             target_dir = data.get('targetDir') or ''
             target_file = data.get('targetFile') or ''
-            output_dir = data.get('outputDir') or 'output/exp_jsonld'
+            output_dir = data.get('outputDir') or 'output/jsonld'
 
             cmd = [sys.executable, '-m', 'src.main', '--mode', mode]
             if target_dir:
@@ -155,8 +155,8 @@ class UIHandler(BaseHTTPRequestHandler):
                 self._send_json({'ok': False, 'error': 'invalid_json'}, 400)
                 return
 
-            sys_out_dir = data.get('sysOutDir') or 'output/exp_jsonld'
-            gt_dir = data.get('gtDir') or 'output/gt_jsonld'
+            sys_out_dir = data.get('sysOutDir') or 'output/jsonld'
+            gt_dir = data.get('gtDir') or 'output/gt'
             violation_dir = data.get('violationDir') or ''
             eval_output_dir = data.get('evalOutputDir') or 'output/html'
 
@@ -192,7 +192,7 @@ class UIHandler(BaseHTTPRequestHandler):
             # parse multipart
             form = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD': 'POST'})
             target_dir = form.getvalue('targetDir') or 'uploads'
-            save_dir = settings.dxf_data_path / target_dir
+            save_dir = settings.dxf_dir / target_dir
             save_dir.mkdir(parents=True, exist_ok=True)
             saved = []
             for field in form.list or []:
@@ -219,7 +219,7 @@ class UIHandler(BaseHTTPRequestHandler):
             mode = str(data.get('mode') or 'SINGLE').upper()
             target_dir = data.get('targetDir') or ''
             target_file = data.get('targetFile') or ''
-            output_dir = data.get('outputDir') or 'output/exp_jsonld'
+            output_dir = data.get('outputDir') or 'output/jsonld'
             supported_steps = {'dxf2svg', 'extract-elements', 'build-topology', 'enrich-graph', 'visualize-graph'}
             if step not in supported_steps:
                 self._send_json({'ok': False, 'error': 'unknown_step', 'step': step, 'supportedSteps': sorted(supported_steps)}, 400)
@@ -230,8 +230,8 @@ class UIHandler(BaseHTTPRequestHandler):
             files = []
 
             def _find_svg_files():
-                """Return all SVG files under data/raw/svg/<target_dir>/"""
-                svg_dir = settings.raw_svg_data_path / target_dir
+                """Return all SVG files under input_data/svg/<target_dir>/"""
+                svg_dir = settings.svg_dir / target_dir
                 if not svg_dir.exists():
                     return []
                 return sorted(svg_dir.glob('*.svg'))
@@ -242,13 +242,13 @@ class UIHandler(BaseHTTPRequestHandler):
                 candidate = Path(str(target_file).replace('\\', '/'))
                 if candidate.is_absolute():
                     return candidate
-                if str(candidate).startswith('data/raw/svg/'):
+                if str(candidate).startswith('input_data/svg/'):
                     return (ROOT / candidate).resolve()
                 if candidate.parent != Path('.'):
-                    return (settings.raw_svg_data_path / candidate).resolve()
+                    return (settings.svg_dir / candidate).resolve()
                 if target_dir:
-                    return (settings.raw_svg_data_path / target_dir / candidate).resolve()
-                return (settings.raw_svg_data_path / candidate).resolve()
+                    return (settings.svg_dir / target_dir / candidate).resolve()
+                return (settings.svg_dir / candidate).resolve()
 
             def build_step_paths(svg_path):
                 base_name = svg_path.stem
@@ -258,8 +258,8 @@ class UIHandler(BaseHTTPRequestHandler):
                 return {
                     'raw_jsonld_path': output_dir_path / f"{base_name}_raw.jsonld",
                     'enriched_jsonld_path': output_dir_path / f"{base_name}.jsonld",
-                    'exp_viz_path': settings.exp_viz_dir / f"{base_name}_exp.png",
-                    'svg_ins_path': settings.svg_ins_dir / f"{base_name}.png"
+                    'exp_viz_path': settings.viz_dir / f"{base_name}_topology.png",
+                    'svg_ins_path': settings.viz_dir / f"{base_name}_instance.png"
                 }
 
             def _run_single_step(step, svg_path, msg_list, res_list):
@@ -320,8 +320,8 @@ class UIHandler(BaseHTTPRequestHandler):
 
             try:
                 if step == 'dxf2svg':
-                    dxf_root = settings.dxf_data_path / target_dir
-                    svg_root = settings.raw_svg_data_path / target_dir
+                    dxf_root = settings.dxf_dir / target_dir
+                    svg_root = settings.svg_dir / target_dir
                     svg_root.mkdir(parents=True, exist_ok=True)
                     if not dxf_root.exists():
                         raise FileNotFoundError(f"DXF source dir not found: {dxf_root}")
@@ -338,7 +338,7 @@ class UIHandler(BaseHTTPRequestHandler):
                     if mode == 'BATCH':
                         svg_files = _find_svg_files()
                         if not svg_files:
-                            raise FileNotFoundError(f"No SVG files found in data/raw/svg/{target_dir}")
+                            raise FileNotFoundError(f"No SVG files found in input_data/svg/{target_dir}")
                         for svg_path in svg_files:
                             messages.append(f"Processing: {svg_path.name}")
                             _run_single_step(step, svg_path, messages, results)
@@ -357,7 +357,7 @@ class UIHandler(BaseHTTPRequestHandler):
             return
 
     def _available_inputs(self):
-        svg_root = ROOT / 'data' / 'raw' / 'svg'
+        svg_root = ROOT / 'input_data' / 'svg'
         svg_files = []
         if svg_root.exists():
             for path in sorted(svg_root.rglob('*.svg')):
@@ -365,7 +365,7 @@ class UIHandler(BaseHTTPRequestHandler):
                     svg_files.append(_repo_rel(path))
 
         result_dirs = []
-        output_root = ROOT / 'output' / 'exp_jsonld'
+        output_root = ROOT / 'output' / 'jsonld'
         if output_root.exists():
             for path in sorted(output_root.rglob('*')):
                 if path.is_dir():
@@ -374,7 +374,7 @@ class UIHandler(BaseHTTPRequestHandler):
         return {
             'svgFiles': svg_files,
             'resultDirs': result_dirs,
-            'defaultOutputDir': 'output/exp_jsonld'
+            'defaultOutputDir': 'output/jsonld'
         }
 
     def _list_files(self, path_value):

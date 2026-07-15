@@ -15,23 +15,18 @@
 
 ```text
 cad_rule_checker/
-├── data/
-│   ├── processed/
-│   │   └── svg/             # Files after primitive recognition by deep learning models
-│   └── raw/
-│       ├── dxf/             # Raw DXF files
-│       ├── dxf_extend/      # Manually annotated or extended DXF files
-│       ├── pickle/          # Intermediate pickle data
-│       └── svg/             # SVG files converted from DXF
+├── input_data/
+│   ├── dxf/                 # Raw DXF files
+│   ├── dxf_gt/              # Manually annotated Ground Truth DXF files
+│   ├── pickle/              # External instance segmentation pickle cache
+│   └── svg/                 # SVG files converted from DXF
 ├── output/
-│   ├── cdt/
-│   ├── exp_jsonld/          # Semantic-enriched JSON-LD output
-│   ├── exp_res/             # Rule checking results
-│   ├── exp_viz/             # Visualization output
-│   ├── gt_jsonld/           # Ground truth JSON-LD
-│   ├── gt_res/              # Ground truth evaluation results
-│   ├── gt_viz/
-│   └── svg_ins/             # Instance recognition visualization
+│   ├── jsonld/              # Semantic-enriched JSON-LD output
+│   ├── violations/          # Rule checking violation reports
+│   ├── viz/                 # All visualization images (CDT / SVG instance / experiment / GT)
+│   ├── gt/                  # Ground truth JSON-LD annotations
+│   ├── html/                # HTML evaluation reports
+│   └── processed/           # Intermediate SVGs after modification
 ├── prompt/
 │   └── prompt_config.txt    # LLM prompt configuration
 ├── rules/
@@ -113,12 +108,12 @@ pip install shapely
 Place the DXF files to be processed in:
 
 ```text
-data/raw/dxf/
+input_data/dxf/
 ```
 
 ### 2. Convert DXF to SVG
 
-The conversion script reads DXF files from `data/raw/dxf/` and outputs SVG to `data/raw/svg/`.
+The conversion script reads DXF files from `input_data/dxf/` and outputs SVG to `input_data/svg/`.
 
 From the project root, run the conversion script:
 
@@ -129,7 +124,7 @@ python -m src.io.dxf_to_svg
 The converted SVG files will be output to:
 
 ```text
-data/raw/svg/
+input_data/svg/
 ```
 
 ### 3. Run the Main Checking Pipeline
@@ -158,7 +153,7 @@ The program will execute:
 Place manually annotated or extended DXF files in:
 
 ```text
-data/raw/dxf_extend/
+input_data/dxf_gt/
 ```
 
 Run the ground truth creation script:
@@ -187,7 +182,6 @@ The main entry point supports the following modes, configurable via the settings
 
 - `SINGLE` — Process a single SVG file
 - `BATCH` — Process all SVG files in a specified directory
-- `DEFAULT` — Process the default directory configured in `settings.yaml`
 
 ### Common Arguments
 
@@ -199,12 +193,12 @@ The main entry point supports the following modes, configurable via the settings
 
 ## Output Directory Overview
 
-- `output/exp_jsonld/` — Enriched JSON-LD files from experiments
-- `output/exp_viz/` — Knowledge graph visualization images
-- `output/svg_ins/` — Instance recognition results
-- `output/gt_jsonld/` — Ground truth JSON-LD files
-- `output/gt_res/` — Ground truth evaluation results
-- `output/exp_res/` — Rule checking violation results
+- `output/jsonld/` — Semantic-enriched JSON-LD output
+- `output/violations/` — SHACL rule checking violation reports
+- `output/viz/` — All visualization images (CDT, SVG instance, experiment, GT previews)
+- `output/gt/` — Ground truth JSON-LD annotations
+- `output/html/` — HTML evaluation reports
+- `output/processed/` — Intermediate SVGs after svg_modifier processing
 
 ## Notes
 

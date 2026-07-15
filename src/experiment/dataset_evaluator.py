@@ -241,10 +241,10 @@ class BatchDatasetEvaluator:
 if __name__ == "__main__":
     # 配置您的实际目录路径
     FILE_DIR = ""
-    GT_DIR = os.path.join(settings.gt_jsonld_dir, FILE_DIR) # 人工标注目录
-    SYS_OUT_DIR = os.path.join(settings.exp_jsonld_dir, FILE_DIR)  # 系统生成图谱目录
+    GT_DIR = os.path.join(settings.gt_dir, FILE_DIR)           # Ground Truth 标注目录
+    SYS_OUT_DIR = os.path.join(settings.jsonld_dir, FILE_DIR)  # 系统生成图谱目录
     VIO_DIR = None
-    OUTPUT_DIR = os.path.join(settings.output_html_dir, FILE_DIR)  # 结果保存目录
+    OUTPUT_DIR = os.path.join(settings.html_dir, FILE_DIR)     # 结果保存目录
 
     # 简单生成测试目录防止直接运行报错
     os.makedirs(OUTPUT_DIR, exist_ok=True)

@@ -246,8 +246,8 @@ class TopologyBuilder:
         room_results = builder.new_build(clean_walls, door_patches, window_patches, room_tags)
 
         # 调用可视化
-        save_dir = str(settings.cdt_dir)
-        filename = os.path.basename(json_output_path).replace("_raw.jsonld", ".png")
+        save_dir = str(settings.viz_dir)
+        filename = os.path.basename(json_output_path).replace("_raw.jsonld", "_cdt.png")
         plot_floor_plan(builder, room_results, save_dir, filename)
 
         # bot构建

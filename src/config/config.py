@@ -53,88 +53,76 @@ class Settings:
     def resolve_project_path(self, value, base_dir=None):
         return self._resolve_path(value, base_dir=base_dir)
 
+    # ==========================================
+    # 3. 输入数据路径 (Input Data) — 仅原始/外部输入文件
+    # ==========================================
     @property
-    def data_path(self):
-        """自动返回 data 目录的绝对路径"""
-        path_str = self._get_value('data', 'root_dir', 'data')
+    def dxf_dir(self):
+        """原始 DXF 图纸目录"""
+        path_str = self._get_value('input_data', 'dxf', 'input_data/dxf')
         return self._resolve_path(path_str)
 
     @property
-    def dxf_data_path(self):
-        path_str = self._get_value('data', 'dxf_dir', 'data/raw/dxf')
+    def svg_dir(self):
+        """原始/转换 SVG 图纸目录"""
+        path_str = self._get_value('input_data', 'svg', 'input_data/svg')
         return self._resolve_path(path_str)
 
     @property
-    def dxf_extend_data_path(self):
-        path_str = self._get_value('data', 'dxf_extend_dir', 'data/raw/dxf_extend')
+    def dxf_gt_dir(self):
+        """人工标注 Ground Truth DXF 目录"""
+        path_str = self._get_value('input_data', 'dxf_gt', 'input_data/dxf_gt')
         return self._resolve_path(path_str)
 
     @property
-    def raw_pickle_data_path(self):
-        """返回 raw pickle 的绝对路径"""
-        path_str = self._get_value('data', 'raw_pickle_dir', 'data/raw/pickle')
+    def pickle_dir(self):
+        """外部实例分割 pickle 缓存目录"""
+        path_str = self._get_value('input_data', 'pickle', 'input_data/pickle')
+        return self._resolve_path(path_str)
+
+    # ==========================================
+    # 4. 输出路径 (Output) — 统一管理所有产出物
+    # ==========================================
+    @property
+    def jsonld_dir(self):
+        """系统生成的 JSON-LD 知识图谱目录"""
+        path_str = self._get_value('output', 'jsonld', 'output/jsonld')
         return self._resolve_path(path_str)
 
     @property
-    def raw_svg_data_path(self):
-        """返回 raw svg 的绝对路径"""
-        path_str = self._get_value('data', 'raw_svg_dir', 'data/raw/svg')
+    def violations_dir(self):
+        """违规报告目录"""
+        path_str = self._get_value('output', 'violations', 'output/violations')
         return self._resolve_path(path_str)
 
     @property
-    def processed_svg_data_path(self):
-        """返回 processed svg 的绝对路径"""
-        path_str = self._get_value('data', 'processed_svg_dir', 'data/processed')
+    def viz_dir(self):
+        """可视化图片目录（CDT/SVG 实例/实验/GT 预览）"""
+        path_str = self._get_value('output', 'viz', 'output/viz')
         return self._resolve_path(path_str)
 
     @property
-    def output_html_dir(self):
-        path_str = self._get_value('output', 'html_dir', 'output/html')
+    def gt_dir(self):
+        """Ground Truth 人工标注目录"""
+        path_str = self._get_value('output', 'gt', 'output/gt')
+        return self._resolve_path(path_str)
+
+    @property
+    def html_dir(self):
+        """HTML 评估报告目录"""
+        path_str = self._get_value('output', 'html', 'output/html')
+        return self._resolve_path(path_str)
+
+    @property
+    def processed_dir(self):
+        """中间处理 SVG 目录"""
+        path_str = self._get_value('output', 'processed', 'output/processed')
         return self._resolve_path(path_str)
 
     @property
     def rules_dir(self):
+        """SHACL 规则目录"""
         path_str = self._cfg.get('rules', 'rules')
-        return self._resolve_path(path_str)
-
-    @property
-    def svg_ins_dir(self):
-        path_str = self._get_value('output', 'svg_ins_dir', 'output/svg_ins')
-        return self._resolve_path(path_str)
-
-    @property
-    def cdt_dir(self):
-        path_str = self._get_value('output', 'cdt_dir', 'output/cdt')
-        return self._resolve_path(path_str)
-
-    @property
-    def exp_viz_dir(self):
-        path_str = self._get_value('output', 'exp_viz_dir', 'output/exp_viz')
-        return self._resolve_path(path_str)
-
-    @property
-    def gt_viz_dir(self):
-        path_str = self._get_value('output', 'gt_viz_dir', 'output/gt_viz')
-        return self._resolve_path(path_str)
-
-    @property
-    def exp_jsonld_dir(self):
-        path_str = self._get_value('output', 'exp_jsonld_dir', 'output/exp_jsonld')
-        return self._resolve_path(path_str)
-
-    @property
-    def gt_jsonld_dir(self):
-        path_str = self._get_value('output', 'gt_jsonld_dir', 'output/gt_jsonld')
-        return self._resolve_path(path_str)
-
-    @property
-    def exp_res_dir(self):
-        path_str = self._get_value('output', 'exp_res_dir', 'output/exp_res')
-        return self._resolve_path(path_str)
-
-    @property
-    def gt_res_dir(self):
-        path_str = self._get_value('output', 'gt_res_dir', 'output/gt_res')
         return self._resolve_path(path_str)
 
     @property
@@ -152,11 +140,11 @@ class Settings:
 
     @property
     def runtime_target_file(self):
-        return self._read_env('CAD_RULE_CHECKER_TARGET_FILE', self._get_value('runtime', 'target_file', '南阳名门150.svg'))
+        return self._read_env('CAD_RULE_CHECKER_TARGET_FILE', self._get_value('runtime', 'target_file', 'nanyangmingmen150.svg'))
 
     @property
     def runtime_output_dir(self):
-        path_str = self._read_env('CAD_RULE_CHECKER_OUTPUT_DIR', self._get_value('runtime', 'output_dir', 'output/exp_jsonld'))
+        path_str = self._read_env('CAD_RULE_CHECKER_OUTPUT_DIR', self._get_value('runtime', 'jsonld_dir', 'output/jsonld'))
         return self._resolve_path(path_str)
 
     @property
@@ -187,18 +175,51 @@ class Settings:
     def llm_model(self):
         return self._read_env('CAD_RULE_CHECKER_LLM_MODEL', self._get_value('llm', 'model', 'glm-4-flash'))
 
+    # ==========================================
+    # 评估 (Evaluation) 配置
+    # ==========================================
+    @property
+    def eval_gt_jsonld(self):
+        """Ground Truth JSON-LD 文件路径（相对项目根目录）"""
+        val = self._get_value('evaluation', 'gt_jsonld', '')
+        return self._resolve_path(val) if val else None
+
+    @property
+    def eval_sys_jsonld(self):
+        """系统输出 JSON-LD 文件路径（相对项目根目录）"""
+        val = self._get_value('evaluation', 'sys_jsonld', '')
+        return self._resolve_path(val) if val else None
+
+    @property
+    def eval_gt_svg(self):
+        """Ground Truth SVG 文件路径（可选，相对项目根目录）"""
+        val = self._get_value('evaluation', 'gt_svg', '')
+        return self._resolve_path(val) if val else None
+
+    @property
+    def eval_sys_svg(self):
+        """系统输入 SVG 文件路径（可选，相对项目根目录）"""
+        val = self._get_value('evaluation', 'sys_svg', '')
+        return self._resolve_path(val) if val else None
+
+    @property
+    def eval_violations_json(self):
+        """系统违规报告 JSON 文件路径（可选，相对项目根目录）"""
+        val = self._get_value('evaluation', 'violations_json', '')
+        return self._resolve_path(val) if val else None
+
     def resolve_runtime_target_path(self, target_dir=None, target_file=None):
         target_dir_value = target_dir or self.runtime_target_dir
         target_file_value = target_file or self.runtime_target_file
 
-        if isinstance(target_dir_value, str) and target_dir_value.startswith('data/raw/svg/'):
-            target_dir_value = target_dir_value[len('data/raw/svg/'):]
-        if isinstance(target_file_value, str) and target_file_value.startswith('data/raw/svg/'):
-            target_file_value = target_file_value[len('data/raw/svg/'):]
+        if isinstance(target_dir_value, str) and target_dir_value.startswith('input_data/svg/'):
+            target_dir_value = target_dir_value[len('input_data/svg/'):]
+        if isinstance(target_file_value, str) and target_file_value.startswith('input_data/svg/'):
+            target_file_value = target_file_value[len('input_data/svg/'):]
 
         target_dir_path = Path(target_dir_value)
         if not target_dir_path.is_absolute():
-            target_dir_path = self.raw_svg_data_path / target_dir_path
+            target_dir_path = self.svg_dir / target_dir_path
 
         target_file_path = Path(target_file_value)
         if target_file_path.is_absolute():
@@ -207,12 +228,12 @@ class Settings:
 
     def resolve_runtime_input_dir(self, target_dir=None):
         target_dir_value = target_dir or self.runtime_target_dir
-        if isinstance(target_dir_value, str) and target_dir_value.startswith('data/raw/svg/'):
-            target_dir_value = target_dir_value[len('data/raw/svg/'):]
+        if isinstance(target_dir_value, str) and target_dir_value.startswith('input_data/svg/'):
+            target_dir_value = target_dir_value[len('input_data/svg/'):]
         target_dir_path = Path(target_dir_value)
         if target_dir_path.is_absolute():
             return target_dir_path
-        return self.raw_svg_data_path / target_dir_path
+        return self.svg_dir / target_dir_path
 
 
 # ==========================================

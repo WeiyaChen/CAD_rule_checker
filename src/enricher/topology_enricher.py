@@ -310,7 +310,7 @@ class TopologyEnricher:
 
 if __name__ == "__main__":
     # 测试代码
-    target_file = os.path.join(settings.exp_jsonld_dir, "apartment_semantic_suites_geo.jsonld")
+    target_file = os.path.join(settings.jsonld_dir, "apartment_semantic_suites_geo.jsonld")
     if len(sys.argv) > 1:
         target_file = sys.argv[1]
 

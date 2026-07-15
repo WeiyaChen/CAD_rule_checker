@@ -1,42 +1,51 @@
-# 这里只写相对路径，不要写绝对路径
-data:
-  root_dir: "data"
-  dxf_dir: "data/raw/dxf"
-  raw_pickle_dir: "data/raw/pickle"
-  raw_svg_dir: "data/raw/svg"
-  dxf_extend_dir: "data/raw/dxf_extend"
-  processed_svg_dir: "data/processed"
+# === 输入数据路径（仅原始/外部输入文件） ===
+input_data:
+  dxf: "input_data/dxf"             # 原始 DXF 图纸
+  svg: "input_data/svg"             # 原始/转换 SVG 图纸
+  dxf_gt: "input_data/dxf_gt"       # 人工标注 Ground Truth DXF（含语义图层）
+  pickle: "input_data/pickle"       # 外部实例分割 pickle 缓存
 
+# === 模型相关 ===
 model:
   save_dir: "models/checkpoints"
 
+# === 运行时配置 ===
 runtime:
   run_mode: "SINGLE"
   target_dir: ""
-  target_file: "南阳名门150.svg"
-  output_dir: "output/exp_jsonld"
+  target_file: "nanyangmingmen150.svg"
+  jsonld_dir: "output/jsonld"       # 系统输出 JSON-LD
   sample_input_jsonld: "apartment_semantic_suites.jsonld"
   sample_output_jsonld: "apartment_semantic_suites_geo.json"
   sample_visualization_input: "北京保利140+135.jsonld"
   sample_visualization_output: "北京保利140+135.png"
 
+# === LLM 配置 ===
 llm:
   api_key: "68c58c6b481a4d328d2fdf295240c1fb.Zt1Itx9ICDK5VIGB"
   base_url: "https://open.bigmodel.cn/api/paas/v4/"
   model: "glm-4-flash"
 
+# === 输出路径（统一管理所有产出物） ===
 output:
-  gt_jsonld_dir: "output/gt_jsonld"
-  html_dir: "output/html"
-  exp_jsonld_dir: "output/exp_jsonld"
-  svg_ins_dir: "output/svg_ins"
-  cdt_dir: "output/cdt"
-  exp_viz_dir: "output/exp_viz"
-  gt_viz_dir: "output/gt_viz"
-  exp_res_dir: "output/exp_res"
-  gt_res_dir: "output/gt_res"
+  jsonld: "output/jsonld"           # 系统生成的 JSON-LD 知识图谱
+  violations: "output/violations"   # SHACL 违规报告
+  viz: "output/viz"                 # 所有可视化图片（CDT/SVG实例/实验/GT）
+  gt: "output/gt"                   # Ground Truth 人工标注
+  html: "output/html"               # HTML 评估报告
+  processed: "output/processed"     # 中间处理 SVG（经 svg_modifier 修改后）
 
+# === SHACL 规则目录 ===
 rules: "rules"
 
+# === 单文件评估配置 ===
+evaluation:
+  gt_jsonld: "output/gt/Nanyangmingmen150_Annotated_gt.jsonld"                     # Ground Truth JSON-LD 文件路径
+  sys_jsonld: "output/jsonld/nanyangmingmen150.jsonld"                    # 系统输出 JSON-LD 文件路径
+  gt_svg: ""                        # Ground Truth SVG 文件路径（可选）
+  sys_svg: "nanyangmingmen150_modified.svg"                       # 系统输入 SVG 文件路径（可选）
+  violations_json: ""               # 违规报告 JSON 文件路径（可选）
+
+# === Prompt 配置 ===
 prompt:
   prompt_config_dir: "prompt/prompt_config.txt"

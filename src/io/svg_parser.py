@@ -462,7 +462,7 @@ def _apply_transform(coords, transform_str):
 # if __name__ == "__main__":
 #     # 测试示例
 #     input_svg_name = "apartment.svg"  # svg文件名
-#     input_svg_path = os.path.join(settings.raw_svg_data_path, input_svg_name)
+#     input_svg_path = os.path.join(settings.svg_dir, input_svg_name)
 #     print("[svg_loader] Loading raw SVG...")
 #     tree, primitives = load_svg(input_svg_path)  # 获取xml树和图元列表
 #     print("[svg_loader] Load complete!")
