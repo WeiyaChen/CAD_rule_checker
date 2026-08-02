@@ -29,6 +29,7 @@
   .card .tag.green { background: #1d4a3a; color: #7ff0b4; }
   .card .tag.purple { background: #45296e; color: #d9b3ff; }
   .card .tag.orange { background: #5a3a16; color: #ffd28a; }
+  .card .tag.teal { background: #164a4a; color: #7ff0e0; }
   .card h2 { font-size: 19px; margin-bottom: 8px; }
   .card p { font-size: 13px; color: #b9ccdd; line-height: 1.6; }
   .copyright { text-align: center; color: #7c8ea0; font-size: 12px; margin-top: 44px; letter-spacing: .5px; }
@@ -48,7 +49,7 @@
     </a>
 
     <a class="card" href="exp_analysis.html">
-      <span class="tag">Category 2 · 2.1 Drawing Analysis</span>
+      <span class="tag purple">Category 2 · 2.1 Drawing Analysis</span>
       <h2>System vs GT Comparison</h2>
       <p>Input a single DXF file and view the system result and the Ground Truth result side by side on screen.</p>
     </a>
@@ -59,8 +60,14 @@
       <p>Input a single DXF file. The system locates the processed file automatically; new files are parsed first, then L1/L2/L3 compliance checks run.</p>
     </a>
 
+    <a class="card" href="kg_browser.html">
+      <span class="tag orange">Tool · Knowledge Graph</span>
+      <h2>Knowledge Graph Browser</h2>
+      <p>Standalone tool: load one knowledge graph at a time (system JSON-LD or GT), with optional enrichment stage replay. For System vs GT comparison, use Drawing Analysis (Exp 2.1).</p>
+    </a>
+
     <a class="card" href="overall_report.html">
-      <span class="tag orange">Evaluation Overview</span>
+      <span class="tag teal">Evaluation Overview</span>
       <h2>overall_results Visualization</h2>
       <p>Reads output/html/overall_results.json and visualizes global metrics and per-sample details.</p>
     </a>

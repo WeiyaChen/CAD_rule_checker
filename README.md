@@ -143,7 +143,31 @@ You can control the input path and run mode via command-line arguments:
 python -m src.main --mode SINGLE --target-file sample.svg
 ```
 
-Alternatively, modify the `runtime` section in the configuration file [src/config/settings.yaml](src/config/settings.yaml) and then run:
+#### BATCH Mode
+
+To process **all** SVG files in a directory at once, use `--mode BATCH` and
+point `--target-dir` at the folder containing the SVG files:
+
+```bash
+python -m src.main --mode BATCH
+```
+
+Optionally, specify a custom output directory with `--output-dir`:
+
+```bash
+python -m src.main --mode BATCH --target-dir input_data/svg --output-dir output/jsonld
+```
+
+In BATCH mode `src/main.py` will:
+
+- Scan the target directory and pick up every `*.svg` file (files are
+  processed in directory order)
+- Run the parsing pipeline on each drawing (the same Exp 1-4 steps as
+  SINGLE mode)
+- Print a summary report at the end with the total number of drawings,
+  how many parsed successfully, and how many failed
+
+Alternatively, modify the `runtime` section in the configuration file [src/config/settings.yaml](src/config/settings.yaml) (set `run_mode: BATCH` and the target directory) and then run:
 
 ```bash
 python -m src.main
@@ -228,6 +252,45 @@ python -m src.experiment.ground_truth_creator --mode BATCH
 python -m src.experiment.dataset_evaluator
 ```
 
+### 7. Knowledge Graph Browser (multi-view)
+
+`src/utils/kg_browser.py` renders **one self-contained interactive HTML per
+drawing** with three tabs, so you can inspect both the whole knowledge graph and
+how the enrichment pipeline changes it step by step (replaces the former
+`suite_viz.py`):
+
+- **全图 Knowledge Graph** — the whole `@graph` as a force-directed graph: all
+  node types (Space / Suite / Door / Window / FunctionalElement) and all relations
+  (`bot:adjacentZone` / `bot:containsElement` / `bot:interfaceOf` /
+  `bot:hasSpace` / `bot:hasSubZone`), switchable by enrichment stage and filterable
+  by edge type; click a node to see its id/group.
+- **富化过程 Stages** — step through the enrichment pipeline (raw → semantic →
+  geometry → ACD → geometry² → topology), highlighting nodes/edges **added
+  (green) / removed (red)** versus the previous stage, plus per-stage stats.
+- **套型从属 Suite** — the suite containment report: color-coded floor plan (one
+  color per suite; public/unassigned hatched gray), membership table and
+  auto-detected anomaly flags (suite count vs. the `<N>suite` expectation, a suite
+  swallowing >75% of private spaces, 1-space suites, unassigned spaces).
+
+The stage browser replays the pipeline from `<base>_raw.jsonld` + `<base>.svg`;
+single-file mode uses the configured LLM client for a faithful replay
+(`--no-llm` falls back to the rule-based sandbox).
+
+```bash
+# Single file (faithful LLM replay)
+python -m src.utils.kg_browser --base "2suite (1)"
+
+# Sandbox (rule-based) replay
+python -m src.utils.kg_browser --base "2suite (1)" --no-llm
+
+# Batch over all drawings
+python -m src.utils.kg_browser --mode BATCH --out-dir output/viz
+```
+
+Output: `<base>_kg_browser.html` (plus `<base>_suites.png` for the Suite tab) in
+`output/viz/`. Requires `vis.js` from CDN (consistent with the existing pyvis
+usage).
+
 ## Web Graphical Interface
 
 A lightweight web UI is provided for interactive, single-file workflows. Start the server from the project root:
@@ -244,8 +307,9 @@ Then open `http://localhost:8000` in a browser. The GUI is organized into two ca
 
 ### Category 2 · Experiments
 
-- **`exp_analysis.html`** — Drawing Analysis (Exp 2.1): input a single DXF file and view the **system result and Ground Truth side by side**. The system parses the drawing and automatically matches the corresponding GT annotation by name.
+- **`exp_analysis.html`** — Drawing Analysis (Exp 2.1): input a single DXF file and view the **system result and Ground Truth side by side**. The system parses the drawing and automatically matches the corresponding GT annotation by name. Below the topology images it also shows a **side-by-side interactive JSON-LD knowledge graph comparison** (System vs GT, each pane is the `kg_browser` view).
 - **`exp_shacl.html`** — SHACL Review (Exp 2.2): input a single DXF file. The system automatically locates the processed enriched JSON-LD; for a new file it runs the parsing pipeline first, then executes the L1 / L2 / L3 compliance checks and shows the violations plus an interactive annotated report.
+- **`kg_browser.html`** — Knowledge Graph Browser (**standalone tool**): pick a processed drawing and a source (`System` or `GT`) and load **one knowledge graph at a time** into the interactive browser produced by `src/utils/kg_browser.py` (whole graph / stages / suite tabs). Tick “包含富化过程” to replay the six enrichment stages for the system side (uses the LLM, slower). System vs GT comparison is intentionally left to `exp_analysis.html` (Exp 2.1).
 
 ### Evaluation Overview
 
@@ -264,6 +328,8 @@ All pages accept a **single file input**; none run batch processing. Images (SVG
 | `POST /api/upload-dxf` | Upload DXF files |
 | `GET /api/preview?path=` | Preview a file (SVG / PNG / HTML / JSON) |
 | `GET /api/evaluation-data` | Read `overall_results.json` and `individual_results.csv` |
+| `GET /api/kg-files` | List datasets for the KG browser (system JSON-LD + matching GT) |
+| `GET /api/kg-browser?base=&src=&stages=&refresh=` | Generate/serve the KG browser HTML for a dataset (`src=system`\|`gt`, `stages=1` replays the enrichment pipeline) |
 
 > Note: `manual.html` is a legacy pure-frontend prototype (canvas graph editor) and retains its built-in zh/en toggle.
 
@@ -302,6 +368,22 @@ The main entry point supports the following modes, configurable via the settings
 - `src/main.py` contains LLM client initialization code. Replace or refactor it to use a secure API key management approach before deployment.
 - The SHACL-based rule checking will not work without `pyshacl` and `rdflib` installed.
 - This project is currently designed for **experimental** rule checking and result visualization. The pipeline can be extended for production use cases as needed.
+
+## Utility Scripts
+
+- `scripts/clean_generated.py` — delete all code-generated files under `output/`
+  in one shot (JSON-LD, visualizations, reports, violations, GT JSON-LD,
+  intermediate SVGs) while keeping the directory structure. `input_data/` is
+  never touched (raw DXF, annotated GT DXF, converted SVGs, pickle cache all
+  preserved).
+
+  ```bash
+  python scripts/clean_generated.py --dry-run   # preview only
+  python scripts/clean_generated.py --yes       # delete immediately
+  ```
+
+- `scripts/check_ui_endpoints.py` — check the web UI backend endpoints.
+- `scripts/run_step_test.py` — run a single pipeline step.
 
 ## Suggested Improvements
 

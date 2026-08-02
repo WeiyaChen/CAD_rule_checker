@@ -174,14 +174,6 @@ class BotGraphGenerator:
     def generate(self):
         topo_data = self._calculate_topology()
 
-        # 创建一个 Apartment 根节点
-        apartment_node = {
-            "@id": "inst:Apartment_01",
-            "@type": "bot:Zone",
-            "bot:containsZone": [{"@id": f"inst:{r['id']}"} for r in self.rooms]
-        }
-        self.graph.append(apartment_node)
-
         # 生成房间节点
         for r in self.rooms:
             r_id = r["id"]

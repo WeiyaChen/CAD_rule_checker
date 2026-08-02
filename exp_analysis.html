@@ -27,6 +27,11 @@
   .card h4 { font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
   .card .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .dot.sys { background: #2a8fbd; } .dot.gt { background: #27ae60; }
+  .kg-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 8px; }
+  .kg-pane { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06); overflow: hidden; }
+  .kg-pane .ph { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #eef1f5; font-size: 14px; font-weight: 600; }
+  .kg-pane .ph .st { margin-left: auto; font-size: 11px; color: #8a97a8; font-weight: 400; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kg-pane iframe { width: 100%; height: 760px; border: 0; display: block; background: #fff; }
   .card pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 11px; max-height: 260px; overflow: auto; white-space: pre-wrap; }
   .sub { font-size: 12px; color: #5b2a96; font-weight: 600; margin: 12px 0 4px; }
   .summary-card { margin-top: 18px; }
@@ -86,6 +91,22 @@
       <h4 style="margin-top:16px">Semantic Type Counts</h4>
       <table class="diff-table" id="semTable"></table>
     </div>
+
+    <div class="card summary-card hidden" id="kgCompareCard">
+      <h4>🕸️ System vs GT · JSON-LD Knowledge Graph</h4>
+      <div class="kg-pair">
+        <div class="kg-pane">
+          <div class="ph"><span class="dot sys"></span>System KG <span class="st" id="kgSysSt">—</span></div>
+          <iframe id="kgSysFrame" src="about:blank"></iframe>
+        </div>
+        <div class="kg-pane">
+          <div class="ph"><span class="dot gt"></span>GT KG <span class="st" id="kgGtSt">—</span></div>
+          <iframe id="kgGtFrame" class="hidden" src="about:blank"></iframe>
+          <div id="kgGtEmpty" class="empty hidden">No matching GT.</div>
+        </div>
+      </div>
+      <div class="zoom-hint">Each pane is the interactive Knowledge Graph browser（全图 / 富化过程 / 套型从属）。要回放富化过程阶段，请在 Knowledge Graph Browser 工具中打开系统图谱。</div>
+    </div>
   </div>
 </div>
 <script src="ui_common.js"></script>
@@ -136,6 +157,7 @@
       showImg(d.sysTopology, 'sysTopo', 'sysTopoEmpty');
       showImg(d.gtTopology, 'gtTopo', 'gtTopoEmpty');
       showDiffSummary(d.sysJsonld, d.gtJsonld);
+      loadKGCompare(d.base);
     }).catch(e => { btn.disabled = false; btn.textContent = 'Start Comparison'; log('Request failed: ' + e); });
   }
 
@@ -207,6 +229,40 @@
     });
     html += '</tbody>';
     box.innerHTML = html;
+  }
+
+  function loadKGCompare(base) {
+    const card = document.getElementById('kgCompareCard');
+    if (!card || !base) return;
+    card.classList.remove('hidden');
+    const sysFrame = document.getElementById('kgSysFrame');
+    const gtFrame = document.getElementById('kgGtFrame');
+    const gtEmpty = document.getElementById('kgGtEmpty');
+    document.getElementById('kgSysSt').textContent = 'generating…';
+    Promise.all([
+      fetch('/api/kg-browser?base=' + encodeURIComponent(base) + '&src=system&stages=0').then(r => r.json()),
+      fetch('/api/kg-browser?base=' + encodeURIComponent(base) + '&src=gt').then(r => r.json())
+    ]).then(([sys, gt]) => {
+      if (sys.ok) {
+        document.getElementById('kgSysSt').textContent = sys.jsonld;
+        sysFrame.src = '/api/preview?path=' + encodeURIComponent(sys.html);
+      } else {
+        document.getElementById('kgSysSt').textContent = 'error';
+        log('❌ system KG: ' + (sys.error || 'failed'));
+      }
+      if (gt.ok) {
+        gtEmpty.classList.add('hidden');
+        gtFrame.classList.remove('hidden');
+        document.getElementById('kgGtSt').textContent = gt.jsonld;
+        gtFrame.src = '/api/preview?path=' + encodeURIComponent(gt.html);
+      } else {
+        gtFrame.classList.add('hidden');
+        gtEmpty.classList.remove('hidden');
+        gtEmpty.textContent = 'No matching GT under output/gt for ' + base;
+        document.getElementById('kgGtSt').textContent = 'no GT';
+      }
+      log('✅ KG compare ready');
+    }).catch(e => { log('KG compare failed: ' + e); });
   }
   loadDxfs();
 </script>

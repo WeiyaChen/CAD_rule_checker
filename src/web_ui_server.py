@@ -70,6 +70,12 @@ class UIHandler(BaseHTTPRequestHandler):
         if parsed.path == '/api/available-dxfs':
             self._send_json(self._available_dxfs())
             return
+        if parsed.path == '/api/kg-files':
+            self._send_json(self._kg_files())
+            return
+        if parsed.path == '/api/kg-browser':
+            self._serve_kg_browser(parse_qs(parsed.query))
+            return
 
         file_path = parsed.path.lstrip('/')
         if not file_path:
@@ -634,6 +640,86 @@ class UIHandler(BaseHTTPRequestHandler):
             if stem == base_name:
                 return p
         return None
+
+    def _kg_files(self):
+        """List JSON-LD datasets available for the KG browser (system + GT)."""
+        files = []
+        jsonld_dir = Path(settings.jsonld_dir)
+        for p in sorted(jsonld_dir.glob('*.jsonld')):
+            if '_raw' in p.stem:
+                continue
+            base = p.stem
+            raw = jsonld_dir / f'{base}_raw.jsonld'
+            gt = self._find_gt_for_base(base)
+            files.append({
+                'base': base,
+                'systemJsonld': _repo_rel(p),
+                'rawJsonld': _repo_rel(raw) if raw.exists() else None,
+                'hasRawSvg': raw.exists() and (Path(settings.svg_dir) / f'{base}.svg').exists(),
+                'gtJsonld': _repo_rel(gt) if gt else None,
+                'hasGt': gt is not None,
+            })
+        return {'files': files}
+
+    def _serve_kg_browser(self, q):
+        """Generate (if needed) and return the KG browser HTML for a dataset.
+
+        Query params:
+            base    -- drawing base name, e.g. "2suite (1)"
+            src     -- 'system' (default) or 'gt'
+            stages  -- '1' to include the 富化过程 stage replay (system, needs raw+svg)
+            refresh -- '1' to force regeneration instead of reusing the cache
+        """
+        base = (q.get('base') or [''])[0]
+        src = (q.get('src') or ['system'])[0]
+        want_stages = (q.get('stages') or ['0'])[0] == '1'
+        refresh = (q.get('refresh') or ['0'])[0] == '1'
+        if not base:
+            self._send_json({'ok': False, 'error': 'missing base'}, 400)
+            return
+
+        viz_dir = Path(settings.viz_dir)
+        if src == 'gt':
+            final_path = self._find_gt_for_base(base)
+            suffix = '_gt'
+            want_stages = False
+        else:
+            final_path = Path(settings.jsonld_dir) / f'{base}.jsonld'
+            suffix = '_stages' if want_stages else ''
+
+        if not final_path or not final_path.exists():
+            self._send_json({'ok': False, 'error': f'{src} jsonld not found for "{base}"'}, 404)
+            return
+
+        out_html = viz_dir / f'{base}{suffix}_kg_browser.html'
+        if refresh and out_html.exists():
+            out_html.unlink()
+
+        replay = False
+        raw = svg = None
+        if src == 'system' and want_stages:
+            raw = Path(settings.jsonld_dir) / f'{base}_raw.jsonld'
+            svg = Path(settings.svg_dir) / f'{base}.svg'
+            if raw.exists() and svg.exists():
+                replay = True
+            # 缺少 raw/svg 时回退到最终图谱（final-only）
+
+        if not out_html.exists():
+            try:
+                from src.utils import kg_browser
+                if replay:
+                    kg_browser.process_one(base, raw, str(svg), str(viz_dir), use_llm=True,
+                                           suffix=suffix)
+                else:
+                    kg_browser.process_one(base, None, None, str(viz_dir), use_llm=False,
+                                           final_path=str(final_path), suffix=suffix, replay=False)
+            except Exception as e:
+                self._send_json({'ok': False, 'error': f'kg-browser generation failed: {e}'}, 500)
+                return
+
+        self._send_json({'ok': True, 'base': base, 'src': src, 'stages': replay,
+                         'suffix': suffix, 'html': _repo_rel(out_html),
+                         'jsonld': _repo_rel(final_path)})
 
     def _run_parsing_single(self, svg_name, output_dir):
         """Run the parsing pipeline (main.py SINGLE mode) as a subprocess."""

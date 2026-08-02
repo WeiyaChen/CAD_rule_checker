@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Graph Browser · Standalone Tool</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f4f7fb; color: #223; display: flex; flex-direction: column; }
+  .hidden { display: none !important; }
+  header { background: linear-gradient(135deg, #0f3d5c, #2a8fbd); color: #fff; padding: 12px 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header a.back { color: #cfe9ff; text-decoration: none; font-size: 14px; }
+  header h1 { font-size: 19px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; background: #123c55; color: #8fd4ff; }
+  .toolbar { background: #fff; border-bottom: 1px solid #e0e6ef; padding: 10px 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 13px; }
+  .toolbar label { display: inline-flex; align-items: center; gap: 5px; }
+  .toolbar select { padding: 6px 8px; border: 1px solid #cfd8e3; border-radius: 6px; font-size: 13px; min-width: 200px; }
+  .toolbar .seg { display: inline-flex; border: 1px solid #cfd8e3; border-radius: 8px; overflow: hidden; }
+  .toolbar .seg button { border: 0; background: #fff; padding: 6px 16px; cursor: pointer; font-size: 13px; font-weight: 600; color: #445; }
+  .toolbar .seg button.active { background: #2a8fbd; color: #fff; }
+  .toolbar .btn { padding: 7px 16px; border: 0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .toolbar .btn.primary { background: #2a8fbd; color: #fff; }
+  .toolbar .btn.ghost { background: #e8f3f9; color: #0f5a86; }
+  .toolbar .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .toolbar .src-info { color: #7a8aa0; font-size: 12px; }
+  #status { color: #0f5a86; font-weight: 600; font-size: 12px; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .graph-area { flex: 1; padding: 14px 22px; min-height: 0; display: flex; flex-direction: column; }
+  .graph-area iframe { flex: 1; width: 100%; border: 1px solid #e0e6ef; border-radius: 8px; background: #fff; min-height: 480px; }
+  .empty { color: #7a8aa0; font-size: 14px; padding: 40px; text-align: center; }
+  .logbar { background: #0d1b2a; color: #9fe8af; font-family: Consolas, monospace; font-size: 11px; padding: 6px 22px; max-height: 90px; overflow: auto; white-space: pre-wrap; }
+  .hint { font-size: 12px; color: #7a8aa0; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="index.html">← Back</a>
+  <h1>Knowledge Graph Browser</h1>
+  <span class="badge">Standalone tool · one graph at a time</span>
+</header>
+
+<div class="toolbar">
+  <label>Dataset
+    <select id="fileSelect"></select>
+  </label>
+
+  <span class="seg" id="srcSeg">
+    <button data-src="system" class="active">System</button>
+    <button data-src="gt">GT</button>
+  </span>
+
+  <label><input type="checkbox" id="stagesChk"> 富化过程（系统，较慢）</label>
+
+  <button class="btn primary" id="buildBtn">Generate / Refresh</button>
+  <button class="btn ghost" id="reloadBtn">Reload</button>
+  <span id="status">—</span>
+</div>
+
+<div class="graph-area">
+  <div class="hint">一次加载单个知识图谱（来源可选 System 或 GT）。系统/GT 的并排对比请在 Drawing Analysis (Exp 2.1) 查看。</div>
+  <iframe id="frame" src="about:blank"></iframe>
+  <div id="empty" class="empty hidden"></div>
+</div>
+
+<div class="logbar" id="log">Ready.</div>
+
+<script>
+  const logEl = document.getElementById('log');
+  function log(msg) { logEl.textContent += (logEl.textContent ? '\n' : '') + msg; logEl.scrollTop = logEl.scrollHeight; }
+
+  let FILES = [];
+  let src = 'system';
+
+  function loadFiles() {
+    fetch('/api/kg-files').then(r => r.json()).then(d => {
+      FILES = d.files || [];
+      const sel = document.getElementById('fileSelect');
+      sel.innerHTML = '';
+      FILES.forEach(f => {
+        const o = document.createElement('option');
+        o.value = f.base;
+        o.textContent = f.base + (f.hasGt ? '  ✓GT' : '');
+        sel.appendChild(o);
+      });
+      if (sel.options.length) log('Loaded ' + sel.options.length + ' datasets');
+      else log('No datasets found under output/jsonld');
+      onSourceChange();
+    }).catch(e => log('Load failed: ' + e));
+  }
+
+  function selected() {
+    const base = document.getElementById('fileSelect').value;
+    return FILES.find(f => f.base === base) || null;
+  }
+
+  function onSourceChange() {
+    const f = selected();
+    const isGt = src === 'gt';
+    const gtChk = document.getElementById('stagesChk');
+    if (isGt) { gtChk.checked = false; gtChk.disabled = true; }
+    else { gtChk.disabled = false; }
+    document.getElementById('status').textContent = f
+      ? (isGt ? (f.gtJsonld || 'no GT') : (f.systemJsonld || 'no system')) : '—';
+  }
+
+  async function build() {
+    const f = selected();
+    if (!f) { log('Please select a dataset first'); return; }
+    const btn = document.getElementById('buildBtn');
+    btn.disabled = true; btn.textContent = 'Generating…';
+    const stages = !(src === 'gt') && document.getElementById('stagesChk').checked;
+    log('Generate: ' + f.base + ' [' + src + ']' + (stages ? ' · stages' : ''));
+
+    const frame = document.getElementById('frame');
+    const empty = document.getElementById('empty');
+
+    // GT 且无匹配 GT 时占位
+    if (src === 'gt' && !f.hasGt) {
+      frame.classList.add('hidden');
+      empty.classList.remove('hidden');
+      empty.textContent = 'No matching GT under output/gt for ' + f.base;
+      document.getElementById('status').textContent = 'no GT';
+      btn.disabled = false; btn.textContent = 'Generate / Refresh';
+      return;
+    }
+
+    try {
+      const url = '/api/kg-browser?base=' + encodeURIComponent(f.base)
+                + '&src=' + src + '&stages=' + (stages ? '1' : '0');
+      document.getElementById('status').textContent = 'generating…';
+      const r = await fetch(url);
+      const d = await r.json();
+      if (!d.ok) { log('❌ ' + (d.error || 'failed')); document.getElementById('status').textContent = 'error'; return; }
+      document.getElementById('status').textContent = d.jsonld + (d.stages ? ' · stages' : '');
+      log('✅ ' + d.html);
+      empty.classList.add('hidden');
+      frame.classList.remove('hidden');
+      frame.src = '/api/preview?path=' + encodeURIComponent(d.html);
+    } catch (e) {
+      log('❌ request failed: ' + e);
+      document.getElementById('status').textContent = 'error';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Generate / Refresh';
+    }
+  }
+
+  function reloadFrame() {
+    const frame = document.getElementById('frame');
+    frame.src = frame.src;
+    log('Frame reloaded');
+  }
+
+  document.getElementById('buildBtn').onclick = build;
+  document.getElementById('reloadBtn').onclick = reloadFrame;
+  document.getElementById('fileSelect').onchange = onSourceChange;
+  document.getElementById('stagesChk').onchange = onSourceChange;
+  document.querySelectorAll('#srcSeg button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#srcSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    src = b.dataset.src;
+    onSourceChange();
+  });
+
+  loadFiles();
+</script>
+</body>
+</html>
