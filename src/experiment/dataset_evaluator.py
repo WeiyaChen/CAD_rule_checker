@@ -1,39 +1,47 @@
-import os
+"""
+Batch dataset evaluator.
+
+Runs the single-file PipelineEvaluator over an entire dataset directory,
+aggregates per-file metrics (geometry / topology / semantic / compliance),
+and writes both a per-file CSV and a global summary JSON.
+"""
+
 import json
+import os
+import re
+import traceback
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-
-# 导入您提供的单文件评估器
-
-
 
 from src.config.config import settings
 from src.experiment.evaluator import PipelineEvaluator
 
 
 class BatchDatasetEvaluator:
-    def __init__(self, gt_dir, sys_out_dir, violation_dir, output_dir):
+    def __init__(self, gt_dir: str, sys_out_dir: str, violation_dir: Optional[str], output_dir: str):
         """
-        初始化批量数据集评估引擎
-        :param gt_dir: 存放人工标注 Ground Truth JSON 的目录
-        :param sys_out_dir: 存放系统输出 JSON-LD 的目录
-        :param violation_dir: 存放系统输出违规报告 JSON 的目录 (可选)
-        :param output_dir: 评估结果(CSV/JSON)的保存目录
+        Initialize the batch dataset evaluation engine.
+
+        :param gt_dir: Directory holding the human-annotated Ground Truth JSON files.
+        :param sys_out_dir: Directory holding the system-generated JSON-LD files.
+        :param violation_dir: Directory holding the system violation report JSON files (optional).
+        :param output_dir: Directory where evaluation results (CSV/JSON) are saved.
         """
         self.gt_dir = gt_dir
         self.sys_out_dir = sys_out_dir
         self.violation_dir = violation_dir
         self.output_dir = output_dir
 
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
+        os.makedirs(self.output_dir, exist_ok=True)
 
-        # 存储每个文件的独立结果
-        self.individual_results = []
+        # Per-file individual results
+        self.individual_results: List[Dict[str, Any]] = []
 
-        # 存储全局聚合数据
-        self.global_data = {
+        # Global aggregation data collected across all files
+        self.global_data: Dict[str, Any] = {
             "gt_rooms": 0,
             "1to1_rooms": 0,
             "all_iou_scores": [],
@@ -45,55 +53,83 @@ class BatchDatasetEvaluator:
             "comp_tp": 0, "comp_fp": 0, "comp_fn": 0
         }
 
-    def _match_files(self):
-        """扫描并配对目录下的文件"""
-        matched_pairs = []
-        if not os.path.exists(self.gt_dir):
+    @staticmethod
+    def _extract_base_name(filename: str) -> Optional[str]:
+        """Extract the base sample name from a Ground Truth filename.
+
+        Handles both ``.json`` and ``.jsonld`` extensions, strips a trailing
+        ``_gt`` marker and an ``_annotated`` source marker so the GT name maps
+        onto the system-output name, e.g.
+        ``2suite_annotated (1)_gt.jsonld`` -> ``2suite (1)``.
+        """
+        for ext in (".jsonld", ".json"):
+            if filename.endswith(ext):
+                name = filename[: -len(ext)]
+                break
+        else:
+            return None
+
+        if name.endswith("_gt"):
+            name = name[:-3]
+        name = re.sub(r"_annotated", "", name, flags=re.IGNORECASE)
+        return name
+
+    def _find_system_output(self, base_name: str) -> Optional[str]:
+        """Locate the matching system output file for a given base name."""
+        if not os.path.isdir(self.sys_out_dir):
+            return None
+        for ext in (".jsonld", ".json"):
+            candidate = os.path.join(self.sys_out_dir, f"{base_name}{ext}")
+            if os.path.exists(candidate):
+                return candidate
+        return None
+
+    def _match_files(self) -> List[Dict[str, str]]:
+        """Scan and pair up the Ground Truth / system output files in the directories."""
+        matched_pairs: List[Dict[str, str]] = []
+        if not os.path.isdir(self.gt_dir):
             return matched_pairs
 
         for gt_filename in os.listdir(self.gt_dir):
-            if not gt_filename.endswith(".json") and not gt_filename.endswith(".jsonld"):
+            if not (gt_filename.endswith(".json") or gt_filename.endswith(".jsonld")):
                 continue
 
-            # 提取基础文件名，兼容多种后缀命名习惯
-            base_name = gt_filename.replace("_gt.jsonld", "")
+            base_name = self._extract_base_name(gt_filename)
+            if not base_name:
+                continue
 
-            # 寻找对应的系统输出文件
-            sys_path = None
-            for ext in [".jsonld", ".json"]:
-                temp_path = os.path.join(self.sys_out_dir, f"{base_name}{ext}")
-                if os.path.exists(temp_path):
-                    sys_path = temp_path
-                    break
+            sys_path = self._find_system_output(base_name)
+            if not sys_path:
+                continue
 
-            if sys_path:
-                vio_path = None
-                if self.violation_dir:
-                    temp_vio = os.path.join(self.violation_dir, f"{base_name}_violations.json")
-                    if os.path.exists(temp_vio):
-                        vio_path = temp_vio
+            vio_path = ""
+            if self.violation_dir:
+                temp_vio = os.path.join(self.violation_dir, f"{base_name}_violations.json")
+                if os.path.exists(temp_vio):
+                    vio_path = temp_vio
 
-                matched_pairs.append({
-                    "base_name": base_name,
-                    "gt_path": os.path.join(self.gt_dir, gt_filename),
-                    "sys_path": sys_path,
-                    "vio_path": vio_path
-                })
+            matched_pairs.append({
+                "base_name": base_name,
+                "gt_path": os.path.join(self.gt_dir, gt_filename),
+                "sys_path": sys_path,
+                "vio_path": vio_path,
+            })
 
         return matched_pairs
 
-    def _calculate_metrics(self, tp, fp, fn):
-        """辅助函数：计算 P, R, F1"""
+    @staticmethod
+    def _calculate_metrics(tp: float, fp: float, fn: float) -> Tuple[float, float, float]:
+        """Compute precision, recall, and F1 from TP / FP / FN counts."""
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
         return precision, recall, f1
 
-    def run_evaluation(self):
+    def run_evaluation(self) -> None:
         """Run the batch evaluation core logic."""
         file_pairs = self._match_files()
         if not file_pairs:
-            print(f"[-] No matched test data found in the specified directory.")
+            print("[-] No matched test data found in the specified directory.")
             return
 
         print(f"[+] Starting full evaluation, found {len(file_pairs)} valid samples...")
@@ -102,37 +138,42 @@ class BatchDatasetEvaluator:
             base_name = pair["base_name"]
             print(f"\n>>> Evaluating: {base_name}")
 
-            # 加载数据
+            # Load the input data files
             with open(pair["gt_path"], 'r', encoding='utf-8') as f:
                 gt_data = json.load(f)
             with open(pair["sys_path"], 'r', encoding='utf-8') as f:
                 sys_data = json.load(f)
 
-            sys_violations = []
+            sys_violations: List[Any] = []
             if pair["vio_path"]:
                 with open(pair["vio_path"], 'r', encoding='utf-8') as f:
                     sys_violations = json.load(f)
 
-            # 实例化单文件评估器
+            # Run the single-file evaluator (the getters trigger evaluation lazily)
             try:
                 evaluator = PipelineEvaluator(gt_data, sys_data, sys_violations)
-                # 执行提取（调用 getter 会自动触发评估）
                 rate_1to1, mean_iou, iou_scores = evaluator.get_geometry_metrics()
                 topo_tp, topo_fp, topo_fn = evaluator.get_topology_raw_counts()
                 area_errors, width_errors = evaluator.get_computation_errors()
                 y_true, y_pred = evaluator.get_semantic_labels()
                 comp_tp, comp_fp, comp_fn = evaluator.get_compliance_raw_counts()
-            except Exception as e:
-                print(f"[-] Evaluation error for {base_name}: {e}")
+            except Exception as exc:  # noqa: BLE001 - keep going on a per-file failure
+                print(f"[-] Evaluation error for {base_name}: {exc}")
+                traceback.print_exc()
                 continue
 
-            # --- 1. 记录单文件独立结果 ---
+            # --- 1. Record the per-file individual result ---
             topo_p, topo_r, topo_f1 = self._calculate_metrics(topo_tp, topo_fp, topo_fn)
             comp_p, comp_r, comp_f1 = self._calculate_metrics(comp_tp, comp_fp, comp_fn)
 
-            sem_acc = accuracy_score(y_true, y_pred) if y_true else 0.0
-            _, _, sem_macro_f1, _ = precision_recall_fscore_support(y_true, y_pred, average='macro',
-                                                                    zero_division=0) if y_true else (0, 0, 0, None)
+            if y_true:
+                sem_acc = accuracy_score(y_true, y_pred)
+                _, _, sem_macro_f1, _ = precision_recall_fscore_support(
+                    y_true, y_pred, average='macro', zero_division=0
+                )
+                sem_macro_f1 = float(sem_macro_f1)
+            else:
+                sem_acc, sem_macro_f1 = 0.0, 0.0
 
             ind_result = {
                 "File_Name": base_name,
@@ -151,7 +192,7 @@ class BatchDatasetEvaluator:
             }
             self.individual_results.append(ind_result)
 
-            # --- 2. 累加全局汇总数据 ---
+            # --- 2. Accumulate the global aggregation data ---
             self.global_data["gt_rooms"] += len(evaluator.gt_rooms)
             self.global_data["1to1_rooms"] += sum(1 for v in evaluator.gt_status.values() if v == "1-to-1")
             self.global_data["all_iou_scores"].extend(iou_scores)
@@ -172,20 +213,20 @@ class BatchDatasetEvaluator:
 
         self._save_results()
 
-    def _save_results(self):
-        """计算最终的全局指标并保存结果"""
+    def _save_results(self) -> None:
+        """Compute the final global metrics and save the results."""
         if not self.individual_results:
             return
 
-        # 1. 保存单文件独立结果为 CSV
+        # 1. Save the per-file individual results as CSV
         df = pd.DataFrame(self.individual_results)
         ind_csv_path = os.path.join(self.output_dir, "individual_results.csv")
         df.to_csv(ind_csv_path, index=False, encoding='utf-8-sig')
         print(f"\n[+] Individual evaluation results saved to: {ind_csv_path}")
 
-        # 2. 计算全局指标
-        g_1to1_rate = self.global_data["1to1_rooms"] / self.global_data["gt_rooms"] if self.global_data[
-                                                                                           "gt_rooms"] > 0 else 0.0
+        # 2. Compute the global metrics
+        gt_rooms = self.global_data["gt_rooms"]
+        g_1to1_rate = self.global_data["1to1_rooms"] / gt_rooms if gt_rooms > 0 else 0.0
         g_miou = np.mean(self.global_data["all_iou_scores"]) if self.global_data["all_iou_scores"] else 0.0
 
         g_topo_p, g_topo_r, g_topo_f1 = self._calculate_metrics(
@@ -195,11 +236,14 @@ class BatchDatasetEvaluator:
         g_mae_area = np.mean(self.global_data["area_errors"]) if self.global_data["area_errors"] else 0.0
         g_mae_width = np.mean(self.global_data["width_errors"]) if self.global_data["width_errors"] else 0.0
 
-        g_sem_acc = accuracy_score(self.global_data["y_true"], self.global_data["y_pred"]) if self.global_data[
-            "y_true"] else 0.0
-        _, _, g_sem_macro_f1, _ = precision_recall_fscore_support(
-            self.global_data["y_true"], self.global_data["y_pred"], average='macro', zero_division=0
-        ) if self.global_data["y_true"] else (0, 0, 0, None)
+        if self.global_data["y_true"]:
+            g_sem_acc = accuracy_score(self.global_data["y_true"], self.global_data["y_pred"])
+            _, _, g_sem_macro_f1, _ = precision_recall_fscore_support(
+                self.global_data["y_true"], self.global_data["y_pred"], average='macro', zero_division=0
+            )
+            g_sem_macro_f1 = float(g_sem_macro_f1)
+        else:
+            g_sem_acc, g_sem_macro_f1 = 0.0, 0.0
 
         g_comp_p, g_comp_r, g_comp_f1 = self._calculate_metrics(
             self.global_data["comp_tp"], self.global_data["comp_fp"], self.global_data["comp_fn"]
@@ -231,7 +275,7 @@ class BatchDatasetEvaluator:
             }
         }
 
-        # 保存全局汇总结果为 JSON
+        # Save the global summary results as JSON
         overall_json_path = os.path.join(self.output_dir, "overall_results.json")
         with open(overall_json_path, 'w', encoding='utf-8') as f:
             json.dump(overall_results, f, ensure_ascii=False, indent=4)
@@ -239,22 +283,26 @@ class BatchDatasetEvaluator:
 
 
 if __name__ == "__main__":
-    # 配置您的实际目录路径
-    FILE_DIR = ""
-    GT_DIR = os.path.join(settings.gt_dir, FILE_DIR)           # Ground Truth 标注目录
-    SYS_OUT_DIR = os.path.join(settings.jsonld_dir, FILE_DIR)  # 系统生成图谱目录
-    VIO_DIR = None
-    OUTPUT_DIR = os.path.join(settings.html_dir, FILE_DIR)     # 结果保存目录
+    import sys
 
-    # 简单生成测试目录防止直接运行报错
+    # Optional: pass a subdirectory (or relative path) as the first CLI argument.
+    FILE_DIR = sys.argv[1] if len(sys.argv) > 1 else ""
+
+    # Configure the actual directory paths
+    GT_DIR = os.path.join(str(settings.gt_dir), FILE_DIR) if settings.gt_dir else ""             # Ground Truth annotation directory
+    SYS_OUT_DIR = os.path.join(str(settings.jsonld_dir), FILE_DIR) if settings.jsonld_dir else ""  # System-generated graph directory
+    VIO_DIR = os.path.join(str(settings.violations_dir), FILE_DIR) if settings.violations_dir else None  # System violation reports
+    OUTPUT_DIR = os.path.join(str(settings.html_dir), FILE_DIR) if settings.html_dir else ""       # Results output directory
+
+    # Create the output directory to avoid errors when running directly
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     evaluator = BatchDatasetEvaluator(
         gt_dir=GT_DIR,
         sys_out_dir=SYS_OUT_DIR,
         violation_dir=VIO_DIR,
-        output_dir=OUTPUT_DIR
+        output_dir=OUTPUT_DIR,
     )
 
-    # 启动评估
+    # Start the evaluation
     evaluator.run_evaluation()

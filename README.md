@@ -10,6 +10,8 @@
 - ✅ Semantic enrichment with optional LLM inference
 - ✅ Batch and single-file processing modes
 - ✅ Ground truth generation and model evaluation
+- ✅ Independent SHACL compliance review (parsing and compliance are decoupled)
+- ✅ Web graphical interface for single-file workflows (analysis / comparison / SHACL review / evaluation overview)
 
 ## Project Structure
 
@@ -39,7 +41,7 @@ cad_rule_checker/
 │   ├── config/              # Configuration and directory constants
 │   ├── core/                # Core geometry and spatial objects
 │   ├── enricher/            # Graph enrichment and semantic extensions
-│   ├── experiment/          # Evaluation and ground truth scripts
+│   ├── experiment/          # Experiment entries (parsing / compliance / GT / evaluation)
 │   ├── io/                  # DXF/SVG reading, writing, and conversion
 │   ├── topology/            # Topology construction and graph analysis
 │   ├── utils/               # Visualization and utility tools
@@ -127,12 +129,18 @@ The converted SVG files will be output to:
 input_data/svg/
 ```
 
-### 3. Run the Main Checking Pipeline
+### 3. Run the Drawing Parsing Pipeline (Exp 1-4)
+
+Parsing a drawing and checking it for compliance are two independent stages.
+`src/main.py` performs **parsing only** — it extracts elements, builds the
+topological knowledge graph, enriches semantics and generates visualizations.
+This corresponds to the first four evaluation experiments (Exp 1-4). SHACL
+compliance review is handled separately by `compliance_reviewer.py` (Exp 5).
 
 You can control the input path and run mode via command-line arguments:
 
 ```bash
-python -m src.main --mode SINGLE --target-file nanyangmingmen150.svg
+python -m src.main --mode SINGLE --target-file sample.svg
 ```
 
 Alternatively, modify the `runtime` section in the configuration file [src/config/settings.yaml](src/config/settings.yaml) and then run:
@@ -156,19 +164,108 @@ Place manually annotated or extended DXF files in:
 input_data/dxf_gt/
 ```
 
-Run the ground truth creation script:
+Run the ground truth creation script (single interactive mode, or batch over all
+DXF files in the directory):
 
 ```bash
 python -m src.experiment.ground_truth_creator
+python -m src.experiment.ground_truth_creator --mode BATCH
 ```
 
 ### 5. Evaluate Models and Datasets
 
-Configure the directory settings in `src/experiment/dataset_evaluator.py` and run:
+The evaluation compares the system output against the Ground Truth across five
+experiments (geometry / topology / geometric computation / semantic reasoning /
+compliance). The two stages of the system pipeline map to two independent
+experiment entry points:
+
+```bash
+# Parsing (Exp 1-4): end-to-end drawing parsing -> enriched JSON-LD
+python -m src.experiment.parsing_pipeline --mode BATCH
+
+# Compliance (Exp 5): SHACL L1/L2/L3 review on the enriched JSON-LD
+python -m src.experiment.compliance_reviewer --mode BATCH
+```
+
+Then run the batch evaluation:
 
 ```bash
 python -m src.experiment.dataset_evaluator
 ```
+
+Results are written to `output/html/overall_results.json` (global summary) and
+`output/html/individual_results.csv` (per-file metrics).
+
+### 6. Experiment Entry Points
+
+The `src/experiment/` directory provides decoupled, runnable entry points that
+map onto the five evaluation experiments:
+
+- `parsing_pipeline.py` — Drawing parsing (**Exp 1-4**): element extraction,
+  topology construction, semantic enrichment, and visualization. Produces
+  enriched JSON-LD in `output/jsonld/`.
+- `compliance_reviewer.py` — Standalone SHACL compliance review (**Exp 5**):
+  reads the enriched JSON-LD and runs L1 semantic / L2 geometric / L3
+  topological checks, producing system violation reports and interactive HTML
+  reports.
+- `ground_truth_creator.py` — Generates human-annotated Ground Truth JSON-LD
+  from annotated DXF files (single interactive or batch mode).
+- `dataset_evaluator.py` — Batch evaluation comparing system output vs. GT
+  across all five experiments.
+
+```bash
+# Parsing (Exp 1-4)
+python -m src.experiment.parsing_pipeline --mode BATCH
+
+# Compliance review (Exp 5)
+python -m src.experiment.compliance_reviewer --mode BATCH
+
+# Ground truth generation (interactive / batch)
+python -m src.experiment.ground_truth_creator
+python -m src.experiment.ground_truth_creator --mode BATCH
+
+# Evaluation (Exp 1-5)
+python -m src.experiment.dataset_evaluator
+```
+
+## Web Graphical Interface
+
+A lightweight web UI is provided for interactive, single-file workflows. Start the server from the project root:
+
+```bash
+python -m src.web_ui_server
+```
+
+Then open `http://localhost:8000` in a browser. The GUI is organized into two categories plus an evaluation overview:
+
+### Category 1 · Normal Use
+
+- **`normal_use.html`** — End-to-End Drawing Analysis: input a single DXF file, the parsing pipeline runs automatically (DXF→SVG → extraction → topology → semantic enrichment → visualization), and the input drawing, topology image, instance image and enriched JSON-LD are displayed.
+
+### Category 2 · Experiments
+
+- **`exp_analysis.html`** — Drawing Analysis (Exp 2.1): input a single DXF file and view the **system result and Ground Truth side by side**. The system parses the drawing and automatically matches the corresponding GT annotation by name.
+- **`exp_shacl.html`** — SHACL Review (Exp 2.2): input a single DXF file. The system automatically locates the processed enriched JSON-LD; for a new file it runs the parsing pipeline first, then executes the L1 / L2 / L3 compliance checks and shows the violations plus an interactive annotated report.
+
+### Evaluation Overview
+
+- **`overall_report.html`** — Visualizes `output/html/overall_results.json` (global metrics and per-sample details). Read-only — it does not run batch evaluation.
+
+All pages accept a **single file input**; none run batch processing. Images (SVG / PNG) support **zoom & pan**: scroll to zoom, drag to pan, and double-click or the `⟲` button to reset.
+
+### Backend API
+
+| Method & path | Purpose |
+|---|---|
+| `GET /api/available-dxfs` | List DXF files under `input_data/dxf` |
+| `POST /api/run-analysis` | Single DXF end-to-end analysis (Category 1) |
+| `POST /api/experiment-draw` | System vs GT comparison (Exp 2.1) |
+| `POST /api/experiment-shacl` | SHACL compliance review (Exp 2.2) |
+| `POST /api/upload-dxf` | Upload DXF files |
+| `GET /api/preview?path=` | Preview a file (SVG / PNG / HTML / JSON) |
+| `GET /api/evaluation-data` | Read `overall_results.json` and `individual_results.csv` |
+
+> Note: `manual.html` is a legacy pure-frontend prototype (canvas graph editor) and retains its built-in zh/en toggle.
 
 ## Key Configuration Files
 
@@ -197,7 +294,7 @@ The main entry point supports the following modes, configurable via the settings
 - `output/violations/` — SHACL rule checking violation reports
 - `output/viz/` — All visualization images (CDT, SVG instance, experiment, GT previews)
 - `output/gt/` — Ground truth JSON-LD annotations
-- `output/html/` — HTML evaluation reports
+- `output/html/` — HTML evaluation reports and compliance review reports
 - `output/processed/` — Intermediate SVGs after svg_modifier processing
 
 ## Notes

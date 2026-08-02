@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>End-to-End Drawing Analysis · Normal Use</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f4f7fb; color: #223; }
+  .hidden { display: none !important; }
+  header { background: linear-gradient(135deg, #0f4c81, #2a8fbd); color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header a.back { color: #cfe8ff; text-decoration: none; font-size: 14px; }
+  header h1 { font-size: 20px; }
+  .wrap { display: flex; min-height: calc(100vh - 60px); }
+  .side { width: 320px; background: #fff; border-right: 1px solid #e0e6ef; padding: 18px; flex-shrink: 0; }
+  .main { flex: 1; padding: 20px; overflow: auto; }
+  h3 { font-size: 15px; margin: 14px 0 8px; color: #0f4c81; }
+  select, input[type=file] { width: 100%; padding: 8px; border: 1px solid #cfd8e3; border-radius: 6px; font-size: 14px; }
+  .btn { width: 100%; margin-top: 12px; padding: 11px; border: 0; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; }
+  .btn.primary { background: #0f4c81; color: #fff; }
+  .btn.primary:hover { background: #123f68; }
+  .btn.ghost { background: #eef3f8; color: #0f4c81; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .log { background: #0d1b2a; color: #9fe8af; font-family: Consolas, monospace; font-size: 12px; padding: 12px; border-radius: 8px; max-height: 200px; overflow: auto; white-space: pre-wrap; margin-top: 14px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .card { background: #fff; border-radius: 10px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .card h4 { font-size: 14px; color: #0f4c81; margin-bottom: 8px; }
+  .card pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 11px; max-height: 320px; overflow: auto; white-space: pre-wrap; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+  .badge.ok { background: #d8f5e2; color: #146c3d; }
+  .badge.run { background: #e8f0fe; color: #1a56a8; }
+  .hint { font-size: 12px; color: #7a8aa0; margin-top: 6px; }
+  .empty { color: #7a8aa0; font-size: 13px; }
+  .zoom-hint { font-size: 11px; color: #8a97a8; margin-top: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="index.html">← Back</a>
+  <h1>End-to-End Drawing Analysis (Normal Use)</h1>
+  <span class="badge run">Single DXF input · Analysis results + visualization</span>
+</header>
+<div class="wrap">
+  <div class="side">
+    <h3>① Select or Upload DXF</h3>
+    <select id="dxfSelect"></select>
+    <input type="file" id="dxfFile" accept=".dxf" style="margin-top:8px">
+    <button class="btn ghost" id="uploadBtn" onclick="uploadDxf()">Upload Selected DXF</button>
+
+    <h3>② Start Analysis</h3>
+    <button class="btn primary" id="runBtn" onclick="runAnalysis()">Start Analysis</button>
+    <p class="hint">Runs automatically: DXF→SVG → extraction → topology → semantic enrichment → visualization</p>
+
+    <div class="log" id="log">Waiting for action…</div>
+  </div>
+
+  <div class="main">
+    <div class="cols">
+      <div class="card">
+        <h4>① Input Drawing (SVG)</h4>
+        <img id="previewSvg" class="zoomable hidden" alt="Input SVG">
+        <p id="noSvg" class="empty">The input drawing appears here after running.</p>
+      </div>
+      <div class="card">
+        <h4>② Instance Visualization</h4>
+        <img id="previewInstance" class="zoomable hidden" alt="Instances">
+        <p id="noInstance" class="empty">Element recognition result appears here after running.</p>
+        <div class="zoom-hint">Scroll to zoom · drag to pan · double-click to reset</div>
+      </div>
+      <div class="card">
+        <h4>③ Space Recognition (CDT)</h4>
+        <img id="previewCdt" class="zoomable hidden" alt="CDT">
+        <p id="noCdt" class="empty">The CDT space-recognition result appears here after running.</p>
+        <div class="zoom-hint">Scroll to zoom · drag to pan · double-click to reset</div>
+      </div>
+      <div class="card">
+        <h4>④ Topology Visualization</h4>
+        <img id="previewTopo" class="zoomable hidden" alt="Topology">
+        <p id="noTopo" class="empty">The knowledge-graph topology appears here after running.</p>
+        <div class="zoom-hint">Scroll to zoom · drag to pan · double-click to reset</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="ui_common.js"></script>
+<script>
+  const logEl = document.getElementById('log');
+  function log(msg) { logEl.textContent += (logEl.textContent ? '\n' : '') + msg; logEl.scrollTop = logEl.scrollHeight; }
+  function preview(path, imgId, emptyId) {
+    const img = document.getElementById(imgId), empty = document.getElementById(emptyId);
+    if (!path) { img.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+    img.onload = () => { img.classList.remove('hidden'); empty.classList.add('hidden'); };
+    img.src = '/api/preview?path=' + encodeURIComponent(path);
+  }
+  function loadDxfs() {
+    fetch('/api/available-dxfs').then(r => r.json()).then(d => {
+      const sel = document.getElementById('dxfSelect');
+      sel.innerHTML = '';
+      (d.dxfFiles || []).forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o); });
+      if (sel.options.length) log('Loaded ' + sel.options.length + ' DXF files');
+    }).catch(e => log('Failed to load DXF list: ' + e));
+  }
+
+  function uploadDxf() {
+    const input = document.getElementById('dxfFile');
+    if (!input.files || !input.files.length) { log('Please choose a DXF file to upload'); return; }
+    const fd = new FormData();
+    fd.append('targetDir', '');
+    Array.from(input.files).forEach(f => fd.append('file', f));
+    log('Uploading…');
+    fetch('/api/upload-dxf', { method: 'POST', body: fd })
+      .then(r => r.json()).then(d => {
+        log('Uploaded: ' + (d.saved || []).join(', '));
+        loadDxfs();
+      }).catch(e => log('Upload failed: ' + e));
+  }
+
+  function runAnalysis() {
+    const dxfFile = document.getElementById('dxfSelect').value;
+    if (!dxfFile) { log('Please select a DXF file first'); return; }
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true; btn.textContent = 'Analyzing…';
+    log('Start analysis: ' + dxfFile);
+    fetch('/api/run-analysis', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dxfFile, outputDir: 'output/jsonld' })
+    }).then(r => r.json()).then(d => {
+      btn.disabled = false; btn.textContent = 'Start Analysis';
+      if (d.stdout) log(d.stdout.slice(0, 3000));
+      if (d.stderr) log('[stderr] ' + d.stderr.slice(0, 1500));
+      if (!d.ok) { log('❌ Analysis failed'); return; }
+      log('✅ Analysis complete: ' + d.base);
+      preview(d.svg, 'previewSvg', 'noSvg');
+      preview(d.topologyPng, 'previewTopo', 'noTopo');
+      preview(d.instancePng, 'previewInstance', 'noInstance');
+      preview(d.cdtPng, 'previewCdt', 'noCdt');
+    }).catch(e => { btn.disabled = false; btn.textContent = 'Start Analysis'; log('Request failed: ' + e); });
+  }
+
+  loadDxfs();
+</script>
+</body>
+</html>

@@ -16,12 +16,36 @@ from src.config.config import settings
 from src.io.svg_loader import load_svg
 
 
+def _resolve_pkl_path(input_file_sem):
+    """
+    Resolve the instance-segmentation pkl file path.
+
+    Supports both naming conventions:
+      - '{name}.pkl'      (default)
+      - '{name}_s2.pkl'   (official external pkl with '_s2' suffix)
+    Falls back to a glob match for any other suffix, then returns the
+    primary candidate so the caller's exists-check can report an error.
+    """
+    pkl_dir = str(settings.pickle_dir)
+    candidates = [
+        os.path.join(pkl_dir, f"{input_file_sem}.pkl"),
+        os.path.join(pkl_dir, f"{input_file_sem}_s2.pkl"),
+    ]
+    for cand in candidates:
+        if os.path.exists(cand):
+            return cand
+    matches = sorted(Path(pkl_dir).glob(f"{input_file_sem}*.pkl"))
+    if matches:
+        return str(matches[0])
+    return candidates[0]
+
+
 def modify_svg(input_svg_path, tree, primitives):
     # 1. Build pkl file path
     input_svg_name = os.path.basename(input_svg_path)
     input_file_sem = os.path.splitext(input_svg_name)[0]
 
-    ins_save_path = os.path.join(settings.pickle_dir, f"{input_file_sem}.pkl")
+    ins_save_path = _resolve_pkl_path(input_file_sem)
 
     if not os.path.exists(ins_save_path):
         raise FileNotFoundError(f"pkl file not found: {ins_save_path}")
@@ -46,7 +70,7 @@ def modify_svg(input_svg_path, tree, primitives):
 
     # 3. Save modified SVG
     output_svg_name = f"{input_file_sem}_modified.svg"
-    output_svg_path = os.path.join(settings.processed_dir, output_svg_name)
+    output_svg_path = os.path.join(str(settings.processed_dir), output_svg_name)
     save_dest = Path(output_svg_path)
     save_dest.parent.mkdir(parents=True, exist_ok=True)
     tree.write(output_svg_path, pretty_print=True, xml_declaration=True, encoding="utf-8")

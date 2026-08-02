@@ -7,6 +7,22 @@ from shapely.geometry import MultiPoint
 from src.config.labels import get_wall
 
 
+# 常用房间中文标签 -> 英文（实例可视化中避免出现中文）
+ZH_TO_EN = {
+    "卧室": "Bedroom", "主卧": "Master Bedroom", "主卧室": "Master Bedroom", "次卧": "Second Bedroom",
+    "儿童房": "Kids Room", "老人房": "Elder Room", "客厅": "Living Room", "起居室": "Living Room",
+    "餐厅": "Dining Room", "厨房": "Kitchen", "卫生间": "Bathroom", "主卫": "Master Bathroom",
+    "公卫": "Public Bathroom", "厕所": "Toilet", "浴室": "Bathroom", "洗衣房": "Laundry",
+    "阳台": "Balcony", "露台": "Terrace", "书房": "Study Room", "储物": "Storage",
+    "储藏": "Storage", "储藏室": "Storage", "储物间": "Storage", "衣帽间": "Cloakroom",
+    "更衣": "Cloakroom", "更衣室": "Cloakroom", "玄关": "Foyer", "门厅": "Foyer",
+    "前室": "Antechamber", "走廊": "Corridor", "过道": "Corridor", "电梯厅": "Elevator Lobby",
+    "楼梯间": "Stairwell", "入户花园": "Garden", "花园": "Garden", "花池": "Planter",
+    "设备间": "Utility Room", "管道井": "Pipe Shaft", "配电间": "Electrical Room",
+    "空调机位": "AC Platform", "飘窗": "Bay Window",
+}
+
+
 def visualize_elements(elements, SVG_CATEGORIES, save_dir, filename, alpha=0.25):
     """
     可视化 SVG 提取出的基础元素，并保存到指定文件夹
@@ -55,6 +71,7 @@ def visualize_elements(elements, SVG_CATEGORIES, save_dir, filename, alpha=0.25)
         if etype == "text":
             x, y = e["coords"]
             content = e.get("text", "N/A")
+            content = ZH_TO_EN.get(content.replace(" ", "").replace("\u3000", ""), content)
 
             ax.text(
                 x, y,

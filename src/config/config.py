@@ -1,5 +1,7 @@
 import os
+from os import PathLike
 from pathlib import Path
+from typing import overload
 
 import yaml
 
@@ -34,12 +36,21 @@ class Settings:
         section_cfg = self._cfg.get(section, default)
         return section_cfg if isinstance(section_cfg, dict) else {}
 
-    def _get_value(self, section, key, default=None):
+    def _get_value(self, section, key, default: str = '') -> str:
         return self._get_section(section).get(key, default)
 
-    def _read_env(self, env_key, default=None):
+    def _read_env(self, env_key, default: str = '') -> str:
         value = os.getenv(env_key)
         return value if value not in (None, "") else default
+
+    @overload
+    def _resolve_path(self, value: None, base_dir=None) -> None: ...
+
+    @overload
+    def _resolve_path(self, value: str, base_dir=None) -> Path: ...
+
+    @overload
+    def _resolve_path(self, value: PathLike[str], base_dir=None) -> Path: ...
 
     def _resolve_path(self, value, base_dir=None):
         if value is None:
@@ -50,7 +61,7 @@ class Settings:
         base_root = Path(base_dir) if base_dir is not None else PROJECT_ROOT
         return (base_root / path).resolve()
 
-    def resolve_project_path(self, value, base_dir=None):
+    def resolve_project_path(self, value: str | None, base_dir=None) -> Path | None:
         return self._resolve_path(value, base_dir=base_dir)
 
     # ==========================================
@@ -120,9 +131,9 @@ class Settings:
         return self._resolve_path(path_str)
 
     @property
-    def rules_dir(self):
+    def rules_dir(self) -> Path:
         """SHACL 规则目录"""
-        path_str = self._cfg.get('rules', 'rules')
+        path_str: str = self._cfg.get('rules', 'rules')
         return self._resolve_path(path_str)
 
     @property
@@ -140,7 +151,7 @@ class Settings:
 
     @property
     def runtime_target_file(self):
-        return self._read_env('CAD_RULE_CHECKER_TARGET_FILE', self._get_value('runtime', 'target_file', 'nanyangmingmen150.svg'))
+        return self._read_env('CAD_RULE_CHECKER_TARGET_FILE', self._get_value('runtime', 'target_file', 'sample.svg'))
 
     @property
     def runtime_output_dir(self):

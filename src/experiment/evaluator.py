@@ -651,16 +651,22 @@ class PipelineEvaluator:
         print("⚖️ [Exp 5] SHACL Compliance Checking")
         print("=" * 50)
 
-        gt_set = set([(v["node_id"], v["rule"]) for v in self.gt_violations])
+        def _norm_node(node_id):
+            """Normalize a node id (strip inst: prefix) so GT / system align."""
+            return node_id.replace("inst:", "") if isinstance(node_id, str) else node_id
+
+        def _rule_code(v):
+            """Extract the violation rule code from the message, e.g. 【违规 4.1.1】 -> 4.1.1."""
+            match = re.search(r'【违规 ([\d\.]+)】', v.get("message", ""))
+            return match.group(1) if match else "Unknown"
+
+        gt_set = set((_norm_node(v["node_id"]), _rule_code(v)) for v in self.gt_violations)
 
         sys_set = set()
         for v in self.sys_violations:
             sys_node_id = v["node_id"]
             gt_node_id = self.sys_to_gt_map.get(sys_node_id, sys_node_id)
-
-            match = re.search(r'【违规 ([\d\.]+)】', v["message"])
-            rule = match.group(1) if match else "Unknown"
-            sys_set.add((gt_node_id, rule))
+            sys_set.add((_norm_node(gt_node_id), _rule_code(v)))
 
         true_positives = len(gt_set.intersection(sys_set))
         false_positives = len(sys_set - gt_set)
@@ -749,11 +755,11 @@ if __name__ == "__main__":
             print(f"    - {m}")
         print("\n   Example configuration:")
         print('''  evaluation:
-    gt_jsonld: "output/gt/nanyangmingmen150_gt.jsonld"
-    sys_jsonld: "output/jsonld/nanyangmingmen150.jsonld"
-    gt_svg: "output/processed/nanyangmingmen150_gt.svg"    # optional
-    sys_svg: "input_data/svg/nanyangmingmen150.svg"              # optional
-    violations_json: "output/violations/nanyangmingmen150_violations.json"  # optional''')
+    gt_jsonld: "output/gt/sample_gt.jsonld"
+    sys_jsonld: "output/jsonld/sample.jsonld"
+    gt_svg: "output/processed/sample_gt.svg"    # optional
+    sys_svg: "input_data/svg/sample.svg"              # optional
+    violations_json: "output/violations/sample_violations.json"  # optional''')
         sys.exit(1)
 
     # 3. Load ground truth

@@ -23,38 +23,38 @@ from src.config.config import settings
 
 
 def get_entity_color(entity, override_layer=None):
-    """获取图元颜色，支持图层覆盖逻辑以适配块引用"""
+    """Get the entity color, supporting layer-override logic to handle block references."""
     if colors is None:
         return 0, 0, 0
 
-    # 优先使用 TrueColor（24位）
+    # Prefer TrueColor (24-bit)
     if entity.dxf.hasattr("true_color"):
         r, g, b = colors.aci2rgb(entity.dxf.true_color)
         return (r, g, b)
 
-    # 若为 ByLayer 或 ByBlock，读取最终继承的颜色索引
+    # If ByLayer or ByBlock, read the final inherited color index
     color_index = entity.dxf.color
-    if color_index in (0, 256):  # ByBlock 或 ByLayer
+    if color_index in (0, 256):  # ByBlock or ByLayer
         try:
-            # 优先使用覆盖图层（即块所在的图层）进行颜色索引查找
+            # Prefer the override layer (i.e., the layer where the block lives) for color index lookup
             layer = override_layer if override_layer else entity.dxf.layer
             layer_obj = entity.doc.layers.get(layer)
             if layer_obj is not None:
                 color_index = layer_obj.color
         except Exception:
-            color_index = 7  # 默认白色
+            color_index = 7  # default white
 
-    # 转换 AutoCAD 颜色索引为 RGB
+    # Convert the AutoCAD color index to RGB
     r, g, b = colors.aci2rgb(color_index)
 
-    # 亮度计算
+    # Brightness calculation
     brightness = (0.299 * r + 0.587 * g + 0.114 * b)
 
-    # 视觉优化：白色在白底 SVG 中反转为黑色
+    # Visual optimization: invert white to black on white-background SVGs
     if (r, g, b) == (255, 255, 255):
         return 0, 0, 0
 
-    # 太亮则压暗处理
+    # Darken overly bright colors
     if brightness > 200:
         factor = 0.5
         r, g, b = int(r * factor), int(g * factor), int(b * factor)
@@ -64,58 +64,58 @@ def get_entity_color(entity, override_layer=None):
 
 def convert_dxf_to_svg(dxf_path, svg_path):
     if ezdxf is None or bbox is None or path is None:
-        raise ImportError("缺少 ezdxf 依赖，无法转换 DXF 为 SVG")
+        raise ImportError("Missing ezdxf dependency, cannot convert DXF to SVG")
 
-    # 读取 DXF 文件
+    # Read the DXF file
     doc = ezdxf.readfile(dxf_path)
     msp = doc.modelspace()
 
-    # 背景颜色:默认设置为白色
+    # Background color: white by default
     svg_bg_color = "#FFFFFF"
 
-    # 统计各类型数量
+    # Count the entity types
     types = Counter(e.dxftype() for e in msp)
     for t, n in types.items():
         print(f"{t}: {n}")
 
-    # 计算边界
+    # Compute the bounding box
     ext = bbox.extents(msp)
     xmin, xmax = ext.extmin[0], ext.extmax[0]
     ymin, ymax = ext.extmin[1], ext.extmax[1]
 
-    # 缩放长度，反转y轴
+    # Scale coordinates and flip the y-axis
     def scale_point(x, y):
-        # 选较小的，保持完整显示
+        # Pick the smaller scale so the whole drawing fits
         sx = 140 / (xmax - xmin)
         sy = 140 / (ymax - ymin)
         s = min(sx, sy)
-        # 计算偏移，让图形居中
+        # Compute the offset to center the drawing
         new_w = s * (xmax - xmin)
         new_h = s * (ymax - ymin)
         offset_x = (140 - new_w) / 2
         offset_y = (140 - new_h) / 2
 
-        # 应用变换 + 翻转 y
+        # Apply the transform + flip y
         x_new = offset_x + s * (x - xmin)
         y_new = 140 - (offset_y + s * (y - ymin))
         return x_new, y_new
 
-    # 缩放长度
+    # Scale lengths
     def scale_length(length):
-        # 选较小的，保持完整显示
+        # Pick the smaller scale so the whole drawing fits
         sx = 140 / (xmax - xmin)
         sy = 140 / (ymax - ymin)
         s = min(sx, sy)
         length = s * length
         return length
 
-    # 创建 SVG 根元素
+    # Create the SVG root element
     sx = 140 / (xmax - xmin)
     sy = 140 / (ymax - ymin)
     s = min(sx, sy)
     svg = ET.Element('svg', {"xmlns": "http://www.w3.org/2000/svg", "style": f"background-color:{svg_bg_color}", "scale":str(s)})
 
-    # 按图层收集对象
+    # Collect objects by layer
     layer_groups = {}
     def get_layer_group(layer_name):
         if layer_name not in layer_groups:
@@ -123,19 +123,19 @@ def convert_dxf_to_svg(dxf_path, svg_path):
         return layer_groups[layer_name]
 
     def process_entities(entities, override_layer=None):
-        """递归处理图元集合，实现块引用的深度遍历"""
+        """Recursively process a collection of entities, deep-traversing block references."""
         for e in entities:
-            # 1. 跳过被标记为不可见的图元 (动态块可见性状态通常通过此属性控制)
+            # 1. Skip entities marked invisible (dynamic block visibility is usually controlled via this attribute)
             if e.dxf.hasattr('invisible') and e.dxf.invisible:
                 continue
 
             # ==========================================================
-            # 【修复 1】：前置 current_layer 的计算，确立外部容器图层的绝对优先级
+            # [Fix 1]: compute current_layer upfront, giving the outer container layer absolute priority
             # ==========================================================
             current_layer = override_layer if override_layer else str(e.dxf.layer)
 
             # ==========================================================
-            # 【修复 2】：判断 current_layer 的可见性，防止底层硬编码图层处于关闭状态而遭到误杀
+            # [Fix 2]: check current_layer visibility to avoid killing entities whose underlying hard-coded layer is off
             # ==========================================================
             try:
                 layer_obj = doc.layers.get(current_layer)
@@ -144,18 +144,18 @@ def convert_dxf_to_svg(dxf_path, svg_path):
             except Exception:
                 pass
 
-            # --- 深度遍历逻辑：处理 INSERT 图元 ---
+            # --- Deep-traversal logic: handle INSERT entities ---
             if e.dxftype() == 'INSERT':
                 try:
                     # ==========================================================
-                    # 【修复 3】：向下传递 current_layer，防止嵌套子块重置 override_layer
+                    # [Fix 3]: pass current_layer down to prevent nested child blocks from resetting override_layer
                     # ==========================================================
                     process_entities(e.virtual_entities(), override_layer=current_layer)
                 except Exception as ex:
                     print(f"  [-] Failed to explode block {e.dxf.name}: {ex}")
                 continue
 
-            # 处理标注线实体 (自动拆解为线段、文字与箭头)
+            # Handle dimension entities (auto-explode into lines, text, and arrows)
             elif e.dxftype() in ('DIMENSION', 'ARC_DIMENSION', 'LARGE_RADIAL_DIMENSION', 'LEADER', 'MULTILEADER'):
                 try:
                     process_entities(e.virtual_entities(), override_layer=current_layer)
@@ -163,17 +163,17 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                     print(f"  [-] Failed to parse dimension {e.dxftype()}: {ex}")
                 continue
 
-            # 获取图元最终所属图层的分组
+            # Get the group for the entity's final layer
             g = get_layer_group(current_layer)
             rgb_r, rgb_g, rgb_b = get_entity_color(e, override_layer=current_layer)
             color_str = f"rgb({rgb_r},{rgb_g},{rgb_b})"
             common_attr = {"fill": "none", "stroke": color_str, "stroke-width": "0.1"}
 
             # ==========================================================
-            # 【新增逻辑】：SVG 坐标序列去重与防退化过滤器
+            # [New logic]: SVG coordinate de-duplication and degenerate-path prevention filter
             # ==========================================================
             def filter_consecutive_points(pts, tol=1e-4):
-                """过滤连续重复或极度接近的点，防止生成 M x,y L x,y 退化路径"""
+                """Filter consecutive duplicate or extremely close points to avoid degenerate M x,y L x,y paths."""
                 if not pts: return []
                 clean_pts = [pts[0]]
                 for p in pts[1:]:
@@ -184,7 +184,7 @@ def convert_dxf_to_svg(dxf_path, svg_path):
             if e.dxftype() == 'LINE':
                 x1, y1 = scale_point(e.dxf.start.x, e.dxf.start.y)
                 x2, y2 = scale_point(e.dxf.end.x, e.dxf.end.y)
-                # 提高容差阈值至 1e-4，彻底阻断肉眼不可见的零长度线
+                # Raise the tolerance to 1e-4 to fully block invisible zero-length lines
                 if abs(x1 - x2) > 1e-4 or abs(y1 - y2) > 1e-4:
                     d = f"M {x1:.4f},{y1:.4f} L {x2:.4f},{y2:.4f}"
                     ET.SubElement(g, 'path', d=d, **common_attr)
@@ -193,12 +193,12 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                 try:
                     entity_path = path.make_path(e)
                     raw_points = list(entity_path.flattening(3.0))
-                    # 1. 缩放点坐标
+                    # 1. Scale the point coordinates
                     scaled_pts = [scale_point(pt.x, pt.y) for pt in raw_points]
-                    # 2. 执行连续点去重
+                    # 2. De-duplicate consecutive points
                     clean_pts = filter_consecutive_points(scaled_pts)
 
-                    # 3. 只有去重后剩余2个及以上有效点才生成路径
+                    # 3. Only emit a path if at least 2 valid points remain after de-duplication
                     if len(clean_pts) >= 2:
                         d_path = f"M {clean_pts[0][0]:.4f},{clean_pts[0][1]:.4f}"
                         for p in clean_pts[1:]:
@@ -317,15 +317,15 @@ def convert_dxf_to_svg(dxf_path, svg_path):
                     print(f"  [-] Failed to parse ELLIPSE: {ex}")
                 continue
 
-    # 设置viewbox
+    # Set the viewBox
     viewbox_width = 140
     viewbox_height = 140
     svg.attrib['viewBox'] = f"{0} {0} {viewbox_width} {viewbox_height}"
 
-    # 开始全图递归处理
+    # Start recursive processing of the whole drawing
     process_entities(msp)
 
-    # 保存 SVG 文件
+    # Save the SVG file
     tree = ET.ElementTree(svg)
     write_svg_tree(tree, svg_path)
 
@@ -373,7 +373,7 @@ def main():
         convert_dxf_to_svg(input_path, str(output_path))
         print(f"✅ Conversion successful: {output_path}\n")
         # except Exception as e:
-        #     print(f"❌ 转换失败 {file_name}: {e}\n")
+        #     print(f"❌ Conversion failed {file_name}: {e}\n")
 
     print("🎉 Batch conversion complete!")
 

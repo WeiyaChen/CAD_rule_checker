@@ -1,19 +1,33 @@
 import os
+os.environ.setdefault('MPLBACKEND', 'Agg')  # 批量模式强制非交互后端，避免弹窗
+
 import sys
 import json
+import traceback
+from pathlib import Path
+from typing import Any, cast
+
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Polygon, MultiPoint, LineString, Point
+from shapely.geometry import Polygon, MultiPoint, LineString
 from math import dist
 from collections import deque
 
 from src.config.config import settings
+from src.config.gt_constants import (
+    DOOR_LAYERS,
+    FUNCTIONAL_ELEMENT_MAP,
+    JSONLD_CONTEXT,
+    LAYER_SEMANTIC_MAP,
+    PRIVATE_SEEDS,
+    PUBLIC_BLOCKERS,
+    PUBLIC_SEEDS,
+    ROOM_COLOR_MAP,
+)
 
 try:
-    import ezdxf
     from ezdxf import bbox
+    from ezdxf.filemanagement import readfile
 except ImportError:
     print("❌ Missing ezdxf library. Please run: pip install ezdxf")
     sys.exit(1)
@@ -26,58 +40,10 @@ except ImportError:
     sys.exit(1)
 
 # =====================================================================
-# 常量与映射配置
-# =====================================================================
-LAYER_SEMANTIC_MAP = {
-    # 中英文标准图层
-    "GT_BEDROOM": "Bedroom", "GT_卧室": "Bedroom",
-    "GT_LIVINGROOM": "LivingRoom", "GT_客厅": "LivingRoom",
-    "GT_KITCHEN": "Kitchen", "GT_厨房": "Kitchen",
-    "GT_BATHROOM": "Bathroom", "GT_卫生间": "Bathroom",
-    "GT_BALCONY": "Balcony", "GT_阳台": "Balcony",
-    "GT_CORRIDOR": "Corridor", "GT_过道": "Corridor",
-    "GT_ENTRANCE": "Entrance", "GT_玄关": "Entrance",
-    "GT_GARDEN": "Garden", "GT_花园": "Garden",
-    "GT_DININGROOM": "DiningRoom", "GT_餐厅": "DiningRoom",
-    "GT_ELEVATORSHAFT": "ElevatorShaft", "GT_电梯": "ElevatorShaft",
-    "GT_STORAGEROOM": "StorageRoom", "GT_储藏间": "StorageRoom",
-    "GT_STAIRWELL": "Stairwell", "GT_楼梯": "Stairwell",
-    "GT_CLOAKROOM": "Cloakroom", "GT_衣帽间": "Cloakroom",
-    "GT_STUDYROOM": "StudyRoom", "GT_书房": "StudyRoom",
-    "GT_SUNROOM": "SunRoom", "GT_阳光房": "SunRoom",
-    "GT_WATERROOM": "WaterRoom", "GT_水机房": "WaterRoom",
-    "GT_ELECTRICALROOM": "ElectricalRoom", "GT_电机房": "ElectricalRoom",
-    "GT_VENTILATIONROOM": "VentilationRoom", "GT_风机房": "VentilationRoom"
-}
-
-DOOR_LAYERS = ["GT_DOOR", "GT_门"]
-
-# 新增：内部设施图层映射
-FACILITY_MAP = {
-    "GT_SINK": "beo:Sink", "GT_水槽": "beo:Sink",
-    "GT_BATHTUB": "beo:Bathtub", "GT_浴缸": "beo:Bathtub",
-    "GT_BATH": "beo:Bath", "GT_洗浴区": "beo:Bath",
-    "GT_GASSTOVE": "beo:GasStove", "GT_燃气灶": "beo:GasStove",
-    "GT_TOILET": "beo:Toilet", "GT_便器": "beo:Toilet"
-}
-
-JSONLD_CONTEXT = {
-    "bot": "https://w3id.org/bot#",
-    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-    "inst": "http://mythesis.org/instance/",
-    "props": "http://mythesis.org/props/",
-    "beo": "https://pi.pauwel.be/voc/buildingelement#",
-    "bldg": "http://mythesis.org/bldg/",
-    "geo": "http://www.opengis.net/ont/geosparql#",
-    "xsd": "http://www.w3.org/2001/XMLSchema#"
-}
-
-
-# =====================================================================
-# 核心计算算子
+# Core computational operators
 # =====================================================================
 def auto_calculate_deltas(doc):
-    """根据整个图纸的包围盒计算全局偏移矩阵"""
+    """Compute the global offset matrix from the entire drawing's bounding box."""
     msp = doc.modelspace()
     ext = bbox.extents(msp)
 
@@ -103,7 +69,7 @@ def auto_calculate_deltas(doc):
 
 
 def get_mrr_metrics(polygon_geom):
-    """常规空间：提取几何的最小外接矩形，返回面积、长边、短边"""
+    """Regular space: extract the minimum bounding rectangle and return area, long side, short side."""
     area_sqm = polygon_geom.area / 1_000_000.0
     rect = polygon_geom.minimum_rotated_rectangle
 
@@ -124,7 +90,7 @@ def get_mrr_metrics(polygon_geom):
 
 
 def get_corridor_clear_width(polygon_geom):
-    """交通空间：基于纯矢量几何的非相邻边界最小距离算法计算通行净宽"""
+    """Circulation space: compute the clear passage width using the non-adjacent boundary minimum-distance algorithm on pure vector geometry."""
     if polygon_geom.geom_type != 'Polygon':
         return 0.0
 
@@ -158,7 +124,7 @@ def get_corridor_clear_width(polygon_geom):
 
 
 # =====================================================================
-# 图谱语义推理辅助函数
+# Graph semantic inference helper functions
 # =====================================================================
 def infer_interior_door_type(connected_room_types):
     if "Kitchen" in connected_room_types: return "bldg:KitchenDoor"
@@ -197,42 +163,50 @@ def get_min_topology_distance(start_node, target_semantics, rooms_data):
 
 
 # =====================================================================
-# 主构建流程
+# Main build flow
 # =====================================================================
-def build_graph_from_dxf():
+def build_graph_from_dxf(dxf_input=None):
+    """处理单个已标注 DXF 图纸，生成 GT JSON-LD / 违规基线 / 拓扑可视化。
+
+    参数:
+        dxf_input: DXF 文件路径。为 None 时进入交互模式，由用户拖拽输入。
+    返回:
+        "OK" 表示处理成功，否则返回 "ERROR"。
+    """
     print("=====================================================")
     print("🏗️  BIM Knowledge Graph Auto-Construction Engine (Geometry + Topology + Component instances + Semantics)")
     print("=====================================================\n")
 
-    dxf_input = input("👉 Drag in a DXF file with layers already drawn: ").strip().strip("'\"")
+    if dxf_input is None:
+        dxf_input = input("👉 Drag in a DXF file with layers already drawn: ").strip().strip("'\"")
     if not os.path.exists(dxf_input):
         print(f"\n❌ File not found: {dxf_input}")
-        return
+        return "ERROR"
 
     try:
-        doc = ezdxf.readfile(dxf_input)
-        delta_x, delta_y, scale_factor = auto_calculate_deltas(doc)
+        doc = readfile(dxf_input)
+        delta_x, delta_y, _ = auto_calculate_deltas(doc)
         print(f"✅ [Calibration OK] Delta X: {delta_x:.2f} | Delta Y: {delta_y:.2f}\n")
     except Exception as e:
         print(f"\n❌ DXF read or calibration failed: {e}")
-        return
+        return "ERROR"
 
     msp = doc.modelspace()
 
     rooms_data = {}
     doors_data = {}
-    facilities_data = {}  # 新增：设施数据字典
+    functional_elements_data = {}  # Added: functional element data dictionary
 
-    room_counter, door_counter, facility_counter = 1, 1, 1
+    room_counter, door_counter, fe_counter = 1, 1, 1
 
     print("🔍 Phase 1/4: Scanning and reconstructing polygon entities (performing differentiated geometry calculation)...")
 
-    # 1. 扫描提取图元
+    # 1. Scan and extract entities
     for entity in msp:
         layer_name = entity.dxf.layer.upper()
 
         if hasattr(entity, 'get_points'):
-            points = list(entity.get_points(format='xy'))
+            points = list(getattr(entity, 'get_points')(format='xy'))
         elif entity.dxftype() in ['LINE']:
             points = [(entity.dxf.start.x, entity.dxf.start.y), (entity.dxf.end.x, entity.dxf.end.y)]
         else:
@@ -242,8 +216,8 @@ def build_graph_from_dxf():
 
         translated_points = [(round(x + delta_x), round(y + delta_y)) for x, y in points]
 
-        # A. 房间识别
-        if layer_name.startswith("GT_") and layer_name not in DOOR_LAYERS and layer_name not in FACILITY_MAP:
+        # A. Room recognition
+        if layer_name.startswith("GT_") and layer_name not in DOOR_LAYERS and layer_name not in FUNCTIONAL_ELEMENT_MAP:
             semantic_type = LAYER_SEMANTIC_MAP.get(layer_name, "Unknown")
 
             if dist(translated_points[0], translated_points[-1]) > 1e-5:
@@ -267,14 +241,14 @@ def build_graph_from_dxf():
                 "area": area,
                 "calculated_width": calculated_width,
                 "adjacencies": set(),
-                "contained_facilities": set()  # 新增：记录该房间包含的设施ID
+                "contained_elements": set()  # Added: record functional-element IDs contained in this room
             }
             room_counter += 1
 
-        # B. 门识别
+        # B. Door recognition
         elif layer_name in DOOR_LAYERS:
             mrr_geom = MultiPoint(translated_points).minimum_rotated_rectangle
-            area, length, width = get_mrr_metrics(mrr_geom)
+            area, length, _ = get_mrr_metrics(mrr_geom)
 
             node_id = f"inst:Door_{door_counter:03d}"
             doors_data[node_id] = {
@@ -286,28 +260,28 @@ def build_graph_from_dxf():
             }
             door_counter += 1
 
-        # C. 内部设施识别 (水槽、浴缸、燃气灶)
-        elif layer_name in FACILITY_MAP:
-            # 无论设施原形状如何，取其最小外接矩形作为物理占位，并计算质心
+        # C. Internal functional element recognition (sink, bathtub, gas stove)
+        elif layer_name in FUNCTIONAL_ELEMENT_MAP:
+            # Regardless of the element's original shape, use its minimum bounding rectangle as the physical footprint and compute the centroid.
             mrr_geom = MultiPoint(translated_points).minimum_rotated_rectangle
             centroid = mrr_geom.centroid
 
-            node_id = f"inst:Facility_{facility_counter:03d}"
-            facilities_data[node_id] = {
+            node_id = f"inst:FunctionalElement_{fe_counter:03d}"
+            functional_elements_data[node_id] = {
                 "id": node_id,
                 "geom": mrr_geom,
                 "centroid": centroid,
-                "semantic": FACILITY_MAP[layer_name],
-                "mounted_room": None  # 初始化归属房间为空
+                "semantic": FUNCTIONAL_ELEMENT_MAP[layer_name],
+                "mounted_room": None  # Initialize the mounted room as empty
             }
-            facility_counter += 1
+            fe_counter += 1
 
-    print(f"  [+] Successfully extracted {len(rooms_data)} rooms, {len(doors_data)} doors, {len(facilities_data)} facilities.")
+    print(f"  [+] Successfully extracted {len(rooms_data)} rooms, {len(doors_data)} doors, {len(functional_elements_data)} functional elements.")
 
-    print("🔍 Phase 2/4: Computing spatial topology network and facility mounting...")
+    print("🔍 Phase 2/4: Computing spatial topology network and functional-element mounting...")
     room_ids = list(rooms_data.keys())
 
-    # 2.1 房间之间的拓扑提取
+    # 2.1 Topology extraction between rooms
     min_overlap_length = 1
     for i in range(len(room_ids)):
         for j in range(i + 1, len(room_ids)):
@@ -331,7 +305,7 @@ def build_graph_from_dxf():
                 r1['adjacencies'].add(r2['id'])
                 r2['adjacencies'].add(r1['id'])
 
-    # 2.2 门桥接拓扑提取
+    # 2.2 Door-bridged topology extraction
     ray_len = 300
     for d_id, door in doors_data.items():
         door_geom = door['geom']
@@ -382,25 +356,22 @@ def build_graph_from_dxf():
             rA['adjacencies'].add(rB['id'])
             rB['adjacencies'].add(rA['id'])
 
-    # 2.3 设施挂载拓扑 (Spatial Join)
-    # 利用设施的质心判断其落入哪个房间的多边形内部
+    # 2.3 Functional-element mounting topology (Spatial Join)
+    # Use each element's centroid to determine which room polygon it falls into.
     mounted_count = 0
-    for f_id, facility in facilities_data.items():
-        centroid = facility['centroid']
+    for f_id, fe in functional_elements_data.items():
+        centroid = fe['centroid']
         for r_id, room in rooms_data.items():
-            # 使用包含判定，若由于精度问题质心在边界上，退化为极小距离容差判断
+            # Use a containment check; if the centroid lies on the boundary due to precision issues, fall back to a tiny distance tolerance.
             if room['geom'].contains(centroid) or room['geom'].distance(centroid) < 5.0:
-                facility['mounted_room'] = r_id
-                room['contained_facilities'].add(f_id)
+                fe['mounted_room'] = r_id
+                room['contained_elements'].add(f_id)
                 mounted_count += 1
                 break
-    print(f"  [+] Facility topology mounting complete. Successfully associated {mounted_count}/{len(facilities_data)} facilities to their rooms.")
+    print(f"  [+] Functional-element mounting complete. Successfully associated {mounted_count}/{len(functional_elements_data)} elements to their rooms.")
 
     print("🔍 Phase 3/4: External area detection, advanced semantic inference, and suite assembly...")
-    # 3.1 识别公共外部空间与内部走廊
-    PUBLIC_SEEDS = {"ElevatorShaft", "Stairwell", "WaterRoom", "ElectricalRoom", "VentilationRoom", "EquipmentRoom"}
-    PRIVATE_SEEDS = {"Bedroom", "LivingRoom", "Kitchen", "Bathroom", "DiningRoom", "Cloakroom", "StudyRoom", "Balcony",
-                     "Entrance"}
+    # 3.1 Identify public/exterior spaces and interior corridors
 
     public_spaces = set()
     for r_id, room in rooms_data.items():
@@ -416,7 +387,7 @@ def build_graph_from_dxf():
                 room['semantic'] = "PublicCorridor"
                 public_spaces.add(r_id)
 
-    # 3.2 门洞类型判定
+    # 3.2 Door type determination
     for d_id, door in doors_data.items():
         conn_list = list(door['interfaces'])
         connected_semantics = [rooms_data[r]['semantic'] for r in conn_list]
@@ -435,7 +406,7 @@ def build_graph_from_dxf():
         else:
             door['door_type'] = infer_interior_door_type(connected_semantics)
 
-    # 3.3 细化内部私有过道类型
+    # 3.3 Refine interior private corridor types
     for r_id, room in rooms_data.items():
         if room['semantic'] in ["Corridor", "PublicCorridor"]:
             neighbor_room_types = [rooms_data[n]['semantic'] for n in room['adjacencies']]
@@ -444,10 +415,8 @@ def build_graph_from_dxf():
             if composite_types:
                 room['composite_corridor_types'] = composite_types
 
-    # 3.4 广度优先搜索 (BFS) 识别独立套型 (Suite)
+    # 3.4 Breadth-first search (BFS) to identify independent suites (Suites)
     suites = []
-    PUBLIC_BLOCKERS = {"ElevatorShaft", "Stairwell", "WaterRoom", "ElectricalRoom", "VentilationRoom", "EquipmentRoom",
-                       "PublicCorridor", "Unknown"}
 
     visited_rooms = set()
     for r_id, room in rooms_data.items():
@@ -484,7 +453,7 @@ def build_graph_from_dxf():
     graph_nodes = []
     graph_nodes.extend(suites)
 
-    # 写入房间节点 (WKT 格式对齐 EXP 组的字典结构)
+    # Write room nodes (WKT format aligned with the EXP group's dictionary structure)
     for r_id, room in rooms_data.items():
         types = ["bot:Space"]
         if room['semantic'] == "Corridor" and 'composite_corridor_types' in room:
@@ -510,12 +479,12 @@ def build_graph_from_dxf():
         if room['adjacencies']:
             node["bot:adjacentZone"] = [{"@id": n} for n in room['adjacencies']]
 
-        if room['contained_facilities']:
-            node["bot:containsElement"] = [{"@id": f_id} for f_id in room['contained_facilities']]
+        if room['contained_elements']:
+            node["bot:containsElement"] = [{"@id": f_id} for f_id in room['contained_elements']]
 
         graph_nodes.append(node)
 
-    # 写入门节点 (WKT 格式对齐)
+    # Write door nodes (WKT format aligned)
     for d_id, door in doors_data.items():
         types = ["bot:Element", "beo:Door", door['door_type']]
         node = {
@@ -534,11 +503,11 @@ def build_graph_from_dxf():
 
         graph_nodes.append(node)
 
-    # 写入设施节点 (全面对齐 EXP 组的 FunctionalElement 与 rdfs:label 格式)
-    for f_id, facility in facilities_data.items():
-        sem_type = facility['semantic']
+    # Write functional element nodes (fully aligned with the EXP group's FunctionalElement and rdfs:label format)
+    for f_id, fe in functional_elements_data.items():
+        sem_type = fe['semantic']
 
-        # 提取具体的名称并格式化为 rdfs:label (如 'beo:Sink' -> 'sink')
+        # Extract the concrete name and format it as rdfs:label (e.g. 'beo:Sink' -> 'sink')
         label = sem_type.split(":")[-1].lower()
         if label == "gasstove":
             label = "gas stove"
@@ -555,7 +524,7 @@ def build_graph_from_dxf():
             "@type": types,
             "rdfs:label": label,
             "geo:asWKT": {
-                "@value": facility['geom'].wkt,
+                "@value": fe['geom'].wkt,
                 "@type": "geo:wktLiteral"
             }
         }
@@ -569,13 +538,13 @@ def build_graph_from_dxf():
     base_name = os.path.splitext(os.path.basename(dxf_input))[0].replace("_已标注", "")
     out_filename = f"{base_name}_gt.jsonld"
 
-    ground_truth_dir = settings.gt_dir
+    ground_truth_dir = str(settings.gt_dir)
     os.makedirs(ground_truth_dir, exist_ok=True)
 
     out_path = os.path.join(ground_truth_dir, out_filename)
 
     # =====================================================================
-    # 阶段 4.5: 自动执行 SHACL 规则审查生成违规 GT
+    # Phase 4.5: Auto-execute SHACL rule validation to generate violation GT
     # =====================================================================
     print("⚖️ Phase 4.5: Auto-executing SHACL rule validation, generating violation Ground Truth...")
     violations_list = []
@@ -585,18 +554,19 @@ def build_graph_from_dxf():
 
         target_shacl_files = [
             "l1_semantic_check.ttl",
-            "l2_geometirc_check.ttl",
-            "l3_topologiccal_check.ttl"
+            "l2_geometric_check.ttl",
+            "l3_topological_check.ttl"
         ]
 
         for shacl_file in target_shacl_files:
-            if not os.path.exists(os.path.join(settings.rules_dir, shacl_file)):
+            shacl_file_path = os.path.join(str(settings.rules_dir), shacl_file)
+            if not os.path.exists(shacl_file_path):
                 continue
 
             shacl_graph = Graph()
-            shacl_graph.parse(os.path.join(settings.rules_dir, shacl_file), format="turtle")
+            shacl_graph.parse(shacl_file_path, format="turtle")
 
-            conforms, results_graph, results_text = validate(
+            conforms, results_graph, _ = validate(
                 data_graph,
                 shacl_graph=shacl_graph,
                 inference='rdfs',
@@ -617,7 +587,7 @@ def build_graph_from_dxf():
                                 sh:sourceShape ?sourceShape .
                     }
                 """
-                violations = results_graph.query(query)
+                violations = cast(Any, results_graph).query(query)
                 for row in violations:
                     v_node_id = str(row.focusNode).split('/')[-1]
                     v_msg = str(row.message)
@@ -640,14 +610,14 @@ def build_graph_from_dxf():
 
     out_vio_filename = f"{base_name}_gt_violations.json"
 
-    target_dir = settings.violations_dir
+    target_dir = str(settings.violations_dir)
     os.makedirs(target_dir, exist_ok=True)
 
     out_vio_path = os.path.join(target_dir, out_vio_filename)
     with open(out_vio_path, 'w', encoding='utf-8') as f:
         json.dump(violations_list, f, ensure_ascii=False, indent=2)
 
-    # 计算拓扑连通边数（无向图边数 = 总度数 // 2）
+    # Compute the number of topology-connected edges (undirected graph edges = total degree // 2)
     total_edges = sum(len(room['adjacencies']) for room in rooms_data.values()) // 2
 
     print("\n" + "=" * 50)
@@ -655,91 +625,76 @@ def build_graph_from_dxf():
     print(f"  - Room Nodes:                   {len(rooms_data)}")
     print(f"  - Door Elements:                {len(doors_data)}")
     print(f"  - Topology Edges:               {total_edges}")
-    # print(f"  - Facilities:                   {len(facilities_data)}")
+    # print(f"  - Functional Elements:          {len(functional_elements_data)}")
     print(f"  - Extracted Suites:             {len(suites)}")
     # print(f"  - Violations:                   {len(violations_list)}")
     print("=" * 50 + "\n")
 
     # =====================================================================
-    # 5. 可视化结果生成 (已修改：支持不同房间不同颜色)
+    # 5. Visualization result generation (modified: supports different colors per room)
     # =====================================================================
     fig, ax = plt.subplots(figsize=(10, 8))
-    # 设置支持中文的字体，防止“未知空间”等标签乱码
+    # Set a font that supports Chinese to prevent garbled labels such as "Unknown Space".
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'sans-serif']
-    plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+    plt.rcParams['axes.unicode_minus'] = False  # Fix negative sign display
 
-    # 定义房间语义到颜色的映射表 (使用十六进制颜色，建议选择淡雅的颜色以防遮挡文字)
-    # 你可以根据喜好随意修改这里的颜色值
-    ROOM_COLOR_MAP = {
-        "Bedroom": "#AEC6CF",  # 淡蓝色
-        "LivingRoom": "#FFDAC1",  # 浅桃色
-        "Kitchen": "#FFB7B2",  # 淡红色
-        "Bathroom": "#B19CD9",  # 淡紫色
-        "Balcony": "#CFCFC4",  # 浅灰色
-        "Corridor": "#FDFD96",  # 淡黄色
-        "Entrance": "#FFB7C5",  # 淡粉色
-        "DiningRoom": "#E2F0CB",  # 淡青色
-        "PublicCorridor": "#D3D3D3",  # 中灰色 (公共区域)
-        "StudyRoom": "#C5E3BF",  # 浅绿色
-        "StorageRoom": "#E0C9A6",  # 浅褐色
-        "Unknown": "#F5F5F5"  # 烟白色 (未知)
-    }
+    # ROOM_COLOR_MAP (room semantic -> color) is defined in src/config/gt_constants.py.
 
-    # 绘制房间
+    # Draw rooms
     print("🎨 Generating colored topology preview...")
     for r_id, room in rooms_data.items():
         poly = room['geom']
         x, y = poly.exterior.xy
 
-        # 获取房间语义
+        # Get the room semantic
         semantic = room['semantic']
 
-        # 根据语义获取颜色，如果没有定义，则使用默认的浅蓝色
-        # 这里的 alpha=0.6 设置了透明度，让底色不那么刺眼
-        fc_color = ROOM_COLOR_MAP.get(semantic, "#ADD8E6")  # 默认淡蓝色
+        # Get the color by semantic; use default light blue if undefined.
+        # alpha=0.6 sets transparency so the base color is not too glaring.
+        fc_color = ROOM_COLOR_MAP.get(semantic, "#ADD8E6")  # default light blue
 
-        # 绘制填充区域
+        # Draw the filled area
         ax.fill(x, y, alpha=0.6, fc=fc_color, ec='#404040', lw=1, zorder=1)
 
-        # 绘制房间标签 (语义 + 面积)
+        # Draw the room label (semantic + area)
         centroid = poly.centroid
         if not centroid.is_empty:
-            ax.text(poly.centroid.x, poly.centroid.y, f"{semantic}\n({room['area']}㎡)",
+            ax.text(poly.centroid.x, poly.centroid.y, f"{semantic}\n({room['area']}m²)",
                     ha='center', va='center', fontsize=12, fontweight='bold',
-                    color='#2C3E50', zorder=10)  # 确保文字在最上层
+                    color='#2C3E50', zorder=10)  # Ensure text stays on top
         else:
             print(f"Warning: Empty geometry found, semantic label: {semantic}")
 
-    # 绘制门 (保持原样，高亮显示)
+    # Draw doors (as-is, highlighted)
     for d_id, door in doors_data.items():
         poly = door['geom']
         x, y = poly.exterior.xy
         is_entr = (door['door_type'] == "bldg:EntranceDoor")
-        door_color = '#E74C3C' if is_entr else '#FAD7A1'  # 入户门红色，内部门橙色
+        door_color = '#E74C3C' if is_entr else '#FAD7A1'  # entrance doors red, interior doors orange
         edge_color = '#C0392B' if is_entr else '#E67E22'
         ax.fill(x, y, alpha=0.9, fc=door_color, ec=edge_color, lw=2, zorder=5)
 
-    # 绘制挂载的设施质心 (保持原样)
-    for f_id, facility in facilities_data.items():
-        cx, cy = facility['centroid'].x, facility['centroid'].y
-        f_type = facility['semantic']
+    # Draw mounted functional element centroids (as-is)
+    for f_id, fe in functional_elements_data.items():
+        cx, cy = fe['centroid'].x, fe['centroid'].y
+        f_type = fe['semantic']
         if f_type == "beo:Sink":
-            marker, color = 'v', '#1E90FF'  # 蓝色下三角
+            marker, color = 'v', '#1E90FF'  # blue downward triangle
         elif f_type == "beo:Bathtub":
-            marker, color = 's', '#00CED1'  # 碧绿色正方形
+            marker, color = 's', '#00CED1'  # turquoise square
         elif f_type == "beo:GasStove":
-            marker, color = '^', '#FF4500'  # 橙红色上三角
+            marker, color = '^', '#FF4500'  # orange-red upward triangle
         else:
-            marker, color = 'o', '#808080'  # 灰色圆点
+            marker, color = 'o', '#808080'  # gray dot
 
         ax.scatter(cx, cy, marker=marker, color=color, s=60, edgecolors='black', zorder=15)
-        # 为设施添加极小的文字标签
+        # Add a tiny text label for the element
         label_text = f_type.split(':')[-1]
         ax.text(cx, cy + 150, label_text, fontsize=7, ha='center',
                 color='#000080', fontweight='bold', zorder=16)
 
-    # 差异化绘制拓扑连通关系 (保持原样)
-    # 1. 通过门连接的边 (绿色虚线)
+    # Draw topology connectivity with differentiation (as-is)
+    # 1. Edges connected through doors (green dashed)
     door_edges = set()
     for d_id, door in doors_data.items():
         conn = list(door['interfaces'])
@@ -749,7 +704,7 @@ def build_graph_from_dxf():
             p1, p2 = rooms_data[conn[0]]['geom'].centroid, rooms_data[conn[1]]['geom'].centroid
             ax.plot([p1.x, p2.x], [p1.y, p2.y], color='#27AE60', linestyle='--', lw=2.5, alpha=0.8, zorder=20)
 
-    # 2. 纯几何相邻的边 (蓝色实线)
+    # 2. Edges adjacent purely by geometry (blue solid)
     drawn_adj_edges = set()
     for r_id, room in rooms_data.items():
         for adj_id in room['adjacencies']:
@@ -760,13 +715,13 @@ def build_graph_from_dxf():
                 p2 = rooms_data[adj_id]['geom'].centroid
                 ax.plot([p1.x, p2.x], [p1.y, p2.y], color='#2980B9', linestyle='-', lw=1.5, alpha=0.5, zorder=19)
 
-    # 界面美化设置
+    # Plot beautification settings
     ax.set_aspect('equal')
-    ax.axis('off')  # 关闭坐标轴
+    ax.axis('off')  # Turn off axes
     plt.title("Global Topology & Colored Zone Analysis Preview", pad=20, fontsize=14, fontweight='bold')
 
-    # 保存图片
-    img_dir = settings.viz_dir
+    # Save image
+    img_dir = str(settings.viz_dir)
     if not os.path.exists(img_dir): os.makedirs(img_dir)
 
     out_img_filename = f"{base_name}_gt_topology.png"
@@ -777,7 +732,76 @@ def build_graph_from_dxf():
     print(f"✅ Colored topology preview saved to: {out_img_path}")
 
     plt.close(fig)
+    return "OK"
+
+
+def build_graph_from_directory(dxf_dir=None):
+    """批量模式：处理指定目录下的所有已标注 DXF 图纸，逐个生成 GT 知识图谱。
+
+    参数:
+        dxf_dir: 存放已标注 DXF 的目录路径。为 None 时使用配置中的
+                 input_data/dxf_gt 目录。
+    """
+    if dxf_dir is None:
+        dxf_dir = str(settings.dxf_gt_dir)
+
+    dxf_dir_path = Path(dxf_dir)
+    if not dxf_dir_path.exists() or not dxf_dir_path.is_dir():
+        print(f"❌ Invalid or missing directory: {dxf_dir}")
+        return
+
+    dxf_files = sorted(dxf_dir_path.glob('*.dxf'))
+    if not dxf_files:
+        print(f"🛑 No DXF files found in directory: {dxf_dir}")
+        return
+
+    total = len(dxf_files)
+    print(f"🔍 Found {total} DXF files to process, starting automated batch GT creation...\n")
+
+    ok_count = 0
+    error_count = 0
+    for i, dxf_file in enumerate(dxf_files, 1):
+        print("\n" + "─" * 60)
+        print(f"[{i}/{total}] Processing: {dxf_file.name}")
+        print("─" * 60)
+        try:
+            status = build_graph_from_dxf(str(dxf_file))
+        except Exception as e:
+            print(f"  ⚠️ {dxf_file.name} crashed unexpectedly: {e}")
+            traceback.print_exc()
+            status = "ERROR"
+        if status == "OK":
+            ok_count += 1
+        else:
+            error_count += 1
+            print(f"  ⚠️ {dxf_file.name} failed with status: {status}")
+
+    print("\n" + "★" * 60)
+    print("📊 Batch GT creation complete!")
+    print(f"  Total: {total} | ✅ Success: {ok_count} | ❌ Errors: {error_count}")
+    print("★" * 60)
 
 
 if __name__ == "__main__":
-    build_graph_from_dxf()
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Ground Truth Creator (BIM knowledge graph auto-construction)"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["SINGLE", "BATCH"],
+        default="SINGLE",
+        help="SINGLE: process one DXF interactively; BATCH: process all DXFs in a directory",
+    )
+    parser.add_argument(
+        "--dir",
+        default=None,
+        help="DXF directory for BATCH mode (default: input_data/dxf_gt)",
+    )
+    args = parser.parse_args()
+
+    if args.mode.upper() == "BATCH":
+        build_graph_from_directory(args.dir)
+    else:
+        build_graph_from_dxf()

@@ -4,6 +4,7 @@ os.environ.setdefault('MPLBACKEND', 'Agg')  # force non-interactive backend BEFO
 
 import csv
 import json
+import re
 import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -65,6 +66,9 @@ class UIHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == '/api/evaluation-data':
             self._send_json(self._evaluation_data())
+            return
+        if parsed.path == '/api/available-dxfs':
+            self._send_json(self._available_dxfs())
             return
 
         file_path = parsed.path.lstrip('/')
@@ -131,7 +135,7 @@ class UIHandler(BaseHTTPRequestHandler):
             try:
                 env = os.environ.copy()
                 env['PYTHONUTF8'] = '1'
-                proc = subprocess.run(cmd, cwd=str(ROOT), env=env, capture_output=True, text=True, timeout=1800)
+                proc = subprocess.run(cmd, cwd=str(ROOT), env=env, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=1800)
                 stdout = proc.stdout or ''
                 stderr = proc.stderr or ''
                 self._send_json({
@@ -187,11 +191,176 @@ class UIHandler(BaseHTTPRequestHandler):
                 self._send_json({'ok': False, 'error': str(ex)}, 500)
             return
 
+        # ==========================================
+        # 类别一：正常使用 —— 输入单个 DXF，端到端分析并可视化
+        # ==========================================
+        if parsed.path == '/api/run-analysis':
+            data = self._read_json_body()
+            if data is None:
+                self._send_json({'ok': False, 'error': 'invalid_json'}, 400)
+                return
+
+            dxf_path = self._resolve_dxf_path(data.get('dxfFile') or '')
+            output_dir = data.get('outputDir') or 'output/jsonld'
+            if not dxf_path:
+                self._send_json({'ok': False, 'error': f'DXF file not found: {data.get("dxfFile")}'}, 404)
+                return
+
+            base_name = dxf_path.stem
+            svg_path = Path(settings.svg_dir) / f"{base_name}.svg"
+            svg_path.parent.mkdir(parents=True, exist_ok=True)
+            if not svg_path.exists():
+                try:
+                    convert_dxf_to_svg(str(dxf_path), str(svg_path))
+                except Exception as e:
+                    self._send_json({'ok': False, 'error': f'dxf2svg failed: {e}'}, 500)
+                    return
+
+            run = self._run_parsing_single(base_name + '.svg', output_dir)
+            output_dir_path = Path(output_dir)
+            if not output_dir_path.is_absolute():
+                output_dir_path = (ROOT / output_dir_path).resolve()
+            viz_dir = Path(settings.viz_dir)
+
+            payload = {
+                'ok': run['returnCode'] == 0,
+                'returnCode': run['returnCode'],
+                'stdout': run['stdout'],
+                'stderr': run['stderr'],
+                'base': base_name,
+                'svg': self._rel_or_none(svg_path),
+                'jsonld': self._rel_or_none(output_dir_path / f'{base_name}.jsonld'),
+                'rawJsonld': self._rel_or_none(output_dir_path / f'{base_name}_raw.jsonld'),
+                'topologyPng': self._rel_or_none(viz_dir / f'{base_name}_topology.png'),
+                'instancePng': self._rel_or_none(viz_dir / f'{base_name}_instance.png'),
+                'cdtPng': self._rel_or_none(viz_dir / f'{base_name}_cdt.png'),
+            }
+            self._send_json(payload)
+            return
+
+        # ==========================================
+        # 类别二 2.1：图纸分析 —— 单个 DXF，左右同屏对比系统结果与 GT 结果
+        # ==========================================
+        if parsed.path == '/api/experiment-draw':
+            data = self._read_json_body()
+            if data is None:
+                self._send_json({'ok': False, 'error': 'invalid_json'}, 400)
+                return
+
+            dxf_path = self._resolve_dxf_path(data.get('dxfFile') or '')
+            output_dir = data.get('outputDir') or 'output/jsonld'
+            if not dxf_path:
+                self._send_json({'ok': False, 'error': f'DXF file not found: {data.get("dxfFile")}'}, 404)
+                return
+
+            base_name = dxf_path.stem
+            svg_path = Path(settings.svg_dir) / f"{base_name}.svg"
+            svg_path.parent.mkdir(parents=True, exist_ok=True)
+            if not svg_path.exists():
+                try:
+                    convert_dxf_to_svg(str(dxf_path), str(svg_path))
+                except Exception as e:
+                    self._send_json({'ok': False, 'error': f'dxf2svg failed: {e}'}, 500)
+                    return
+
+            output_dir_path = Path(output_dir)
+            if not output_dir_path.is_absolute():
+                output_dir_path = (ROOT / output_dir_path).resolve()
+            jsonld_path = output_dir_path / f'{base_name}.jsonld'
+
+            # 复用已有富化结果（对比视图）；仅当不存在时才重新解析
+            run = {'returnCode': 0, 'stdout': '', 'stderr': ''}
+            if not jsonld_path.exists():
+                run = self._run_parsing_single(base_name + '.svg', output_dir)
+
+            viz_dir = Path(settings.viz_dir)
+
+            gt_path = self._find_gt_for_base(base_name)
+            gt_stem = gt_path.stem if gt_path else None
+
+            payload = {
+                'ok': run['returnCode'] == 0,
+                'returnCode': run['returnCode'],
+                'stdout': run['stdout'],
+                'stderr': run['stderr'],
+                'base': base_name,
+                'hasGt': gt_path is not None,
+                'sysTopology': self._rel_or_none(viz_dir / f'{base_name}_topology.png'),
+                'sysInstance': self._rel_or_none(viz_dir / f'{base_name}_instance.png'),
+                'sysCdt': self._rel_or_none(viz_dir / f'{base_name}_cdt.png'),
+                'sysJsonld': self._rel_or_none(output_dir_path / f'{base_name}.jsonld'),
+                'gtJsonld': self._rel_or_none(gt_path) if gt_path else None,
+                'gtTopology': self._rel_or_none(viz_dir / f'{gt_stem}_topology.png') if gt_stem else None,
+                'gtInstance': self._rel_or_none(viz_dir / f'{gt_stem}_gt_topology.png') if gt_stem else None,
+            }
+            self._send_json(payload)
+            return
+
+        # ==========================================
+        # 类别二 2.2：SHACL 审查 —— 输入 DXF，自动定位/处理对应文件后再审查
+        # ==========================================
+        if parsed.path == '/api/experiment-shacl':
+            data = self._read_json_body()
+            if data is None:
+                self._send_json({'ok': False, 'error': 'invalid_json'}, 400)
+                return
+
+            dxf_path = self._resolve_dxf_path(data.get('dxfFile') or '')
+            output_dir = data.get('outputDir') or 'output/jsonld'
+            if not dxf_path:
+                self._send_json({'ok': False, 'error': f'DXF file not found: {data.get("dxfFile")}'}, 404)
+                return
+
+            base_name = dxf_path.stem
+            svg_path = Path(settings.svg_dir) / f"{base_name}.svg"
+            svg_path.parent.mkdir(parents=True, exist_ok=True)
+            if not svg_path.exists():
+                try:
+                    convert_dxf_to_svg(str(dxf_path), str(svg_path))
+                except Exception as e:
+                    self._send_json({'ok': False, 'error': f'dxf2svg failed: {e}'}, 500)
+                    return
+
+            output_dir_path = Path(output_dir)
+            if not output_dir_path.is_absolute():
+                output_dir_path = (ROOT / output_dir_path).resolve()
+            jsonld_path = output_dir_path / f'{base_name}.jsonld'
+
+            # 自动定位已处理文件；若为新文件则先解析再审查
+            run = {'returnCode': 0, 'stdout': '', 'stderr': ''}
+            if not jsonld_path.exists():
+                run = self._run_parsing_single(base_name + '.svg', output_dir)
+                if run['returnCode'] != 0:
+                    self._send_json({'ok': False, 'error': 'parsing failed', 'stdout': run['stdout'], 'stderr': run['stderr']}, 500)
+                    return
+
+            try:
+                from src.experiment.compliance_reviewer import review_single
+                status, violations = review_single(str(jsonld_path), save_html=True)
+            except Exception as e:
+                self._send_json({'ok': False, 'error': f'compliance review failed: {e}'}, 500)
+                return
+
+            violations_json = Path(settings.violations_dir) / f'{base_name}_violations.json'
+            html_path = Path(settings.html_dir) / f'{base_name}_compliance_report.html'
+            payload = {
+                'ok': True,
+                'base': base_name,
+                'status': status,
+                'violationCount': len(violations),
+                'violationsJson': self._rel_or_none(violations_json),
+                'reportHtml': self._rel_or_none(html_path),
+                'stdout': run['stdout'],
+                'stderr': run['stderr'],
+            }
+            self._send_json(payload)
+            return
+
         # Upload DXF files via multipart/form-data
         if parsed.path == '/api/upload-dxf':
             # parse multipart
             form = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD': 'POST'})
-            target_dir = form.getvalue('targetDir') or 'uploads'
+            target_dir = str(form.getvalue('targetDir') or 'uploads')
             save_dir = settings.dxf_dir / target_dir
             save_dir.mkdir(parents=True, exist_ok=True)
             saved = []
@@ -200,7 +369,8 @@ class UIHandler(BaseHTTPRequestHandler):
                     filename = Path(field.filename).name
                     out_path = save_dir / filename
                     with open(out_path, 'wb') as out_f:
-                        shutil.copyfileobj(field.file, out_f)
+                        if field.file:
+                            shutil.copyfileobj(field.file, out_f)
                     saved.append(_repo_rel(out_path))
             self._send_json({'ok': True, 'saved': saved, 'targetDir': _repo_rel(save_dir)})
             return
@@ -392,23 +562,102 @@ class UIHandler(BaseHTTPRequestHandler):
             return
         body = path.read_bytes()
         suffix = path.suffix.lower()
-        mime = 'image/svg+xml' if suffix == '.svg' else 'application/octet-stream'
+        mime = {
+            '.svg': 'image/svg+xml',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+            '.json': 'application/json; charset=utf-8',
+            '.jsonld': 'application/json; charset=utf-8',
+            '.html': 'text/html; charset=utf-8',
+            '.ttl': 'text/turtle; charset=utf-8',
+        }.get(suffix, 'application/octet-stream')
         self.send_response(200)
         self.send_header('Content-Type', mime)
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
+    def _read_json_body(self):
+        """Read and parse a JSON POST body. Returns None on parse failure."""
+        length = int(self.headers.get('Content-Length', '0'))
+        body = self.rfile.read(length).decode('utf-8') if length else '{}'
+        try:
+            return json.loads(body or '{}')
+        except json.JSONDecodeError:
+            return None
+
+    def _rel_or_none(self, path):
+        """Return the repo-relative path, or None if the file does not exist."""
+        p = Path(path)
+        return _repo_rel(p) if p.exists() else None
+
+    def _available_dxfs(self):
+        """List DXF files available under input_data/dxf."""
+        dxf_root = Path(settings.dxf_dir)
+        files = []
+        if dxf_root.is_dir():
+            files = sorted(p.name for p in dxf_root.glob('*.dxf'))
+        return {'dxfFiles': files}
+
+    def _resolve_dxf_path(self, raw):
+        """Resolve a DXF reference to an absolute path (default under input_data/dxf)."""
+        if not raw:
+            return None
+        p = Path(str(raw).replace('\\', '/'))
+        if p.is_absolute():
+            return p if p.exists() else None
+        candidate = Path(settings.dxf_dir) / p
+        if candidate.exists():
+            return candidate
+        candidate2 = ROOT / p
+        return candidate2 if candidate2.exists() else None
+
+    def _find_gt_for_base(self, base_name):
+        """Locate the Ground Truth JSON-LD for a system base name.
+
+        Tries direct names first, then scans output/gt for a file whose stem
+        (after removing ``_gt`` / ``_annotated`` markers) matches the base name.
+        """
+        gt_dir = Path(settings.gt_dir)
+        for name in (f"{base_name}_gt.jsonld", f"{base_name}_annotated_gt.jsonld", f"{base_name}_Annotated_gt.jsonld"):
+            p = gt_dir / name
+            if p.exists():
+                return p
+        for p in sorted(gt_dir.glob('*_gt.jsonld')):
+            stem = p.stem
+            if stem.endswith('_gt'):
+                stem = stem[:-3]
+            stem = re.sub(r'_annotated', '', stem, flags=re.IGNORECASE)
+            if stem == base_name:
+                return p
+        return None
+
+    def _run_parsing_single(self, svg_name, output_dir):
+        """Run the parsing pipeline (main.py SINGLE mode) as a subprocess."""
+        cmd = [sys.executable, '-m', 'src.main', '--mode', 'SINGLE', '--target-file', svg_name, '--output-dir', output_dir]
+        env = os.environ.copy()
+        env['PYTHONUTF8'] = '1'
+        try:
+            proc = subprocess.run(cmd, cwd=str(ROOT), env=env, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=1800)
+            return {'returnCode': proc.returncode, 'stdout': proc.stdout or '', 'stderr': proc.stderr or ''}
+        except subprocess.TimeoutExpired as exc:
+            return {'returnCode': -1, 'stdout': exc.stdout or '', 'stderr': f"{exc.stderr or ''}\n[timeout]"}
+
     def _evaluation_data(self):
         overall_files = list((ROOT / 'output' / 'html').rglob('overall_results.json'))
         rows = []
         metrics = []
+        raw_overall = None
         for overall_file in overall_files:
             try:
                 with open(overall_file, 'r', encoding='utf-8') as fh:
                     data = json.load(fh)
             except Exception:
                 continue
+            raw_overall = data
             row = {'source': _repo_rel(overall_file)}
             flat_metrics = {}
             for group, values in data.items():
@@ -444,6 +693,7 @@ class UIHandler(BaseHTTPRequestHandler):
 
         return {
             'overall': rows[0],
+            'raw': raw_overall,
             'individual': individual_rows,
             'chart': [
                 {'label': 'Geometry 1to1', 'value': rows[0].get('Global_1to1_Match_Rate', 0)},

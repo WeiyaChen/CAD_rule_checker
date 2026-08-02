@@ -7,7 +7,6 @@ import openai
 
 # 引入配置与引擎
 from src.config.config import Settings
-from src.compliance.shacl_engine import ShaclValidationEngine
 from src.processor import process_single_drawing, process_directory
 
 
@@ -57,7 +56,6 @@ def main():
 
     output_json_dir.mkdir(parents=True, exist_ok=True)
 
-    validator = ShaclValidationEngine()
     llm_client = setup_llm_client(settings)
 
     if run_mode == "SINGLE":
@@ -65,14 +63,14 @@ def main():
             print(f"ERROR: Target file not found '{target_file}'")
             sys.exit(1)
         print(f"Starting single-drawing review: {target_file}")
-        process_single_drawing(str(target_file), output_json_dir, validator, llm_client)
+        process_single_drawing(str(target_file), output_json_dir, llm_client)
 
     elif run_mode == "BATCH":
         if not target_dir.exists() or not target_dir.is_dir():
             print(f"ERROR: Invalid or missing target directory '{target_dir}'")
             sys.exit(1)
         print(f"Starting batch review for directory: {target_dir}")
-        process_directory(str(target_dir), output_json_dir, validator, llm_client)
+        process_directory(str(target_dir), output_json_dir, llm_client)
 
     else:
         print(f"🛑 ERROR: Unknown run mode '{run_mode}'. Check RUN_MODE configuration.")

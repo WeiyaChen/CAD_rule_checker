@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图谱可视交互修正系统 (空间与设施协同版)</title>
+    <title>Interactive Graph Visualization & Correction System</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,7 +16,7 @@
             overflow: hidden;
         }
 
-        /* 布局容器 */
+        /* layout container */
         #main-wrapper {
             flex: 1;
             display: flex;
@@ -44,7 +44,7 @@
             color: #7f8c8d;
         }
 
-        /* 单画布区 */
+        /* single canvas area */
         #workspace-single {
             flex: 1;
             display: flex;
@@ -79,7 +79,7 @@
             cursor: default;
         }
 
-        /* 状态指示器 */
+        /* status indicator */
         #mode-indicator {
             position: absolute;
             top: 15px;
@@ -96,7 +96,7 @@
             z-index: 10;
         }
 
-        /* 侧边栏 */
+        /* sidebar */
         #sidebar {
             width: 320px;
             background: #fff;
@@ -241,128 +241,127 @@
         <div class="header">
             <div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <h2 style="margin:0 0 5px 0;">交互式图谱可视修正系统</h2>
+                    <h2 style="margin:0 0 5px 0;">Interactive Graph Visualization & Correction System</h2>
                     <a href="/" style="text-decoration:none; font-size:0.8rem; color:#0f4c81; border:1px solid #0f4c81; padding:3px 10px; border-radius:4px;">⌂ Home</a>
-                    <button id="langToggleManual" onclick="toggleLangManual()" style="background:none; border:1px solid #bdc3c7; padding:3px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem; color:#555;">EN</button>
                 </div>
-                <p>操作提示：支持空间几何重塑与设施节点增补；质心连线可自动确立相邻拓扑或包含关联。</p>
+                <p>Tip: Supports spatial geometry remodeling and facility node augmentation; centroid connections can auto-establish adjacency or containment relations.</p>
             </div>
         </div>
 
         <div id="workspace-single">
             <div class="pane-header">
-                <span>📐 综合图纸视图 (Integrated View)</span>
-                <span id="view-status" style="font-size:0.85rem; color:#e67e22; font-weight:normal;">当前模式：纯净浏览</span>
+                <span>📐 Integrated Drawing View</span>
+                <span id="view-status" style="font-size:0.85rem; color:#e67e22; font-weight:normal;">Mode: Browse</span>
             </div>
             <div class="pane-body" id="editor-container">
-                <div id="mode-indicator">✍️ 模式提示</div>
+                <div id="mode-indicator">✍️ Mode hint</div>
                 <canvas id="editor-canvas"></canvas>
             </div>
         </div>
     </div>
 
     <div id="sidebar">
-        <!-- 视图与编辑控制面板 -->
+        <!-- View & Editing controls panel -->
         <div class="panel-section">
-            <h3>视图与交互控制 (Controls)</h3>
+            <h3>View & Controls</h3>
             <div class="toggle-group">
                 <label class="toggle-label">
                     <input type="checkbox" id="cb-basemap" checked onchange="toggleLayer()">
-                    🗺️ 显示原生 CAD 底图
+                    🗺️ Show native CAD base map
                 </label>
                 <label class="toggle-label">
                     <input type="checkbox" id="cb-graph" checked onchange="toggleLayer()">
-                    🌐 显示结构化知识图谱
+                    🌐 Show structured knowledge graph
                 </label>
             </div>
-            <button id="btn-edit-toggle" class="edit-toggle-btn" onclick="toggleEditMode()">🔒 开启交互编辑</button>
+            <button id="btn-edit-toggle" class="edit-toggle-btn" onclick="toggleEditMode()">🔒 Enable Interactive Editing</button>
         </div>
 
-        <!-- 数据接入面板 -->
+        <!-- Data input panel -->
         <div class="panel-section">
-            <h3>数据接入 (Data Input)</h3>
+            <h3>Data Input</h3>
             <input type="file" id="file-bg" accept=".svg, image/png, image/jpeg" style="display: none;">
-            <button class="upload-btn" onclick="document.getElementById('file-bg').click()">🖼️ 1. 上传原生图纸底图</button>
+            <button class="upload-btn" onclick="document.getElementById('file-bg').click()">🖼️ 1. Upload native drawing base map</button>
 
             <input type="file" id="file-json" accept=".json, .jsonld" style="display: none;">
-            <button class="upload-btn" onclick="document.getElementById('file-json').click()">📄 2. 上传知识图谱 (JSON-LD)</button>
+            <button class="upload-btn" onclick="document.getElementById('file-json').click()">📄 2. Upload knowledge graph (JSON-LD)</button>
         </div>
 
         <div class="panel-section">
-            <h3>几何重塑与设施增补</h3>
-            <div class="hint-text">💡 选中空间后，右键点击顶点即可删除该点</div>
-            <button id="btn-draw" class="draw-btn" onclick="toggleDrawMode()" style="opacity: 0.5; cursor: not-allowed;" disabled>✍️ 绘制自定义空间</button>
-            <button id="btn-add-fac" class="fac-btn" onclick="toggleAddFacilityMode()" style="opacity: 0.5; cursor: not-allowed;" disabled>➕ 增补内部设施节点</button>
-            <button id="btn-cancel-draw" class="cancel-btn" onclick="cancelDrawMode()">取消操作</button>
+            <h3>Geometry & Facilities</h3>
+            <div class="hint-text">💡 Select a space, then right-click a vertex to delete it</div>
+            <button id="btn-draw" class="draw-btn" onclick="toggleDrawMode()" style="opacity: 0.5; cursor: not-allowed;" disabled>✍️ Draw Custom Space</button>
+            <button id="btn-add-fac" class="fac-btn" onclick="toggleAddFacilityMode()" style="opacity: 0.5; cursor: not-allowed;" disabled>➕ Add Facility Node</button>
+            <button id="btn-cancel-draw" class="cancel-btn" onclick="cancelDrawMode()">Cancel</button>
         </div>
 
         <div class="panel-section">
-            <h3>节点属性覆写 (Node Override)</h3>
+            <h3>Node Override</h3>
             <div id="edit-form-container">
-                <div id="edit-form-overlay">请先开启上方“交互编辑”</div>
+                <div id="edit-form-overlay">Please enable "Interactive Editing" above first</div>
 
-                <div id="no-selection" style="font-size: 0.9rem; color: #95a5a6; display: none;">请在左侧画布中点击选择节点。</div>
+                <div id="no-selection" style="font-size: 0.9rem; color: #95a5a6; display: none;">Please click a node on the canvas to select it.</div>
                 <div id="edit-form" style="display: none;">
                     <div class="form-group">
-                        <label>统一资源标识符 (URI)</label>
+                        <label>Uniform Resource Identifier (URI)</label>
                         <input type="text" id="node-id" disabled style="background: #f4f6f6; cursor: not-allowed;">
                     </div>
                     <div class="form-group">
-                        <label>本体语义 (Semantic Type)</label>
-                        <!-- 空间下拉菜单 -->
+                        <label>Semantic Type</label>
+                        <!-- space dropdown -->
                         <select id="node-type-space" style="display: none;">
-                            <option value="Unknown">Unknown (待推断)</option>
-                            <option value="Bedroom">Bedroom (卧室)</option>
-                            <option value="LivingRoom">LivingRoom (起居室)</option>
-                            <option value="Kitchen">Kitchen (厨房)</option>
-                            <option value="Bathroom">Bathroom (卫生间)</option>
-                            <option value="Balcony">Balcony (阳台)</option>
-                            <option value="Corridor">Corridor (过道)</option>
-                            <option value="DiningRoom">DiningRoom (餐厅)</option>
+                            <option value="Unknown">Unknown</option>
+                            <option value="Bedroom">Bedroom</option>
+                            <option value="LivingRoom">Living Room</option>
+                            <option value="Kitchen">Kitchen</option>
+                            <option value="Bathroom">Bathroom</option>
+                            <option value="Balcony">Balcony</option>
+                            <option value="Corridor">Corridor</option>
+                            <option value="DiningRoom">Dining Room</option>
                         </select>
-                        <!-- 设施下拉菜单 -->
+                        <!-- facility dropdown -->
                         <select id="node-type-facility" style="display: none;">
-                            <option value="UnknownFacility">Unknown (待确认设施)</option>
-                            <option value="GasStove">Gas Stove (燃气灶)</option>
-                            <option value="Sink">Sink (洗涤池)</option>
-                            <option value="Toilet">Toilet (便器)</option>
-                            <option value="Bathtub">Bathtub (浴缸)</option>
-                            <option value="Bed">Bed (床铺)</option>
-                            <option value="Cabinet">Cabinet (柜子)</option>
-                            <option value="Sofa">Sofa (沙发)</option>
-                            <option value="Table">Table (桌子)</option>
-                            <option value="Wardrobe">Wardrobe (衣柜)</option>
-                            <option value="ShoeCabinet">Shoe Cabinet (鞋柜)</option>
-                            <option value="WashingMachine">Washing Machine (洗衣机)</option>
+                            <option value="UnknownFacility">Unknown Facility</option>
+                            <option value="GasStove">Gas Stove</option>
+                            <option value="Sink">Sink</option>
+                            <option value="Toilet">Toilet</option>
+                            <option value="Bathtub">Bathtub</option>
+                            <option value="Bed">Bed</option>
+                            <option value="Cabinet">Cabinet</option>
+                            <option value="Sofa">Sofa</option>
+                            <option value="Table">Table</option>
+                            <option value="Wardrobe">Wardrobe</option>
+                            <option value="ShoeCabinet">Shoe Cabinet</option>
+                            <option value="WashingMachine">Washing Machine</option>
                         </select>
                     </div>
                     <div class="form-group" id="fg-area">
-                        <label>净面积 (Area ㎡) - 自动精确核算</label>
+                        <label>Net Area (㎡) - auto-calculated</label>
                         <input type="number" id="node-area" step="0.1">
                     </div>
-                    <button onclick="applyNodeChanges()">确认修改</button>
-                    <button class="cancel-btn" style="display:block; margin-top:5px; background-color:#e74c3c;" onclick="deleteSelectedNode()">🗑️ 删除该节点</button>
+                    <button onclick="applyNodeChanges()">Apply Changes</button>
+                    <button class="cancel-btn" style="display:block; margin-top:5px; background-color:#e74c3c;" onclick="deleteSelectedNode()">🗑️ Delete Node</button>
                 </div>
             </div>
         </div>
 
         <div class="panel-section" style="margin-top: auto;">
-            <h3>图谱同步 (Synchronization)</h3>
-            <button class="success" onclick="syncGraphData()">序列化并更新至知识图谱</button>
+            <h3>Synchronization</h3>
+            <button class="success" onclick="syncGraphData()">Serialize & Update Graph</button>
             <div id="status-box"></div>
 
             <div class="legend">
                 <div><span style="background: #FFDAB9;"></span> Kitchen</div>
                 <div><span style="background: #E0FFFF;"></span> Bathroom</div>
-                <div style="margin-top: 5px;">📍 蓝色实线：空间相邻拓扑 (adjacentZone)</div>
-                <div>📍 绿色虚线：设施包含拓扑 (containsElement)</div>
-                <div>🔸 菱形标记：设施构件位置</div>
+                <div style="margin-top: 5px;">📍 Blue solid line: space adjacency (adjacentZone)</div>
+                <div>📍 Green dashed line: facility containment (containsElement)</div>
+                <div>🔸 Diamond marker: facility component position</div>
             </div>
         </div>
     </div>
 
     <script>
-        // =================== 核心数据结构与全局变量 ===================
+        // =================== Core data structures & globals ===================
 
         let backgroundImage = null;
         let baseMapVertices = [];
@@ -372,7 +371,7 @@
         let showBaseMap = true;
         let showGraph = true;
 
-        // 图谱数据结构
+        // graph data structure
         let graphData = {
             "inst:Space_01": {
                 nodeClass: "Space", type: "LivingRoom", area: 24.5,
@@ -425,7 +424,7 @@
         let svgViewBoxW = 140.0, svgViewBoxH = 140.0;
         let areaScaleFactor = null;
 
-        // =================== 画布与交互状态 ===================
+        // =================== Canvas & interaction state ===================
         const canvasEditor = document.getElementById('editor-canvas');
         const ctxEditor = canvasEditor.getContext('2d');
         const containerEditor = document.getElementById('editor-container');
@@ -448,7 +447,7 @@
         let worldMouseX = 0, worldMouseY = 0;
         let currentSnapInfo = null;
 
-        // =================== 核心控制逻辑 ===================
+        // =================== Core control logic ===================
 
         function toggleLayer() {
             showBaseMap = document.getElementById('cb-basemap').checked;
@@ -456,7 +455,7 @@
             if (!showBaseMap && !showGraph) {
                 document.getElementById('cb-graph').checked = true;
                 showGraph = true;
-                showMessage("⚠️ 必须至少保留一个可见图层。");
+                showMessage("⚠️ At least one visible layer must remain.");
             }
             drawAll();
         }
@@ -465,23 +464,23 @@
             const btn = document.getElementById('btn-edit-toggle');
             if (currentMode === 'VIEW') {
                 currentMode = 'SELECT';
-                btn.innerHTML = "🔓 退出交互编辑";
+                btn.innerHTML = "🔓 Exit Interactive Editing";
                 btn.classList.add('active');
                 canvasEditor.style.cursor = 'crosshair';
-                viewStatus.innerHTML = '当前模式：<span style="color:#e74c3c; font-weight:bold;">交互编辑</span>';
+                viewStatus.innerHTML = 'Mode: <span style="color:#e74c3c; font-weight:bold;">Interactive Editing</span>';
 
                 btnDraw.style.opacity = '1'; btnDraw.style.cursor = 'pointer'; btnDraw.disabled = false;
                 btnAddFac.style.opacity = '1'; btnAddFac.style.cursor = 'pointer'; btnAddFac.disabled = false;
                 editFormOverlay.style.display = 'none';
                 updatePanel();
-                showMessage("🔓 交互编辑已开启。");
+                showMessage("🔓 Interactive editing enabled.");
             } else {
                 cancelDrawMode();
                 currentMode = 'VIEW';
-                btn.innerHTML = "🔒 开启交互编辑";
+                btn.innerHTML = "🔒 Enable Interactive Editing";
                 btn.classList.remove('active');
                 canvasEditor.style.cursor = 'default';
-                viewStatus.innerHTML = '当前模式：<span style="color:#27ae60; font-weight:bold;">纯净浏览</span>';
+                viewStatus.innerHTML = 'Mode: <span style="color:#27ae60; font-weight:bold;">Browse</span>';
 
                 btnDraw.style.opacity = '0.5'; btnDraw.style.cursor = 'not-allowed'; btnDraw.disabled = true;
                 btnAddFac.style.opacity = '0.5'; btnAddFac.style.cursor = 'not-allowed'; btnAddFac.disabled = true;
@@ -493,7 +492,7 @@
             drawAll();
         }
 
-        // =================== 核心数学与渲染 ===================
+        // =================== Core math & rendering ===================
 
         function autoFitView() {
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -705,7 +704,7 @@
                     ctxEditor.fillText(`Area: ${node.area}㎡`, node.centroid[0], node.centroid[1] + fontSizeTitle*0.8);
                 }
 
-                // 绘制设施节点
+                // draw facility nodes
                 for (let id in graphData) {
                     let node = graphData[id];
                     if (node.nodeClass !== 'Facility') continue;
@@ -721,11 +720,11 @@
                     ctxEditor.fillText(node.type, node.centroid[0], node.centroid[1] - 10/globalScale);
                 }
 
-                // 绘制拓扑线
+                // draw topology lines
                 let drawnEdges = new Set();
                 for (let id1 in graphData) {
                     let node1 = graphData[id1];
-                    // 空间相邻
+                    // space adjacency
                     if (node1.nodeClass === 'Space' && node1.adjacencies) {
                         ctxEditor.lineWidth = 2 / globalScale; ctxEditor.strokeStyle = "rgba(41, 128, 185, 0.8)";
                         for (let id2 of node1.adjacencies) {
@@ -736,7 +735,7 @@
                             }
                         }
                     }
-                    // 设施包含
+                    // facility containment
                     if (node1.nodeClass === 'Space' && node1.contains) {
                         ctxEditor.lineWidth = 2 / globalScale; ctxEditor.strokeStyle = "rgba(39, 174, 96, 0.9)";
                         ctxEditor.setLineDash([5/globalScale, 5/globalScale]);
@@ -779,7 +778,7 @@
             ctxEditor.restore();
         }
 
-        // =================== 数据接入 ===================
+        // =================== Data input ===================
 
         document.getElementById('file-bg').addEventListener('change', function(e) {
             const file = e.target.files[0]; if (!file) return;
@@ -806,12 +805,12 @@
                         }
                     });
                     const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svgElem)], {type: "image/svg+xml;charset=utf-8"}));
-                    const img = new Image(); img.onload = function() { backgroundImage = img; autoFitView(); drawAll(); showMessage("🖼️ SVG 底图加载成功！"); URL.revokeObjectURL(url); }; img.src = url;
+                    const img = new Image(); img.onload = function() { backgroundImage = img; autoFitView(); drawAll(); showMessage("🖼️ SVG base map loaded successfully!"); URL.revokeObjectURL(url); }; img.src = url;
                 }; reader.readAsText(file);
             } else {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    const img = new Image(); img.onload = function() { backgroundImage = img; svgViewBoxW = img.width; svgViewBoxH = img.height; if (rawGraphDataCache) parseRawJSONLD(rawGraphDataCache); else graphData = {}; autoFitView(); drawAll(); showMessage("🖼️ 光栅底图加载成功！"); }; img.src = event.target.result;
+                    const img = new Image(); img.onload = function() { backgroundImage = img; svgViewBoxW = img.width; svgViewBoxH = img.height; if (rawGraphDataCache) parseRawJSONLD(rawGraphDataCache); else graphData = {}; autoFitView(); drawAll(); showMessage("🖼️ Raster base map loaded successfully!"); }; img.src = event.target.result;
                 }
                 reader.readAsDataURL(file);
             }
@@ -822,8 +821,8 @@
             const reader = new FileReader();
             reader.onload = function(event) {
                 try {
-                    const rawJson = JSON.parse(event.target.result); rawGraphDataCache = rawJson; parseRawJSONLD(rawJson); autoFitView(); drawAll(); showMessage("📄 知识图谱加载成功！");
-                } catch (err) { showMessage("❌ 解析 JSON 失败: " + err.message); }
+                    const rawJson = JSON.parse(event.target.result); rawGraphDataCache = rawJson; parseRawJSONLD(rawJson); autoFitView(); drawAll(); showMessage("📄 Knowledge graph loaded successfully!");
+                } catch (err) { showMessage("❌ Failed to parse JSON: " + err.message); }
             }; reader.readAsText(file);
         });
 
@@ -831,7 +830,7 @@
             graphData = {}; areaScaleFactor = null;
             const nodes = rawJson["@graph"] || [];
 
-            // 1. 提取所有空间
+            // 1. extract all spaces
             nodes.forEach(node => {
                 const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
                 if (types.includes("bot:Space")) {
@@ -849,7 +848,7 @@
                 }
             });
 
-            // 2. 提取所有设施并反向映射 contained_in
+            // 2. extract all facilities and reverse-map contained_in
             nodes.forEach(node => {
                 const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
                 if (types.includes("bot:Element") && !types.some(t => t.includes("Door"))) {
@@ -857,11 +856,11 @@
                     let semType = "UnknownFacility";
                     let label = node["rdfs:label"];
 
-                    // 优先读取 rdfs:label
+                    // prefer rdfs:label
                     if (label) {
                         semType = label.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
                     } else {
-                        // 兼容之前没有 rdfs:label 的老数据
+                        // fallback for legacy data without rdfs:label
                         for (let t of types) {
                             if (t.startsWith("beo:") && t !== "beo:FunctionalElement") {
                                 semType = t.replace("beo:", "");
@@ -891,11 +890,11 @@
             });
         }
 
-        // =================== 模式与事件 ===================
+        // =================== Modes & events ===================
         function toggleDrawMode() {
             if (currentMode === 'VIEW') return;
             currentMode = 'DRAW'; selectedNodeId = null; drawPoints = [];
-            modeIndicator.innerHTML = "✍️ 绘制空间：点击添加顶点，Shift正交约束，右键取消"; modeIndicator.style.display = 'block';
+            modeIndicator.innerHTML = "✍️ Drawing space: click to add vertices, Shift for orthogonal constraint, right-click to cancel"; modeIndicator.style.display = 'block';
             btnDraw.style.display = 'none'; btnAddFac.style.display = 'none'; btnCancelDraw.style.display = 'block';
             updatePanel(); drawAll();
         }
@@ -903,7 +902,7 @@
         function toggleAddFacilityMode() {
             if (currentMode === 'VIEW') return;
             currentMode = 'ADD_FACILITY'; selectedNodeId = null;
-            modeIndicator.innerHTML = "➕ 增补设施：请在画布内部点击合适的位置放置节点，随后右侧可覆写语义。"; modeIndicator.style.display = 'block';
+            modeIndicator.innerHTML = "➕ Adding facility: click inside the canvas to place a node, then override its semantics on the right."; modeIndicator.style.display = 'block';
             btnDraw.style.display = 'none'; btnAddFac.style.display = 'none'; btnCancelDraw.style.display = 'block';
             updatePanel(); drawAll();
         }
@@ -917,13 +916,13 @@
         }
 
         function completeDrawing() {
-            if (drawPoints.length < 3) { showMessage("⚠️ 顶点不足，无法闭合多边形！"); return; }
+            if (drawPoints.length < 3) { showMessage("⚠️ Not enough vertices to close the polygon!"); return; }
             let areaPx = calculatePolygonArea(drawPoints);
             let scaleF = areaScaleFactor || (1 / (dxfScale * dxfScale * 1000000.0));
             let areaSqm = (areaPx * scaleF).toFixed(2);
             let newId = `inst:Space_Custom_${customRoomCounter++}`;
             graphData[newId] = { nodeClass: "Space", type: "Unknown", area: parseFloat(areaSqm), polygon: [...drawPoints], centroid: calculateCentroid(drawPoints), adjacencies: [], contains: [] };
-            showMessage(`[几何确权] 新空间节点 ${newId} 创建成功！面积: ${areaSqm} ㎡。`);
+            showMessage(`[Geometry] New space node ${newId} created! Area: ${areaSqm} m².`);
             cancelDrawMode();
         }
 
@@ -951,7 +950,7 @@
                 let newId = `inst:Facility_Custom_${customFacCounter++}`;
                 graphData[newId] = { nodeClass: "Facility", type: "UnknownFacility", label: "unknown facility", centroid: [worldMouseX, worldMouseY], contained_in: null };
                 selectedNodeId = newId;
-                showMessage(`[设施确权] 设施节点 ${newId} 已放置。拖拽质心可将其连线挂载至对应房间。`);
+                showMessage(`[Facility] Facility node ${newId} placed. Drag its centroid to connect it to a room.`);
                 cancelDrawMode();
                 updatePanel();
                 return;
@@ -967,8 +966,8 @@
                                 let scaleF = areaScaleFactor || (1 / (dxfScale * dxfScale * 1000000.0));
                                 graphData[selectedNodeId].area = parseFloat((calculatePolygonArea(poly) * scaleF).toFixed(2));
                                 graphData[selectedNodeId].centroid = calculateCentroid(poly);
-                                updatePanel(); drawAll(); showMessage(`[多边形优化] 已删除冗余顶点，面积自动重算。`);
-                            } else showMessage(`⚠️ 失败：房间轮廓至少需要 3 个顶点维持多边形！`);
+                                updatePanel(); drawAll(); showMessage(`[Polygon] Redundant vertices removed, area recalculated.`);
+                            } else showMessage(`⚠️ Failed: a room outline needs at least 3 vertices!`);
                             return;
                         }
                     }
@@ -1048,7 +1047,7 @@
                 let scaleF = areaScaleFactor || (1 / (dxfScale * dxfScale * 1000000.0));
                 node.area = parseFloat((calculatePolygonArea(node.polygon) * scaleF).toFixed(2));
                 node.centroid = calculateCentroid(node.polygon);
-                draggingVertexIndex = null; updatePanel(); drawAll(); showMessage(`[几何重塑] 空间边界已对齐吸附，系统重算面积为 ${node.area} ㎡。`); return;
+                draggingVertexIndex = null; updatePanel(); drawAll(); showMessage(`[Geometry] Space boundary aligned/snapped, area recalculated to ${node.area} m².`); return;
             }
 
             if (currentMode === 'SELECT' && isDraggingEdge && dragStartNodeId) {
@@ -1063,10 +1062,10 @@
                     if (node1.nodeClass === 'Space' && node2.nodeClass === 'Space') {
                         if (node1.adjacencies.includes(dropNodeId)) {
                             node1.adjacencies = node1.adjacencies.filter(id => id !== dropNodeId); node2.adjacencies = node2.adjacencies.filter(id => id !== dragStartNodeId);
-                            showMessage(`[拓扑修改] 已成功断开空间 ${dragStartNodeId} 与 ${dropNodeId} 的连通。`);
+                            showMessage(`[Topology] Disconnected ${dragStartNodeId} from ${dropNodeId}.`);
                         } else {
                             node1.adjacencies.push(dropNodeId); node2.adjacencies.push(dragStartNodeId);
-                            showMessage(`[拓扑修复] 已建立空间 ${dragStartNodeId} 与 ${dropNodeId} 的相邻关联。`);
+                            showMessage(`[Topology] Established adjacency between ${dragStartNodeId} and ${dropNodeId}.`);
                         }
                     }
                     else if (node1.nodeClass !== node2.nodeClass) {
@@ -1076,13 +1075,13 @@
 
                         if (space.contains.includes(facId)) {
                             space.contains = space.contains.filter(id => id !== facId); fac.contained_in = null;
-                            showMessage(`[包含修改] 已解除空间 ${spaceId} 对设施 ${facId} 的包含。`);
+                            showMessage(`[Containment] Removed facility ${facId} from space ${spaceId}.`);
                         } else {
                             if (fac.contained_in && graphData[fac.contained_in]) {
                                 let oldSpace = graphData[fac.contained_in]; oldSpace.contains = oldSpace.contains.filter(id => id !== facId);
                             }
                             space.contains.push(facId); fac.contained_in = spaceId;
-                            showMessage(`[包含修复] 成功建立空间 ${spaceId} 对设施 ${facId} 的包含关系。`);
+                            showMessage(`[Containment] Added facility ${facId} to space ${spaceId}.`);
                         }
                     }
                 }
@@ -1090,7 +1089,7 @@
             isDraggingEdge = false; dragStartNodeId = null; drawAll();
         });
 
-        // =================== 面板与数据操作 ===================
+        // =================== Panel & data operations ===================
         function updatePanel() {
             const noSelection = document.getElementById('no-selection');
             const editForm = document.getElementById('edit-form');
@@ -1130,12 +1129,12 @@
                 let newType = document.getElementById('node-type-facility').value;
                 if (node.type !== newType) {
                     node.type = newType;
-                    // 当下拉菜单更新类型时，自动将其转换为底层需要存储的 rdfs:label 形式 (如 "GasStove" -> "gas stove")
+                    // when the dropdown updates the type, convert it to the rdfs:label form stored internally (e.g. "GasStove" -> "gas stove")
                     node.label = newType.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
                     changed = true;
                 }
             }
-            if (changed) { drawAll(); showMessage(`[属性覆写] 节点语义已更新。`); }
+            if (changed) { drawAll(); showMessage(`[Override] Node semantics updated.`); }
         }
 
         function deleteSelectedNode() {
@@ -1152,7 +1151,7 @@
                 }
             }
             delete graphData[selectedNodeId]; selectedNodeId = null;
-            updatePanel(); drawAll(); showMessage(`🗑️ 节点已彻底删除。`);
+            updatePanel(); drawAll(); showMessage(`🗑️ Node permanently deleted.`);
         }
 
         function syncGraphData() {
@@ -1178,7 +1177,7 @@
                 }
             }
             console.log(JSON.stringify(jsonldFormat, null, 2));
-            showMessage(`✅ 数据已成功序列化！空间与设施复合拓扑已生成。<br><span style="font-size:10px;">(按 F12 查看控制台输出 RDF 数据)</span>`);
+            showMessage(`✅ Data serialized successfully! Space & facility topology generated.<br><span style="font-size:10px;">(Press F12 to view RDF output in the console)</span>`);
         }
 
         function showMessage(msg) {
@@ -1188,21 +1187,6 @@
 
         setTimeout(resizeCanvas, 100);
 
-        // i18n toggle for manual page
-        function toggleLangManual() {
-            const btn = document.getElementById('langToggleManual');
-            const isEn = btn.textContent === '中';
-            btn.textContent = isEn ? 'EN' : '中';
-            document.querySelector('.header p').textContent = isEn
-                ? '操作提示：支持空间几何重塑与设施节点增补；质心连线可自动确立相邻拓扑或包含关联。'
-                : 'Tip: Supports spatial geometry remodeling and facility node augmentation; centroid connections can auto-establish adjacency or containment relations.';
-            // update section titles
-            const sections = document.querySelectorAll('.panel-section h3');
-            const zhTitles = ['视图与交互控制 (Controls)', '数据接入 (Data Input)', '几何重塑与设施增补', '节点属性覆写 (Node Override)', '图谱同步 (Synchronization)'];
-            const enTitles = ['View & Controls', 'Data Input', 'Geometry & Facilities', 'Node Override', 'Synchronization'];
-            const titles = isEn ? zhTitles : enTitles;
-            sections.forEach((h3, i) => { if (i < titles.length) h3.textContent = titles[i]; });
-        }
     </script>
 </body>
 </html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHACL Compliance Review (Experiment 2.2)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f4f7fb; color: #223; }
+  .hidden { display: none !important; }
+  header { background: linear-gradient(135deg, #4a1d1d, #a34a2e); color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header a.back { color: #ffd9c7; text-decoration: none; font-size: 14px; }
+  header h1 { font-size: 20px; }
+  .wrap { display: flex; min-height: calc(100vh - 60px); }
+  .side { width: 300px; background: #fff; border-right: 1px solid #e0e6ef; padding: 18px; flex-shrink: 0; }
+  .main { flex: 1; padding: 20px; overflow: auto; }
+  h3 { font-size: 15px; margin: 14px 0 8px; color: #a34a2e; }
+  select, input[type=file] { width: 100%; padding: 8px; border: 1px solid #cfd8e3; border-radius: 6px; font-size: 14px; }
+  .btn { width: 100%; margin-top: 12px; padding: 11px; border: 0; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; }
+  .btn.primary { background: #a34a2e; color: #fff; }
+  .btn.primary:hover { background: #87391f; }
+  .btn.ghost { background: #fbeee8; color: #a34a2e; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .log { background: #0d1b2a; color: #9fe8af; font-family: Consolas, monospace; font-size: 12px; padding: 12px; border-radius: 8px; max-height: 180px; overflow: auto; white-space: pre-wrap; margin-top: 14px; }
+  .note { background: #eef6ff; border: 1px solid #bcd7f5; color: #1a4f85; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 14px; }
+  .summary { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+  .stat { background: #fff; border-radius: 10px; padding: 16px 22px; box-shadow: 0 2px 8px rgba(0,0,0,.06); text-align: center; min-width: 140px; }
+  .stat .num { font-size: 30px; font-weight: 700; }
+  .stat .lbl { font-size: 13px; color: #7a8aa0; }
+  .stat.viol .num { color: #b3261e; } .stat.pass .num { color: #146c3d; }
+  .report-frame { margin-top: 16px; }
+  .report-frame iframe { width: 100%; height: 640px; border: 1px solid #d7dee8; border-radius: 8px; background: #fff; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+  .badge.ok { background: #d8f5e2; color: #146c3d; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="index.html">← Back</a>
+  <h1>SHACL Compliance Review (Experiment 2.2)</h1>
+  <span class="badge ok">Single DXF · auto-locate / auto-process then review</span>
+</header>
+<div class="wrap">
+  <div class="side">
+    <h3>① Select or Upload DXF</h3>
+    <select id="dxfSelect"></select>
+    <input type="file" id="dxfFile" accept=".dxf" style="margin-top:8px">
+    <button class="btn ghost" id="uploadBtn" onclick="uploadDxf()">Upload Selected DXF</button>
+
+    <h3>② Start SHACL Review</h3>
+    <button class="btn primary" id="runBtn" onclick="runShacl()">Start SHACL Review</button>
+
+    <div class="log" id="log">Waiting for action…</div>
+  </div>
+
+  <div class="main">
+    <div class="note">
+      ℹ️ The system locates the processed enriched JSON-LD for this DXF in the background.
+      If it is a new file, the parsing pipeline runs first, then the L1 semantic / L2 geometric / L3 topological compliance checks.
+    </div>
+
+    <div class="summary hidden" id="summary">
+      <div class="stat pass"><div class="num" id="sStatus">-</div><div class="lbl">Verdict</div></div>
+      <div class="stat viol"><div class="num" id="sCount">0</div><div class="lbl">Violations</div></div>
+      <div class="stat"><div class="num" id="sBase">-</div><div class="lbl">Drawing</div></div>
+    </div>
+
+    <div class="report-frame hidden" id="reportFrame">
+      <h4 style="color:#a34a2e">Interactive Annotated Report</h4>
+      <iframe id="reportIframe"></iframe>
+    </div>
+  </div>
+</div>
+<script src="ui_common.js"></script>
+<script>
+  const logEl = document.getElementById('log');
+  function log(msg) { logEl.textContent += (logEl.textContent ? '\n' : '') + msg; logEl.scrollTop = logEl.scrollHeight; }
+  function loadDxfs() {
+    fetch('/api/available-dxfs').then(r => r.json()).then(d => {
+      const sel = document.getElementById('dxfSelect');
+      sel.innerHTML = '';
+      (d.dxfFiles || []).forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o); });
+      if (sel.options.length) log('Loaded ' + sel.options.length + ' DXF files');
+    }).catch(e => log('Load failed: ' + e));
+  }
+  function uploadDxf() {
+    const input = document.getElementById('dxfFile');
+    if (!input.files || !input.files.length) { log('Please choose a DXF to upload'); return; }
+    const fd = new FormData(); fd.append('targetDir', '');
+    Array.from(input.files).forEach(f => fd.append('file', f));
+    log('Uploading…');
+    fetch('/api/upload-dxf', { method: 'POST', body: fd }).then(r => r.json()).then(d => { log('Uploaded: ' + (d.saved || []).join(', ')); loadDxfs(); }).catch(e => log('Upload failed: ' + e));
+  }
+  function runShacl() {
+    const dxfFile = document.getElementById('dxfSelect').value;
+    if (!dxfFile) { log('Please select a DXF file first'); return; }
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true; btn.textContent = 'Reviewing…';
+    log('Start SHACL review: ' + dxfFile);
+    fetch('/api/experiment-shacl', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dxfFile, outputDir: 'output/jsonld' })
+    }).then(r => r.json()).then(d => {
+      btn.disabled = false; btn.textContent = 'Start SHACL Review';
+      if (d.stdout) log(d.stdout.slice(0, 1500));
+      if (d.stderr) log('[stderr] ' + d.stderr.slice(0, 800));
+      if (!d.ok) { log('❌ Review failed: ' + (d.error || '')); return; }
+      log('✅ Review complete: ' + d.base + ' -> ' + d.status + ' (' + d.violationCount + ' violations)');
+      const s = document.getElementById('summary'); s.classList.remove('hidden');
+      document.getElementById('sBase').textContent = d.base;
+      document.getElementById('sCount').textContent = d.violationCount;
+      const st = document.getElementById('sStatus');
+      st.textContent = d.status === 'VIOLATIONS' ? 'FAIL' : 'PASS';
+      st.style.color = d.status === 'VIOLATIONS' ? '#b3261e' : '#146c3d';
+      const rf = document.getElementById('reportFrame');
+      if (d.reportHtml) { rf.classList.remove('hidden'); document.getElementById('reportIframe').src = '/api/preview?path=' + encodeURIComponent(d.reportHtml); }
+      else { rf.classList.add('hidden'); }
+    }).catch(e => { btn.disabled = false; btn.textContent = 'Start SHACL Review'; log('Request failed: ' + e); });
+  }
+  loadDxfs();
+</script>
+</body>
+</html>

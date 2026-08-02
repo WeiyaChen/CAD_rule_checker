@@ -30,7 +30,7 @@ class JSONLDVisualizer:
         # 数据缓存
         self.spaces = {}  # 存储房间信息
         self.doors = {}  # 存储门洞信息
-        self.facilities = []  # 存储设施图元 (水槽、浴缸、灶具等)
+        self.functional_elements = []  # 存储功能构件 (水槽、浴缸、灶具等)
 
         # 建筑语义配色表 (与 GT 可视化脚本保持高度一致)
         self.color_map = {
@@ -124,7 +124,7 @@ class JSONLDVisualizer:
                         sem_type = t
 
                 label = node.get("rdfs:label", sem_type.replace("beo:", ""))
-                self.facilities.append({
+                self.functional_elements.append({
                     "geom": geom,
                     "semantic": sem_type,
                     "label": label
@@ -149,7 +149,7 @@ class JSONLDVisualizer:
 
     def draw(self, output_path):
         """绘制房间轮廓与拓扑关系图 (严格对齐 Ground Truth 风格)"""
-        print(f"🎨 Rendering graph: {len(self.spaces)} spaces, {len(self.doors)} doors, {len(self.facilities)} facilities...")
+        print(f"🎨 Rendering graph: {len(self.spaces)} spaces, {len(self.doors)} doors, {len(self.functional_elements)} functional elements...")
 
         # 设置全局字体以支持中文
         plt.rcParams['font.sans-serif'] = ['SimHei', 'Songti SC', 'Arial Unicode MS']
@@ -174,7 +174,7 @@ class JSONLDVisualizer:
             # 房间中心标注：动态拼接所有的功能类型，支持多标签展示
             centroid = geom.centroid
             types_str = space["types"][0]
-            area_str = f"({space['area']}㎡)" if space['area'] != "N/A" else ""
+            area_str = f"({space['area']}m²)" if space['area'] != "N/A" else ""
 
             label_text = f"{types_str}\n{area_str}"
             ax.text(centroid.x, centroid.y, label_text,
@@ -206,7 +206,7 @@ class JSONLDVisualizer:
         # # ====================================================
         # # 3. 绘制挂载的设施图元质心
         # # ====================================================
-        # for fac in self.facilities:
+        # for fac in self.functional_elements:
         #     geom = fac["geom"]
         #     centroid = geom.centroid
         #     cx, cy = centroid.x, centroid.y
@@ -261,7 +261,7 @@ class JSONLDVisualizer:
                         ax.plot([p1.x, p2.x], [p1.y, p2.y], color='#2980B9', linestyle='-', lw=1.5, alpha=0.4, zorder=5)
 
         ax.set_aspect('equal')
-        plt.title("全局拓扑语义解析预览 (System Output)", pad=15, fontsize=14)
+        plt.title("Semantic Topology Analysis Preview (System Output)", pad=15, fontsize=14)
         plt.axis('off')
 
         plt.tight_layout()
