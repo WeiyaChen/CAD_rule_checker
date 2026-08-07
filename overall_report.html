@@ -12,21 +12,28 @@
   header h1 { font-size: 20px; }
   .wrap { padding: 20px; max-width: 1200px; margin: 0 auto; }
   .src { font-size: 12px; color: #7a8aa0; margin-bottom: 16px; }
+  .section-title { font-size: 16px; margin: 26px 0 12px; color: #3a5a1c; border-left: 4px solid #6f9e2e; padding-left: 10px; }
+  .section-title.compliance { color: #a34a2e; border-left-color: #a34a2e; }
   .groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
   .group { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
   .group h3 { font-size: 15px; margin-bottom: 10px; color: #3a5a1c; }
+  .compliance-groups .group { border: 1px solid #f0d5cb; }
+  .compliance-groups .group h3 { color: #a34a2e; }
   .metric { margin-bottom: 12px; }
   .metric .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
   .metric .row .v { font-weight: 700; }
   .bar { height: 8px; background: #eef1f5; border-radius: 99px; overflow: hidden; }
   .bar > div { height: 100%; background: linear-gradient(90deg, #6f9e2e, #3a5a1c); border-radius: 99px; }
+  .compliance-groups .bar > div { background: linear-gradient(90deg, #c96b4a, #a34a2e); }
   .total { background: #fff; border-radius: 12px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-top: 16px; font-size: 15px; }
   .total b { color: #3a5a1c; }
   .table-wrap { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-top: 16px; overflow: auto; }
   .table-wrap h3 { font-size: 15px; margin-bottom: 10px; color: #3a5a1c; }
+  .table-wrap h3.compliance { color: #a34a2e; }
   table { border-collapse: collapse; width: 100%; font-size: 12px; }
   th, td { border: 1px solid #e4e9f0; padding: 6px 8px; text-align: left; white-space: nowrap; }
   th { background: #f2f6ea; }
+  .table-wrap.compliance-table th { background: #fbeee8; }
   .empty { color: #7a8aa0; padding: 20px; text-align: center; }
 </style>
 </head>
@@ -37,27 +44,41 @@
 </header>
 <div class="wrap">
   <div class="src" id="srcInfo">Source: output/html/overall_results.json (read-only, no batch evaluation)</div>
+
+  <h2 class="section-title">Core Experiments · Geometry / Topology / Geometric Computation / Semantic</h2>
   <div class="groups" id="groups"></div>
   <div class="total" id="totalInfo"></div>
   <div class="table-wrap">
     <h3>Per-Sample Details (individual_results.csv)</h3>
     <div id="tableBox" class="empty">Loading…</div>
   </div>
+
+  <h2 class="section-title compliance">SHACL Compliance (Exp 5) · Separate Results</h2>
+  <div class="groups compliance-groups" id="complianceGroups"></div>
+  <div class="table-wrap compliance-table">
+    <h3 class="compliance">Per-Sample Compliance Details (compliance_individual_results.csv)</h3>
+    <div id="complianceTableBox" class="empty">Loading…</div>
+  </div>
 </div>
 
 <script>
-  const GROUPS = [
+  // Core experiments (geometry / topology / geometric computation / semantic) — grouped together
+  const CORE_GROUPS = [
     { key: 'Geometry', title: 'Geometry Extraction', metrics: [['Global_1to1_Match_Rate', '1-to-1 Match Rate', 1, 'pct'], ['Global_mIoU', 'mIoU', 1, 'pct']] },
     { key: 'Topology', title: 'Topology', metrics: [['Global_Precision', 'Precision', 1, 'pct'], ['Global_Recall', 'Recall', 1, 'pct'], ['Global_F1', 'F1', 1, 'pct']] },
     { key: 'Geometric_Computation', title: 'Geometric Computation Error', metrics: [['Global_MAE_Area', 'MAE Area (㎡)', 50, 'num'], ['Global_MAE_Width', 'MAE Short Side (m)', 5, 'num']] },
     { key: 'Semantic_Reasoning', title: 'Semantic Reasoning', metrics: [['Global_Accuracy', 'Accuracy', 1, 'pct'], ['Global_Macro_F1', 'Macro F1', 1, 'pct']] },
-    { key: 'Compliance_Checking', title: 'Compliance', metrics: [['Global_Precision', 'Precision', 1, 'pct'], ['Global_Recall', 'Recall', 1, 'pct'], ['Global_F1', 'F1', 1, 'pct']] },
   ];
 
-  function renderGroups(raw) {
-    const box = document.getElementById('groups');
+  // SHACL compliance (Exp 5) — displayed as its own separate column
+  const COMPLIANCE_GROUPS = [
+    { key: 'Compliance_Checking', title: 'SHACL Compliance', metrics: [['Global_Precision', 'Precision', 1, 'pct'], ['Global_Recall', 'Recall', 1, 'pct'], ['Global_F1', 'F1', 1, 'pct']] },
+  ];
+
+  function renderGroups(boxId, groups, raw) {
+    const box = document.getElementById(boxId);
     box.innerHTML = '';
-    GROUPS.forEach(g => {
+    groups.forEach(g => {
       const group = raw[g.key] || {};
       const card = document.createElement('div'); card.className = 'group';
       let inner = '<h3>' + g.title + '</h3>';
@@ -73,8 +94,8 @@
     });
   }
 
-  function renderTable(rows) {
-    const box = document.getElementById('tableBox');
+  function renderTable(boxId, rows) {
+    const box = document.getElementById(boxId);
     if (!rows || !rows.length) { box.innerHTML = '<div class="empty">No per-sample data (run: python -m src.experiment.dataset_evaluator)</div>'; return; }
     const cols = Object.keys(rows[0]);
     let html = '<table><thead><tr>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
@@ -87,9 +108,15 @@
     const raw = d.raw || d.overall || {};
     const o = d.overall || {};
     document.getElementById('srcInfo').textContent = 'Source: ' + (o.source || 'output/html/overall_results.json') + ' (read-only, no batch evaluation)';
-    renderGroups(raw);
+    // Core experiments (geometry / topology / semantic) together
+    renderGroups('groups', CORE_GROUPS, raw);
     document.getElementById('totalInfo').innerHTML = 'Samples evaluated: <b>' + (raw.Total_Files_Processed ?? 0) + '</b>';
-    renderTable(d.individual);
+    renderTable('tableBox', d.individual);
+
+    // SHACL compliance results in their own separate column
+    const compRaw = d.complianceRaw || d.compliance || {};
+    renderGroups('complianceGroups', COMPLIANCE_GROUPS, compRaw);
+    renderTable('complianceTableBox', d.complianceIndividual);
   }).catch(e => {
     document.getElementById('srcInfo').textContent = 'Load failed: ' + e;
     document.getElementById('totalInfo').textContent = 'Please make sure output/html/overall_results.json exists';

@@ -7,6 +7,7 @@ structure intact:
   * output/viz        visualization images / HTML (PNG, *_kg_browser.html, ...)
   * output/gt         Ground Truth JSON-LD
   * output/html       evaluation reports + overall_results.json / individual_results.csv
+                      + compliance_results.json / compliance_individual_results.csv
   * output/processed  intermediate SVGs (svg_modifier)
 
 ``input_data/`` is NEVER touched (raw DXF, annotated GT DXF, converted SVGs and

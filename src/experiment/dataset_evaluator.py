@@ -2,19 +2,29 @@
 Batch dataset evaluator.
 
 Runs the single-file PipelineEvaluator over an entire dataset directory,
-aggregates per-file metrics (geometry / topology / semantic / compliance),
-and writes both a per-file CSV and a global summary JSON.
+aggregates per-file metrics, and writes the results to separate output files:
+
+- ``overall_results.json`` / ``individual_results.csv`` — geometry / topology /
+  geometric computation / semantic results (grouped together).
+- ``compliance_results.json`` / ``compliance_individual_results.csv`` — SHACL
+  compliance results (Exp 5), saved and displayed on their own.
 """
 
 import json
 import os
 import re
+import sys
 import traceback
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
+# Windows 控制台默认 GBK 编码，强制 UTF-8 输出避免表情符号触发 UnicodeEncodeError
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
 
 from src.config.config import settings
 from src.experiment.evaluator import PipelineEvaluator
@@ -37,8 +47,11 @@ class BatchDatasetEvaluator:
 
         os.makedirs(self.output_dir, exist_ok=True)
 
-        # Per-file individual results
+        # Per-file individual results (geometry / topology / geometric computation / semantic)
         self.individual_results: List[Dict[str, Any]] = []
+
+        # Per-file SHACL compliance results (Exp 5) — kept separate from the core metrics
+        self.compliance_individual_results: List[Dict[str, Any]] = []
 
         # Global aggregation data collected across all files
         self.global_data: Dict[str, Any] = {
@@ -185,12 +198,18 @@ class BatchDatasetEvaluator:
                 "Error_MAE_Area": round(np.mean(area_errors), 4) if area_errors else 0.0,
                 "Error_MAE_Width": round(np.mean(width_errors), 4) if width_errors else 0.0,
                 "Sem_Accuracy": round(sem_acc, 4),
-                "Sem_Macro_F1": round(sem_macro_f1, 4),
+                "Sem_Macro_F1": round(sem_macro_f1, 4)
+            }
+            self.individual_results.append(ind_result)
+
+            # SHACL compliance metrics are recorded separately (Exp 5)
+            comp_result = {
+                "File_Name": base_name,
                 "Comp_Precision": round(comp_p, 4),
                 "Comp_Recall": round(comp_r, 4),
                 "Comp_F1": round(comp_f1, 4)
             }
-            self.individual_results.append(ind_result)
+            self.compliance_individual_results.append(comp_result)
 
             # --- 2. Accumulate the global aggregation data ---
             self.global_data["gt_rooms"] += len(evaluator.gt_rooms)
@@ -214,15 +233,29 @@ class BatchDatasetEvaluator:
         self._save_results()
 
     def _save_results(self) -> None:
-        """Compute the final global metrics and save the results."""
-        if not self.individual_results:
+        """Compute the final global metrics and save the results.
+
+        The SHACL compliance results (Exp 5) are saved in their own files
+        (``compliance_results.json`` / ``compliance_individual_results.csv``),
+        while the geometry / topology / geometric computation / semantic
+        results are grouped together (``overall_results.json`` /
+        ``individual_results.csv``).
+        """
+        if not self.individual_results and not self.compliance_individual_results:
             return
 
-        # 1. Save the per-file individual results as CSV
-        df = pd.DataFrame(self.individual_results)
-        ind_csv_path = os.path.join(self.output_dir, "individual_results.csv")
-        df.to_csv(ind_csv_path, index=False, encoding='utf-8-sig')
-        print(f"\n[+] Individual evaluation results saved to: {ind_csv_path}")
+        # 1. Save the per-file individual results as CSVs (core vs. compliance)
+        if self.individual_results:
+            df = pd.DataFrame(self.individual_results)
+            ind_csv_path = os.path.join(self.output_dir, "individual_results.csv")
+            df.to_csv(ind_csv_path, index=False, encoding='utf-8-sig')
+            print(f"\n[+] Individual evaluation results saved to: {ind_csv_path}")
+
+        if self.compliance_individual_results:
+            comp_df = pd.DataFrame(self.compliance_individual_results)
+            comp_csv_path = os.path.join(self.output_dir, "compliance_individual_results.csv")
+            comp_df.to_csv(comp_csv_path, index=False, encoding='utf-8-sig')
+            print(f"[+] Compliance individual results saved to: {comp_csv_path}")
 
         # 2. Compute the global metrics
         gt_rooms = self.global_data["gt_rooms"]
@@ -249,8 +282,11 @@ class BatchDatasetEvaluator:
             self.global_data["comp_tp"], self.global_data["comp_fp"], self.global_data["comp_fn"]
         )
 
+        total_files = max(len(self.individual_results), len(self.compliance_individual_results))
+
+        # 3. Global summary for the core experiments (geometry / topology / semantic)
         overall_results = {
-            "Total_Files_Processed": len(self.individual_results),
+            "Total_Files_Processed": total_files,
             "Geometry": {
                 "Global_1to1_Match_Rate": round(g_1to1_rate, 4),
                 "Global_mIoU": round(g_miou, 4)
@@ -267,7 +303,18 @@ class BatchDatasetEvaluator:
             "Semantic_Reasoning": {
                 "Global_Accuracy": round(g_sem_acc, 4),
                 "Global_Macro_F1": round(g_sem_macro_f1, 4)
-            },
+            }
+        }
+
+        # Save the core global summary results as JSON
+        overall_json_path = os.path.join(self.output_dir, "overall_results.json")
+        with open(overall_json_path, 'w', encoding='utf-8') as f:
+            json.dump(overall_results, f, ensure_ascii=False, indent=4)
+        print(f"[+] Dataset overall results saved to: {overall_json_path}")
+
+        # 4. SHACL compliance summary (Exp 5) — saved separately
+        compliance_results = {
+            "Total_Files_Processed": total_files,
             "Compliance_Checking": {
                 "Global_Precision": round(g_comp_p, 4),
                 "Global_Recall": round(g_comp_r, 4),
@@ -275,11 +322,10 @@ class BatchDatasetEvaluator:
             }
         }
 
-        # Save the global summary results as JSON
-        overall_json_path = os.path.join(self.output_dir, "overall_results.json")
-        with open(overall_json_path, 'w', encoding='utf-8') as f:
-            json.dump(overall_results, f, ensure_ascii=False, indent=4)
-        print(f"[+] Dataset overall results saved to: {overall_json_path}")
+        compliance_json_path = os.path.join(self.output_dir, "compliance_results.json")
+        with open(compliance_json_path, 'w', encoding='utf-8') as f:
+            json.dump(compliance_results, f, ensure_ascii=False, indent=4)
+        print(f"[+] SHACL compliance results saved to: {compliance_json_path}")
 
 
 if __name__ == "__main__":

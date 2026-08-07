@@ -733,31 +733,37 @@ class UIHandler(BaseHTTPRequestHandler):
             return {'returnCode': -1, 'stdout': exc.stdout or '', 'stderr': f"{exc.stderr or ''}\n[timeout]"}
 
     def _evaluation_data(self):
-        overall_files = list((ROOT / 'output' / 'html').rglob('overall_results.json'))
-        rows = []
-        metrics = []
-        raw_overall = None
-        for overall_file in overall_files:
-            try:
-                with open(overall_file, 'r', encoding='utf-8') as fh:
-                    data = json.load(fh)
-            except Exception:
-                continue
-            raw_overall = data
-            row = {'source': _repo_rel(overall_file)}
-            flat_metrics = {}
-            for group, values in data.items():
-                if isinstance(values, dict):
-                    for key, value in values.items():
-                        flat_metrics[key] = value
-                        metrics.append((key, value))
-                else:
-                    flat_metrics[group] = values
-            row.update(flat_metrics)
-            rows.append(row)
+        """Serve the batch evaluation results.
 
-        if not rows:
-            rows = [{
+        SHACL compliance results (Exp 5) are kept separate from the core
+        geometry / topology / geometric computation / semantic results:
+        the former come from ``compliance_results.json`` and
+        ``compliance_individual_results.csv``, the latter from
+        ``overall_results.json`` and ``individual_results.csv``.
+        """
+        def _flatten(path_pattern):
+            """Read the first matching JSON file and flatten nested groups."""
+            files = list((ROOT / 'output' / 'html').rglob(path_pattern))
+            for f in files:
+                try:
+                    with open(f, 'r', encoding='utf-8') as fh:
+                        data = json.load(fh)
+                except Exception:
+                    continue
+                flat = {'source': _repo_rel(f)}
+                for group, values in data.items():
+                    if isinstance(values, dict):
+                        for key, value in values.items():
+                            flat[key] = value
+                    else:
+                        flat[group] = values
+                return data, flat
+            return None, None
+
+        # Core experiments (geometry / topology / geometric computation / semantic)
+        raw_overall, core_row = _flatten('overall_results.json')
+        if core_row is None:
+            core_row = {
                 'source': 'output/html/overall_results.json',
                 'Global_1to1_Match_Rate': 0,
                 'Global_mIoU': 0,
@@ -768,30 +774,50 @@ class UIHandler(BaseHTTPRequestHandler):
                 'Global_MAE_Width': 0,
                 'Global_Accuracy': 0,
                 'Global_Macro_F1': 0,
-            }]
+            }
+
+        # SHACL compliance summary (Exp 5) — separate file / column
+        raw_compliance, comp_row = _flatten('compliance_results.json')
+        if comp_row is None:
+            comp_row = {
+                'source': 'output/html/compliance_results.json',
+                'Global_Precision': 0,
+                'Global_Recall': 0,
+                'Global_F1': 0,
+            }
 
         individual_files = list((ROOT / 'output' / 'html').rglob('individual_results.csv'))
         individual_rows = []
         if individual_files:
-            with open(individual_files[0], 'r', encoding='utf-8') as fh:
+            with open(individual_files[0], 'r', encoding='utf-8-sig') as fh:
                 reader = csv.DictReader(fh)
                 individual_rows = list(reader)
 
+        compliance_individual_files = list((ROOT / 'output' / 'html').rglob('compliance_individual_results.csv'))
+        compliance_individual_rows = []
+        if compliance_individual_files:
+            with open(compliance_individual_files[0], 'r', encoding='utf-8-sig') as fh:
+                reader = csv.DictReader(fh)
+                compliance_individual_rows = list(reader)
+
         return {
-            'overall': rows[0],
+            'overall': core_row,
             'raw': raw_overall,
             'individual': individual_rows,
+            'compliance': comp_row,
+            'complianceRaw': raw_compliance,
+            'complianceIndividual': compliance_individual_rows,
             'chart': [
-                {'label': 'Geometry 1to1', 'value': rows[0].get('Global_1to1_Match_Rate', 0)},
-                {'label': 'Geometry mIoU', 'value': rows[0].get('Global_mIoU', 0)},
-                {'label': 'Topology F1', 'value': rows[0].get('Global_F1', 0)},
-                {'label': 'Area MAE', 'value': rows[0].get('Global_MAE_Area', 0)},
-                {'label': 'Semantic Accuracy', 'value': rows[0].get('Global_Accuracy', 0)},
+                {'label': 'Geometry 1to1', 'value': core_row.get('Global_1to1_Match_Rate', 0)},
+                {'label': 'Geometry mIoU', 'value': core_row.get('Global_mIoU', 0)},
+                {'label': 'Topology F1', 'value': core_row.get('Global_F1', 0)},
+                {'label': 'Area MAE', 'value': core_row.get('Global_MAE_Area', 0)},
+                {'label': 'Semantic Accuracy', 'value': core_row.get('Global_Accuracy', 0)},
             ]
         }
 
 
-def run_server(host='0.0.0.0', port=8000):
+def run_server(host='0.0.0.0', port=8001):
     server = ThreadingHTTPServer((host, port), UIHandler)
     print(f'UI server running at http://{host}:{port}')
     server.serve_forever()

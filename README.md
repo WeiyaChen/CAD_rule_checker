@@ -217,8 +217,15 @@ Then run the batch evaluation:
 python -m src.experiment.dataset_evaluator
 ```
 
-Results are written to `output/html/overall_results.json` (global summary) and
-`output/html/individual_results.csv` (per-file metrics).
+Results are written to `output/html/` as two separate groups of files:
+
+- **Core experiments** (geometry / topology / geometric computation / semantic),
+  grouped together:
+  - `output/html/overall_results.json` (global summary)
+  - `output/html/individual_results.csv` (per-file metrics)
+- **SHACL compliance** (Exp 5), saved and displayed on their own:
+  - `output/html/compliance_results.json` (global summary)
+  - `output/html/compliance_individual_results.csv` (per-file metrics)
 
 ### 6. Experiment Entry Points
 
