@@ -48,6 +48,11 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
+
+# Environment variables (contains sensitive data like API keys)
+.env
+.env.local
+.env.*.local
 *.py.cover
 .hypothesis/
 .pytest_cache/

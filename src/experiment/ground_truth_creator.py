@@ -1,5 +1,5 @@
 import os
-os.environ.setdefault('MPLBACKEND', 'Agg')  # 批量模式强制非交互后端，避免弹窗
+os.environ.setdefault('MPLBACKEND', 'Agg')  # Force non-interactive backend in batch mode to prevent popups
 
 import sys
 import json
@@ -166,12 +166,12 @@ def get_min_topology_distance(start_node, target_semantics, rooms_data):
 # Main build flow
 # =====================================================================
 def build_graph_from_dxf(dxf_input=None):
-    """处理单个已标注 DXF 图纸，生成 GT JSON-LD / 违规基线 / 拓扑可视化。
+    """Process a single annotated DXF drawing and generate GT JSON-LD / violation baseline / topology visualization.
 
-    参数:
-        dxf_input: DXF 文件路径。为 None 时进入交互模式，由用户拖拽输入。
-    返回:
-        "OK" 表示处理成功，否则返回 "ERROR"。
+    Args:
+        dxf_input: Path to the DXF file. When None, enters interactive mode where user drags in input.
+    Returns:
+        "OK" for successful processing, otherwise returns "ERROR".
     """
     print("=====================================================")
     print("🏗️  BIM Knowledge Graph Auto-Construction Engine (Geometry + Topology + Component instances + Semantics)")
@@ -535,7 +535,7 @@ def build_graph_from_dxf(dxf_input=None):
         "@graph": graph_nodes
     }
 
-    base_name = os.path.splitext(os.path.basename(dxf_input))[0].replace("_已标注", "")
+    base_name = os.path.splitext(os.path.basename(dxf_input))[0].replace("_annotated", "")
     out_filename = f"{base_name}_gt.jsonld"
 
     ground_truth_dir = str(settings.gt_dir)
@@ -736,11 +736,11 @@ def build_graph_from_dxf(dxf_input=None):
 
 
 def build_graph_from_directory(dxf_dir=None):
-    """批量模式：处理指定目录下的所有已标注 DXF 图纸，逐个生成 GT 知识图谱。
+    """Batch mode: Process all annotated DXF drawings in the specified directory and generate GT knowledge graphs one by one.
 
-    参数:
-        dxf_dir: 存放已标注 DXF 的目录路径。为 None 时使用配置中的
-                 input_data/dxf_gt 目录。
+    Args:
+        dxf_dir: Directory path containing annotated DXF files. When None, uses the
+                 input_data/dxf_gt directory from configuration.
     """
     if dxf_dir is None:
         dxf_dir = str(settings.dxf_gt_dir)

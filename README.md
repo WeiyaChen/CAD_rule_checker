@@ -103,6 +103,68 @@ pip install shapely
 > pip install -r requirements.txt
 > ```
 
+### Environment Variables Configuration (Security Best Practice)
+
+This project uses **environment variables** to manage sensitive information like API keys. This is a security best practice that prevents sensitive data from being committed to version control.
+
+#### Setup Environment Variables
+
+1. **Copy the example environment file:**
+
+```bash
+cp .env.example .env
+```
+
+2. **Edit the `.env` file and add your configuration:**
+
+```bash
+# Required: OpenAI-compatible API key for LLM services
+CAD_RULE_CHECKER_LLM_API_KEY=your_actual_api_key_here
+
+# Optional: Custom API base URL (overrides settings.yaml)
+CAD_RULE_CHECKER_LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
+
+# Optional: Custom model name (overrides settings.yaml)
+CAD_RULE_CHECKER_LLM_MODEL=glm-4-flash
+```
+
+**Why manage all LLM configs together?**
+- 🔒 **Security**: Prevents sensitive API keys from being committed to version control
+- 🚀 **Flexibility**: Easy to switch between different environments (dev/staging/prod)
+- 🎯 **Consistency**: All LLM-related configurations in one place
+- 🧪 **Experimentation**: Easy to test different models and endpoints
+
+#### Alternative Configuration Methods
+
+If you prefer not to use a `.env` file, you can also set environment variables directly:
+
+**Windows PowerShell:**
+```powershell
+# Set all LLM configurations
+$env:CAD_RULE_CHECKER_LLM_API_KEY="your_api_key_here"
+$env:CAD_RULE_CHECKER_LLM_BASE_URL="https://open.bigmodel.cn/api/paas/v4/"
+$env:CAD_RULE_CHECKER_LLM_MODEL="glm-4-flash"
+```
+
+**Linux/macOS:**
+```bash
+# Set all LLM configurations
+export CAD_RULE_CHECKER_LLM_API_KEY="your_api_key_here"
+export CAD_RULE_CHECKER_LLM_BASE_URL="https://open.bigmodel.cn/api/paas/v4/"
+export CAD_RULE_CHECKER_LLM_MODEL="glm-4-flash"
+```
+
+**Or modify the configuration file** (not recommended for production):
+- Edit [src/config/settings.yaml](src/config/settings.yaml) and set values directly in the `llm` section
+- ⚠️ This approach is less secure and not recommended for production environments
+
+#### Configuration Priority
+
+The system reads LLM configurations in the following priority order:
+1. **Environment variables** (highest priority) - overrides everything
+2. **Configuration file** ([src/config/settings.yaml](src/config/settings.yaml)) - fallback defaults
+3. **Hardcoded defaults** - if neither above is available
+
 ## Quick Start
 
 ### 1. Prepare DXF Input
