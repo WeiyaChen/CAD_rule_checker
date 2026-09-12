@@ -8,10 +8,12 @@ from .topology_enricher import TopologyEnricher
 
 
 class GraphEnrichmentPipeline:
-    def __init__(self, raw_graph_dict, room_texts, llm_client=None):
+    def __init__(self, raw_graph_dict, room_texts, llm_client=None, classifier=None):
         self.graph_data = raw_graph_dict
         self.room_texts = room_texts
         self.llm_client = llm_client
+        # 空间类型识别算法实例；None 表示由 SemanticEnricher 按配置创建
+        self.classifier = classifier
         # run_all(collect_snapshots=True) 时逐步快照写到这里，供图谱分步浏览器使用
         self.snapshots = []
 
@@ -32,7 +34,9 @@ class GraphEnrichmentPipeline:
         self.snapshots = []
 
         # 1. 语义富化
-        sem_engine = SemanticEnricher(self.graph_data, self.room_texts, self.llm_client)
+        sem_engine = SemanticEnricher(
+            self.graph_data, self.room_texts, self.llm_client, classifier=self.classifier
+        )
         self.graph_data = sem_engine.execute_enrichment()
         self._snapshot("semantic")
 

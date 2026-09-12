@@ -1,20 +1,32 @@
+# src/spatial/visualization.py
+"""空间轮廓提取结果的可视化（与具体算法无关）。
+
+左图由算法自身的 ``get_visualization_data()`` 提供（CDT 是三角网，其他算法可以是
+空三角网），右图统一绘制最终提取出的房间轮廓，因此任何实现了
+:class:`~src.spatial.contracts.ISpatialContourExtractor` 的算法都能复用。
+
+（历史模块名 ``src/utils/cdt_viz.py`` 已被删除，其函数就是本模块。）
+"""
+
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 from shapely.geometry import Polygon
 
+__all__ = ["plot_floor_plan"]
 
-def plot_floor_plan(builder, room_results, save_dir, filename):
-    """
-    可视化底层算法的三角网及最终生成的房间，并保存到指定文件夹
+
+def plot_floor_plan(extractor, room_results, save_dir, filename):
+    """可视化底层算法的中间数据及最终生成的房间，并保存到指定文件夹
+
     Args:
-        builder: 运行完 new_build 的 FloorPlanMeshBuilderCDT 实例
-        room_results: new_build 返回的房间结果列表
+        extractor: 空间轮廓提取算法实例，需提供 ``get_visualization_data()``
+        room_results: 算法返回的房间结果列表 (``id`` / ``label`` / ``geometry``)
         save_dir: 保存结果的文件夹路径
         filename: 保存的图片文件名
     """
-    # 1. 从 Builder 内部提取数据
-    real_walls, virtual_walls, triangles, points = builder.get_visualization_data()
+    # 1. 从提取算法内部提取数据
+    real_walls, virtual_walls, triangles, points = extractor.get_visualization_data()
 
     if points is not None and len(points) > 0:
         points = np.array(points)
@@ -32,7 +44,9 @@ def plot_floor_plan(builder, room_results, save_dir, filename):
     # ------------------------------------------
     # 左图：算法视角 (Mesh & Constraints)
     # ------------------------------------------
-    ax1.set_title(f"Algorithm View: Mesh & Detected Walls\n(Virtual Walls: {len(virtual_walls)})", fontsize=14)
+    # CDT 会提供三角网，其他算法（如 RGP）可能没有，标题据此自适应
+    view_kind = "Mesh" if triangles is not None and len(triangles) > 0 else "Geometry"
+    ax1.set_title(f"Algorithm View: {view_kind} & Detected Walls\n(Virtual Walls: {len(virtual_walls)})", fontsize=14)
 
     # A. 画背景三角网 (灰色细线)
     if triangles is not None and len(triangles) > 0:

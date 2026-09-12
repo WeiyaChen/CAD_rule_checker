@@ -47,7 +47,10 @@
     <input type="file" id="dxfFile" accept=".dxf" style="margin-top:8px">
     <button class="btn ghost" id="uploadBtn" onclick="uploadDxf()">Upload Selected DXF</button>
 
-    <h3>② Start SHACL Review</h3>
+    <h3>② Spatial Algorithms</h3>
+    <div id="algoSlot"></div>
+
+    <h3>③ Start SHACL Review</h3>
     <button class="btn primary" id="runBtn" onclick="runShacl()">Start SHACL Review</button>
 
     <div class="log" id="log">Waiting for action…</div>
@@ -97,15 +100,19 @@
     const btn = document.getElementById('runBtn');
     btn.disabled = true; btn.textContent = 'Reviewing…';
     log('Start SHACL review: ' + dxfFile);
+    const algo = getSpatialAlgoSelection();
+    log('Contour: ' + algo.contourAlgo + ' · Classifier: ' + algo.classifierAlgo
+      + (algo.forceReparse ? ' · force re-parse' : ''));
     fetch('/api/experiment-shacl', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dxfFile, outputDir: 'output/jsonld' })
+      body: JSON.stringify(Object.assign({ dxfFile, outputDir: 'output/jsonld' }, algo))
     }).then(r => r.json()).then(d => {
       btn.disabled = false; btn.textContent = 'Start SHACL Review';
       if (d.stdout) log(d.stdout.slice(0, 1500));
       if (d.stderr) log('[stderr] ' + d.stderr.slice(0, 800));
       if (!d.ok) { log('❌ Review failed: ' + (d.error || '')); return; }
       log('✅ Review complete: ' + d.base + ' -> ' + d.status + ' (' + d.violationCount + ' violations)');
+      setSpatialAlgoStatus(d);
       const s = document.getElementById('summary'); s.classList.remove('hidden');
       document.getElementById('sBase').textContent = d.base;
       document.getElementById('sCount').textContent = d.violationCount;
@@ -118,6 +125,7 @@
     }).catch(e => { btn.disabled = false; btn.textContent = 'Start SHACL Review'; log('Request failed: ' + e); });
   }
   loadDxfs();
+  mountSpatialAlgos('algoSlot');
 </script>
 </body>
 </html>

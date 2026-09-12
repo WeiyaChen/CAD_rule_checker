@@ -1,4 +1,5 @@
 import os
+import re
 from os import PathLike
 from pathlib import Path
 from typing import overload
@@ -13,6 +14,46 @@ import yaml
 # .parent -> src
 # .parent -> 项目根目录 (cad_rule_checker/)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+# ==========================================
+# 1.1 自动加载项目根目录下的 .env
+# ==========================================
+# 只补充进程环境中尚不存在的键（os.environ.setdefault），因此 shell 里显式
+# export 的值优先。注意 PowerShell 的 ``$env:X = ''`` 是删除变量而非设为空串，
+# 所以另提供 CAD_RULE_CHECKER_SKIP_DOTENV=1 作为彻底跳过 .env 的开关，
+# 用于强制在无 LLM 的规则模式下运行。
+_INLINE_COMMENT = re.compile(r'\s+#.*$')
+
+
+def _load_dotenv(path: Path) -> None:
+    try:
+        content = path.read_text(encoding='utf-8-sig')
+    except OSError:
+        return
+
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#'):
+            continue
+        if line.startswith('export '):
+            line = line[len('export '):].lstrip()
+
+        key, sep, value = line.partition('=')
+        key = key.strip()
+        if not sep or not key.isidentifier():
+            continue
+
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+            value = value[1:-1]
+        else:
+            value = _INLINE_COMMENT.sub('', value).rstrip()
+        os.environ.setdefault(key, value)
+
+
+if not os.environ.get('CAD_RULE_CHECKER_SKIP_DOTENV'):
+    _load_dotenv(PROJECT_ROOT / '.env')
 
 
 # ==========================================
@@ -38,6 +79,15 @@ class Settings:
 
     def _get_value(self, section, key, default: str = '') -> str:
         return self._get_section(section).get(key, default)
+
+    def _get_nested_value(self, section, path, default=None):
+        """读取嵌套配置项，例如 ``_get_nested_value('spatial', 'contour.params', {})``。"""
+        node = self._get_section(section)
+        for key in str(path).split('.'):
+            if not isinstance(node, dict) or key not in node:
+                return default
+            node = node[key]
+        return default if node is None else node
 
     def _read_env(self, env_key, default: str = '') -> str:
         value = os.getenv(env_key)
@@ -185,6 +235,45 @@ class Settings:
     @property
     def llm_model(self):
         return self._read_env('CAD_RULE_CHECKER_LLM_MODEL', self._get_value('llm', 'model', 'glm-4-flash'))
+
+    # ==========================================
+    # 空间语义算法 (Spatial Algorithms) 配置
+    # ==========================================
+    @property
+    def spatial_contour_algorithm(self):
+        """空间轮廓提取算法名（见 src/spatial/registry.py）"""
+        return self._read_env(
+            'CAD_RULE_CHECKER_CONTOUR_ALGO',
+            self._get_nested_value('spatial', 'contour.algorithm', ''),
+        )
+
+    @property
+    def spatial_contour_params(self):
+        """空间轮廓提取算法参数覆盖值"""
+        return self._get_nested_value('spatial', 'contour.params', {})
+
+    @property
+    def spatial_contour_algorithm_params(self):
+        """按算法名分组的空间轮廓提取专属参数，例如 {'RGP': {'snap_tol_mm': 10.0}}"""
+        return self._get_nested_value('spatial', 'contour.algorithm_params', {})
+
+    @property
+    def spatial_classifier_algorithm(self):
+        """空间类型识别算法名（见 src/spatial/registry.py）"""
+        return self._read_env(
+            'CAD_RULE_CHECKER_CLASSIFIER_ALGO',
+            self._get_nested_value('spatial', 'classification.algorithm', ''),
+        )
+
+    @property
+    def spatial_classifier_params(self):
+        """空间类型识别算法参数覆盖值"""
+        return self._get_nested_value('spatial', 'classification.params', {})
+
+    @property
+    def spatial_classifier_algorithm_params(self):
+        """按算法名分组的空间类型识别专属参数"""
+        return self._get_nested_value('spatial', 'classification.algorithm_params', {})
 
     # ==========================================
     # 评估 (Evaluation) 配置

@@ -16,6 +16,13 @@ from io import BytesIO
 
 from src.config.config import settings
 from src.io.dxf_to_svg import convert_dxf_to_svg
+from src.spatial import (
+    UnknownAlgorithmError,
+    contour_visualization_suffix,
+    resolve_classifier_algorithm,
+    resolve_contour_algorithm,
+    spatial_algorithm_catalog,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -76,6 +83,9 @@ class UIHandler(BaseHTTPRequestHandler):
         if parsed.path == '/api/kg-browser':
             self._serve_kg_browser(parse_qs(parsed.query))
             return
+        if parsed.path == '/api/spatial-algos':
+            self._send_json(self._spatial_algos())
+            return
 
         file_path = parsed.path.lstrip('/')
         if not file_path:
@@ -130,6 +140,11 @@ class UIHandler(BaseHTTPRequestHandler):
             target_file = data.get('targetFile') or ''
             output_dir = data.get('outputDir') or 'output/jsonld'
 
+            contour_algo, classifier_algo, algo_error = self._resolve_requested_algos(data)
+            if algo_error:
+                self._send_json({'ok': False, 'error': algo_error}, 400)
+                return
+
             cmd = [sys.executable, '-m', 'src.main', '--mode', mode]
             if target_dir:
                 cmd += ['--target-dir', str(target_dir)]
@@ -137,6 +152,7 @@ class UIHandler(BaseHTTPRequestHandler):
                 cmd += ['--target-file', str(target_file)]
             if output_dir:
                 cmd += ['--output-dir', str(output_dir)]
+            cmd += ['--contour-algo', contour_algo, '--classifier-algo', classifier_algo]
 
             try:
                 env = os.environ.copy()
@@ -212,21 +228,23 @@ class UIHandler(BaseHTTPRequestHandler):
                 self._send_json({'ok': False, 'error': f'DXF file not found: {data.get("dxfFile")}'}, 404)
                 return
 
-            base_name = dxf_path.stem
-            svg_path = Path(settings.svg_dir) / f"{base_name}.svg"
-            svg_path.parent.mkdir(parents=True, exist_ok=True)
-            if not svg_path.exists():
-                try:
-                    convert_dxf_to_svg(str(dxf_path), str(svg_path))
-                except Exception as e:
-                    self._send_json({'ok': False, 'error': f'dxf2svg failed: {e}'}, 500)
-                    return
+            contour_algo, classifier_algo, algo_error = self._resolve_requested_algos(data)
+            if algo_error:
+                self._send_json({'ok': False, 'error': algo_error}, 400)
+                return
 
-            run = self._run_parsing_single(base_name + '.svg', output_dir)
-            output_dir_path = Path(output_dir)
-            if not output_dir_path.is_absolute():
-                output_dir_path = (ROOT / output_dir_path).resolve()
+            base_name = dxf_path.stem
+            svg_path, svg_error = self._ensure_svg(dxf_path, base_name)
+            if svg_error:
+                self._send_json({'ok': False, 'error': svg_error}, 500)
+                return
+
+            output_dir_path = self._abs_output_dir(output_dir)
+            run = self._run_parsing_single(base_name + '.svg', output_dir, contour_algo, classifier_algo)
+            self._record_run(output_dir_path, base_name, contour_algo, classifier_algo, run['returnCode'])
             viz_dir = Path(settings.viz_dir)
+            if run['returnCode'] == 0:
+                self._invalidate_kg_cache(base_name)
 
             payload = {
                 'ok': run['returnCode'] == 0,
@@ -239,7 +257,12 @@ class UIHandler(BaseHTTPRequestHandler):
                 'rawJsonld': self._rel_or_none(output_dir_path / f'{base_name}_raw.jsonld'),
                 'topologyPng': self._rel_or_none(viz_dir / f'{base_name}_topology.png'),
                 'instancePng': self._rel_or_none(viz_dir / f'{base_name}_instance.png'),
-                'cdtPng': self._rel_or_none(viz_dir / f'{base_name}_cdt.png'),
+                'contourPng': self._rel_or_none(viz_dir / f'{base_name}_{contour_visualization_suffix(contour_algo)}.png'),
+                'contourAlgo': contour_algo,
+                'classifierAlgo': classifier_algo,
+                'reused': False,
+                'llmEnabled': bool(settings.llm_api_key),
+                'llmModel': settings.llm_model,
             }
             self._send_json(payload)
             return
@@ -259,25 +282,30 @@ class UIHandler(BaseHTTPRequestHandler):
                 self._send_json({'ok': False, 'error': f'DXF file not found: {data.get("dxfFile")}'}, 404)
                 return
 
-            base_name = dxf_path.stem
-            svg_path = Path(settings.svg_dir) / f"{base_name}.svg"
-            svg_path.parent.mkdir(parents=True, exist_ok=True)
-            if not svg_path.exists():
-                try:
-                    convert_dxf_to_svg(str(dxf_path), str(svg_path))
-                except Exception as e:
-                    self._send_json({'ok': False, 'error': f'dxf2svg failed: {e}'}, 500)
-                    return
+            contour_algo, classifier_algo, algo_error = self._resolve_requested_algos(data)
+            if algo_error:
+                self._send_json({'ok': False, 'error': algo_error}, 400)
+                return
 
-            output_dir_path = Path(output_dir)
-            if not output_dir_path.is_absolute():
-                output_dir_path = (ROOT / output_dir_path).resolve()
+            base_name = dxf_path.stem
+            svg_path, svg_error = self._ensure_svg(dxf_path, base_name)
+            if svg_error:
+                self._send_json({'ok': False, 'error': svg_error}, 500)
+                return
+
+            output_dir_path = self._abs_output_dir(output_dir)
             jsonld_path = output_dir_path / f'{base_name}.jsonld'
 
-            # 复用已有富化结果（对比视图）；仅当不存在时才重新解析
+            # 仅当已有结果确实是用同一套算法（且 LLM 可用性一致）产出时才复用，
+            # 否则会展示到旧配置（例如无 LLM 时代）的无类别图谱。
             run = {'returnCode': 0, 'stdout': '', 'stderr': ''}
-            if not jsonld_path.exists():
-                run = self._run_parsing_single(base_name + '.svg', output_dir)
+            reused = not bool(data.get('forceReparse')) and self._is_reusable_run(
+                output_dir_path, base_name, contour_algo, classifier_algo)
+            if not reused:
+                run = self._run_parsing_single(base_name + '.svg', output_dir, contour_algo, classifier_algo)
+                self._record_run(output_dir_path, base_name, contour_algo, classifier_algo, run['returnCode'])
+                if run['returnCode'] == 0:
+                    self._invalidate_kg_cache(base_name)
 
             viz_dir = Path(settings.viz_dir)
 
@@ -290,10 +318,15 @@ class UIHandler(BaseHTTPRequestHandler):
                 'stdout': run['stdout'],
                 'stderr': run['stderr'],
                 'base': base_name,
+                'reused': reused,
+                'contourAlgo': contour_algo,
+                'classifierAlgo': classifier_algo,
+                'llmEnabled': bool(settings.llm_api_key),
+                'llmModel': settings.llm_model,
                 'hasGt': gt_path is not None,
                 'sysTopology': self._rel_or_none(viz_dir / f'{base_name}_topology.png'),
                 'sysInstance': self._rel_or_none(viz_dir / f'{base_name}_instance.png'),
-                'sysCdt': self._rel_or_none(viz_dir / f'{base_name}_cdt.png'),
+                'sysContour': self._rel_or_none(viz_dir / f'{base_name}_{contour_visualization_suffix(contour_algo)}.png'),
                 'sysJsonld': self._rel_or_none(output_dir_path / f'{base_name}.jsonld'),
                 'gtJsonld': self._rel_or_none(gt_path) if gt_path else None,
                 'gtTopology': self._rel_or_none(viz_dir / f'{gt_stem}_topology.png') if gt_stem else None,
@@ -317,28 +350,31 @@ class UIHandler(BaseHTTPRequestHandler):
                 self._send_json({'ok': False, 'error': f'DXF file not found: {data.get("dxfFile")}'}, 404)
                 return
 
-            base_name = dxf_path.stem
-            svg_path = Path(settings.svg_dir) / f"{base_name}.svg"
-            svg_path.parent.mkdir(parents=True, exist_ok=True)
-            if not svg_path.exists():
-                try:
-                    convert_dxf_to_svg(str(dxf_path), str(svg_path))
-                except Exception as e:
-                    self._send_json({'ok': False, 'error': f'dxf2svg failed: {e}'}, 500)
-                    return
+            contour_algo, classifier_algo, algo_error = self._resolve_requested_algos(data)
+            if algo_error:
+                self._send_json({'ok': False, 'error': algo_error}, 400)
+                return
 
-            output_dir_path = Path(output_dir)
-            if not output_dir_path.is_absolute():
-                output_dir_path = (ROOT / output_dir_path).resolve()
+            base_name = dxf_path.stem
+            svg_path, svg_error = self._ensure_svg(dxf_path, base_name)
+            if svg_error:
+                self._send_json({'ok': False, 'error': svg_error}, 500)
+                return
+
+            output_dir_path = self._abs_output_dir(output_dir)
             jsonld_path = output_dir_path / f'{base_name}.jsonld'
 
-            # 自动定位已处理文件；若为新文件则先解析再审查
+            # 自动定位已处理文件；若为未处理或算法配置不一致的旧文件则先解析
             run = {'returnCode': 0, 'stdout': '', 'stderr': ''}
-            if not jsonld_path.exists():
-                run = self._run_parsing_single(base_name + '.svg', output_dir)
+            reused = not bool(data.get('forceReparse')) and self._is_reusable_run(
+                output_dir_path, base_name, contour_algo, classifier_algo)
+            if not reused:
+                run = self._run_parsing_single(base_name + '.svg', output_dir, contour_algo, classifier_algo)
+                self._record_run(output_dir_path, base_name, contour_algo, classifier_algo, run['returnCode'])
                 if run['returnCode'] != 0:
                     self._send_json({'ok': False, 'error': 'parsing failed', 'stdout': run['stdout'], 'stderr': run['stderr']}, 500)
                     return
+                self._invalidate_kg_cache(base_name)
 
             try:
                 from src.experiment.compliance_reviewer import review_single
@@ -352,6 +388,11 @@ class UIHandler(BaseHTTPRequestHandler):
             payload = {
                 'ok': True,
                 'base': base_name,
+                'reused': reused,
+                'contourAlgo': contour_algo,
+                'classifierAlgo': classifier_algo,
+                'llmEnabled': bool(settings.llm_api_key),
+                'llmModel': settings.llm_model,
                 'status': status,
                 'violationCount': len(violations),
                 'violationsJson': self._rel_or_none(violations_json),
@@ -721,9 +762,13 @@ class UIHandler(BaseHTTPRequestHandler):
                          'suffix': suffix, 'html': _repo_rel(out_html),
                          'jsonld': _repo_rel(final_path)})
 
-    def _run_parsing_single(self, svg_name, output_dir):
+    def _run_parsing_single(self, svg_name, output_dir, contour_algo=None, classifier_algo=None):
         """Run the parsing pipeline (main.py SINGLE mode) as a subprocess."""
         cmd = [sys.executable, '-m', 'src.main', '--mode', 'SINGLE', '--target-file', svg_name, '--output-dir', output_dir]
+        if contour_algo:
+            cmd += ['--contour-algo', contour_algo]
+        if classifier_algo:
+            cmd += ['--classifier-algo', classifier_algo]
         env = os.environ.copy()
         env['PYTHONUTF8'] = '1'
         try:
@@ -731,6 +776,106 @@ class UIHandler(BaseHTTPRequestHandler):
             return {'returnCode': proc.returncode, 'stdout': proc.stdout or '', 'stderr': proc.stderr or ''}
         except subprocess.TimeoutExpired as exc:
             return {'returnCode': -1, 'stdout': exc.stdout or '', 'stderr': f"{exc.stderr or ''}\n[timeout]"}
+
+    # ------------------------------------------------------------------
+    # 空间算法（轮廓提取 / 类型识别）选择与运行溯源
+    # ------------------------------------------------------------------
+
+    def _spatial_algos(self):
+        """Serve the selectable spatial algorithms plus the current LLM status."""
+        catalog = spatial_algorithm_catalog()
+        return {
+            'ok': True,
+            **catalog,
+            'llm': {
+                'enabled': bool(settings.llm_api_key),
+                'model': settings.llm_model,
+            },
+        }
+
+    def _resolve_requested_algos(self, data):
+        """Validate the requested algorithms; return (contour, classifier, error)."""
+        try:
+            contour = resolve_contour_algorithm(data.get('contourAlgo'))
+            classifier = resolve_classifier_algorithm(data.get('classifierAlgo'))
+        except UnknownAlgorithmError as exc:
+            return None, None, str(exc)
+        return contour, classifier, None
+
+    def _ensure_svg(self, dxf_path, base_name):
+        """Convert the DXF to SVG if needed; return (svg_path, error)."""
+        svg_path = Path(settings.svg_dir) / f'{base_name}.svg'
+        svg_path.parent.mkdir(parents=True, exist_ok=True)
+        if not svg_path.exists():
+            try:
+                convert_dxf_to_svg(str(dxf_path), str(svg_path))
+            except Exception as e:
+                return None, f'dxf2svg failed: {e}'
+        return svg_path, None
+
+    @staticmethod
+    def _abs_output_dir(output_dir):
+        path = Path(output_dir)
+        return path if path.is_absolute() else (ROOT / path).resolve()
+
+    @staticmethod
+    def _run_meta_path(output_dir_path, base_name):
+        """Sidecar recording which algorithms produced ``{base}.jsonld``."""
+        return output_dir_path / f'{base_name}.run.json'
+
+    def _is_reusable_run(self, output_dir_path, base_name, contour_algo, classifier_algo):
+        """Whether the cached ``{base}.jsonld`` matches the current request.
+
+        Reuse requires the same algorithms *and* the same LLM availability,
+        because the space types (and therefore the suites) are produced by the
+        classifier and degrade badly when the LLM is unavailable.
+        """
+        jsonld_path = output_dir_path / f'{base_name}.jsonld'
+        meta_path = self._run_meta_path(output_dir_path, base_name)
+        if not jsonld_path.exists() or not meta_path.exists():
+            return False
+        try:
+            with open(meta_path, 'r', encoding='utf-8') as fh:
+                meta = json.load(fh)
+        except Exception:
+            return False
+        if int(meta.get('returnCode', -1)) != 0:
+            return False
+        if str(meta.get('contourAlgorithm', '')).upper() != contour_algo.upper():
+            return False
+        if str(meta.get('classifierAlgorithm', '')).upper() != classifier_algo.upper():
+            return False
+        if bool(meta.get('llmEnabled')) != bool(settings.llm_api_key):
+            return False
+        # 批处理等外部运行可能重写过 jsonld 而未更新 sidecar
+        return jsonld_path.stat().st_mtime <= meta_path.stat().st_mtime
+
+    def _record_run(self, output_dir_path, base_name, contour_algo, classifier_algo, return_code):
+        meta = {
+            'base': base_name,
+            'contourAlgorithm': contour_algo,
+            'classifierAlgorithm': classifier_algo,
+            'llmEnabled': bool(settings.llm_api_key),
+            'llmModel': settings.llm_model,
+            'returnCode': return_code,
+        }
+        try:
+            with open(self._run_meta_path(output_dir_path, base_name), 'w', encoding='utf-8') as fh:
+                json.dump(meta, fh, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def _invalidate_kg_cache(self, base_name):
+        """Drop cached knowledge-graph pages so they reflect the new run."""
+        viz_dir = Path(settings.viz_dir)
+        for suffix in ('', '_stages'):
+            candidate = viz_dir / f'{base_name}{suffix}_kg_browser.html'
+            try:
+                candidate.unlink()
+            except FileNotFoundError:
+                pass
+            except Exception:
+                pass
 
     def _evaluation_data(self):
         """Serve the batch evaluation results.

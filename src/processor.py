@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 
 from src.config.config import settings
 from src.io.extractor import ElementExtractor
+from src.spatial.factory import create_space_type_classifier
 from src.topology.builder import TopologyBuilder
 from src.enricher.enricher_pipeline import GraphEnrichmentPipeline
 from src.config.labels import get_color
@@ -14,11 +15,18 @@ from src.utils.json_to_floorplan_viz import JSONLDVisualizer
 from src.utils.svg_ins_viz import visualize_elements
 
 
-def process_single_drawing(input_svg_path, output_json_dir, llm_client):
+def process_single_drawing(input_svg_path, output_json_dir, llm_client,
+                           contour_algorithm=None, classifier=None, classifier_algorithm=None):
     """
     核心原子函数：端到端解析单张 CAD/SVG 图纸（对应评估实验 Exp 1-4）。
     流程：元素提取 → 拓扑白模型构建 → 全链路语义富化 → 可视化。
     SHACL 合规审查不在此执行，请使用 src/experiment/compliance_reviewer.py。
+
+    Args:
+        contour_algorithm: 空间轮廓提取算法注册名，``None`` 时使用配置文件默认值。
+        classifier: 已实例化的空间类型识别算法；批量处理时复用同一实例。
+        classifier_algorithm: 空间类型识别算法注册名，``classifier`` 为 ``None`` 时使用。
+
     返回: status_code (str) - "PASSED" 或 "ERROR"
     """
     svg_name = os.path.basename(input_svg_path)
@@ -55,7 +63,7 @@ def process_single_drawing(input_svg_path, output_json_dir, llm_client):
                 })
 
         print(">>> Phase 2: Building base topological knowledge graph (geometric white model)...")
-        topology_builder = TopologyBuilder()
+        topology_builder = TopologyBuilder(contour_algorithm=contour_algorithm)
         topology_builder.build(elements, raw_jsonld_path)
 
         # ==========================================
@@ -65,10 +73,16 @@ def process_single_drawing(input_svg_path, output_json_dir, llm_client):
         with open(raw_jsonld_path, 'r', encoding='utf-8') as f:
             raw_graph_data = json.load(f)
 
+        if classifier is None:
+            classifier = create_space_type_classifier(
+                classifier_algorithm, llm_client=llm_client
+            )
+
         enrichment_pipeline = GraphEnrichmentPipeline(
             raw_graph_data,
             room_texts=raw_room_texts,
-            llm_client=llm_client
+            llm_client=llm_client,
+            classifier=classifier,
         )
         enriched_graph_data = enrichment_pipeline.run_all()
 
@@ -98,7 +112,8 @@ def process_single_drawing(input_svg_path, output_json_dir, llm_client):
         return "ERROR"
 
 
-def process_directory(svg_dir, output_json_dir, llm_client):
+def process_directory(svg_dir, output_json_dir, llm_client,
+                      contour_algorithm=None, classifier_algorithm=None):
     """
     批量模式：处理指定目录下的所有图纸（仅解析，对应 Exp 1-4）
     """
@@ -110,6 +125,9 @@ def process_directory(svg_dir, output_json_dir, llm_client):
 
     print(f"🔍 Found {len(svg_files)} drawings to review, starting automated batch pipeline...\n")
 
+    # 识别算法无逐图状态，整批复用同一实例（同时复用其内部的大模型客户端与归一化器）
+    classifier = create_space_type_classifier(classifier_algorithm, llm_client=llm_client)
+
     total_files = len(svg_files)
     passed_files = 0
     error_files = 0
@@ -117,7 +135,9 @@ def process_directory(svg_dir, output_json_dir, llm_client):
     for svg_name in svg_files:
         input_svg_path = os.path.join(svg_dir, svg_name)
         status = process_single_drawing(
-            input_svg_path, output_json_dir, llm_client
+            input_svg_path, output_json_dir, llm_client,
+            contour_algorithm=contour_algorithm,
+            classifier=classifier,
         )
 
         if status == "PASSED":

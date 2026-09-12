@@ -52,7 +52,23 @@ def parse_args():
     parser.add_argument("--target-dir", default=None, help="SVG input directory name")
     parser.add_argument("--target-file", default=None, help="Single SVG file name or path")
     parser.add_argument("--output-dir", default=None, help="Output directory for enriched JSON-LD")
+    parser.add_argument("--contour-algo", default=None,
+                        help="Spatial contour extraction algorithm (default: settings.yaml)")
+    parser.add_argument("--classifier-algo", default=None,
+                        help="Space type recognition algorithm (default: settings.yaml)")
+    parser.add_argument("--list-algos", action="store_true",
+                        help="List registered spatial algorithms and exit")
     args, _ = parser.parse_known_args()
+
+    if args.list_algos:
+        from src.spatial.factory import (
+            available_classifier_algorithms,
+            available_contour_algorithms,
+        )
+
+        print("Contour extractors      : " + ", ".join(available_contour_algorithms()))
+        print("Space type classifiers  : " + ", ".join(available_classifier_algorithms()))
+        sys.exit(0)
 
     settings = Settings(config_file=args.config)
     parser.set_defaults(
@@ -60,6 +76,8 @@ def parse_args():
         target_dir=args.target_dir or settings.runtime_target_dir,
         target_file=args.target_file or settings.runtime_target_file,
         output_dir=args.output_dir or str(settings.runtime_output_dir),
+        contour_algo=args.contour_algo or settings.spatial_contour_algorithm,
+        classifier_algo=args.classifier_algo or settings.spatial_classifier_algorithm,
     )
     return parser.parse_args(), settings
 
@@ -80,14 +98,22 @@ def main():
             print(f"ERROR: Target file not found '{target_file}'")
             sys.exit(1)
         print(f"Starting single-drawing parsing: {target_file}")
-        process_single_drawing(str(target_file), output_json_dir, llm_client)
+        process_single_drawing(
+            str(target_file), output_json_dir, llm_client,
+            contour_algorithm=args.contour_algo,
+            classifier_algorithm=args.classifier_algo,
+        )
 
     elif run_mode == "BATCH":
         if not target_dir.exists() or not target_dir.is_dir():
             print(f"ERROR: Invalid or missing target directory '{target_dir}'")
             sys.exit(1)
         print(f"Starting batch parsing for directory: {target_dir}")
-        process_directory(str(target_dir), output_json_dir, llm_client)
+        process_directory(
+            str(target_dir), output_json_dir, llm_client,
+            contour_algorithm=args.contour_algo,
+            classifier_algorithm=args.classifier_algo,
+        )
 
     else:
         print(f"🛑 ERROR: Unknown run mode '{run_mode}'.")

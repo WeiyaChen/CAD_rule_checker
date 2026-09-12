@@ -7,6 +7,7 @@
 - ✅ DXF → SVG conversion
 - ✅ Structured extraction of drawing elements and text labels
 - ✅ Construction of geometric and topological knowledge graphs
+- ✅ Pluggable spatial algorithms (contour extraction & space-type recognition)
 - ✅ Semantic enrichment with optional LLM inference
 - ✅ Batch and single-file processing modes
 - ✅ Ground truth generation and model evaluation
@@ -25,7 +26,7 @@ cad_rule_checker/
 ├── output/
 │   ├── jsonld/              # Semantic-enriched JSON-LD output
 │   ├── violations/          # Rule checking violation reports
-│   ├── viz/                 # All visualization images (CDT / SVG instance / experiment / GT)
+│   ├── viz/                 # All visualization images (floor plan / SVG instance / experiment / GT)
 │   ├── gt/                  # Ground truth JSON-LD annotations
 │   ├── html/                # HTML evaluation reports
 │   └── processed/           # Intermediate SVGs after modification
@@ -39,11 +40,11 @@ cad_rule_checker/
 ├── src/
 │   ├── compliance/          # SHACL validation engine
 │   ├── config/              # Configuration and directory constants
-│   ├── core/                # Core geometry and spatial objects
 │   ├── enricher/            # Graph enrichment and semantic extensions
 │   ├── experiment/          # Experiment entries (parsing / compliance / GT / evaluation)
 │   ├── io/                  # DXF/SVG reading, writing, and conversion
-│   ├── topology/            # Topology construction and graph analysis
+│   ├── spatial/             # Pluggable spatial layer: contour extraction, space typing, primitives, viz
+│   ├── topology/            # Component aggregation, topology construction, graph analysis
 │   ├── utils/               # Visualization and utility tools
 │   ├── main.py              # Main entry point
 │   └── processor.py         # Drawing processing pipeline
@@ -134,6 +135,21 @@ CAD_RULE_CHECKER_LLM_MODEL=glm-4-flash
 - 🎯 **Consistency**: All LLM-related configurations in one place
 - 🧪 **Experimentation**: Easy to test different models and endpoints
 
+**Loading is automatic** — no `export` required. [src/config/config.py](src/config/config.py) reads
+the project-root `.env` the first time the config module is imported, so every entry point
+([src/main.py](src/main.py), [src/web_ui_server.py](src/web_ui_server.py), the scripts under
+[src/experiment/](src/experiment/)) picks it up. The parsing follows the usual dotenv rules:
+
+- keys already present in the process environment are **never** overwritten, so a shell `export`
+  or a CI variable wins over `.env`;
+- `#` starts a comment on its own line, and an unquoted value is truncated at a trailing ` #`;
+- `export KEY=value` lines and single/double-quoted values are accepted;
+- a missing `.env` is silently ignored.
+
+To bypass `.env` entirely — for instance to force the no-LLM rule-based path — set
+`CAD_RULE_CHECKER_SKIP_DOTENV=1`. Use that flag rather than blanking the key: in PowerShell
+`$env:X=""` *deletes* the variable instead of emptying it.
+
 #### Alternative Configuration Methods
 
 If you prefer not to use a `.env` file, you can also set environment variables directly:
@@ -161,7 +177,7 @@ export CAD_RULE_CHECKER_LLM_MODEL="glm-4-flash"
 #### Configuration Priority
 
 The system reads LLM configurations in the following priority order:
-1. **Environment variables** (highest priority) - overrides everything
+1. **Environment variables** (highest priority) - overrides everything; the `.env` file is merged in at this level, filling only the keys that are not already set
 2. **Configuration file** ([src/config/settings.yaml](src/config/settings.yaml)) - fallback defaults
 3. **Hardcoded defaults** - if neither above is available
 
@@ -368,7 +384,24 @@ A lightweight web UI is provided for interactive, single-file workflows. Start t
 python -m src.web_ui_server
 ```
 
-Then open `http://localhost:8000` in a browser. The GUI is organized into two categories plus an evaluation overview:
+Then open `http://localhost:8001` in a browser. The GUI is organized into two categories plus an evaluation overview:
+
+### Spatial algorithm selection
+
+All three single-DXF pages (Category 1 and both experiments) expose the same
+**Spatial Algorithms** panel in the sidebar. It lists every registered contour
+extraction and space-type classification algorithm (loaded from
+`GET /api/spatial-algos`, i.e. from `src/spatial/registry.py`), pre-selects the
+`settings.yaml` defaults, shows whether the LLM is available, and lets you tick
+*忽略缓存，强制重新解析* to ignore cached results.
+
+Each run reports which algorithms produced the displayed result, and the
+contour visualization follows the selected algorithm (`<base>_cdt.png`,
+`<base>_rgp.png`, …). Cached results are **only reused when the requested
+algorithms and the LLM availability match the ones recorded in
+`output/jsonld/<base>.run.json`** — otherwise the drawing is re-parsed, so the
+page can never show a stale graph (for example one produced before an LLM key
+was configured).
 
 ### Category 1 · Normal Use
 
@@ -376,7 +409,7 @@ Then open `http://localhost:8000` in a browser. The GUI is organized into two ca
 
 ### Category 2 · Experiments
 
-- **`exp_analysis.html`** — Drawing Analysis (Exp 2.1): input a single DXF file and view the **system result and Ground Truth side by side**. The system parses the drawing and automatically matches the corresponding GT annotation by name. Below the topology images it also shows a **side-by-side interactive JSON-LD knowledge graph comparison** (System vs GT, each pane is the `kg_browser` view).
+- **`exp_analysis.html`** — Drawing Analysis (Exp 2.1): input a single DXF file and view the **system result and Ground Truth side by side**. The system parses the drawing and automatically matches the corresponding GT annotation by name. It also displays the **space contour extraction image of the selected algorithm** and a **side-by-side interactive JSON-LD knowledge graph comparison** (System vs GT, each pane is the `kg_browser` view).
 - **`exp_shacl.html`** — SHACL Review (Exp 2.2): input a single DXF file. The system automatically locates the processed enriched JSON-LD; for a new file it runs the parsing pipeline first, then executes the L1 / L2 / L3 compliance checks and shows the violations plus an interactive annotated report.
 - **`kg_browser.html`** — Knowledge Graph Browser (**standalone tool**): pick a processed drawing and a source (`System` or `GT`) and load **one knowledge graph at a time** into the interactive browser produced by `src/utils/kg_browser.py` (whole graph / stages / suite tabs). Tick “包含富化过程” to replay the six enrichment stages for the system side (uses the LLM, slower). System vs GT comparison is intentionally left to `exp_analysis.html` (Exp 2.1).
 
@@ -391,6 +424,7 @@ All pages accept a **single file input**; none run batch processing. Images (SVG
 | Method & path | Purpose |
 |---|---|
 | `GET /api/available-dxfs` | List DXF files under `input_data/dxf` |
+| `GET /api/spatial-algos` | List selectable spatial algorithms (contour extraction / space-type classification), their defaults and the LLM status |
 | `POST /api/run-analysis` | Single DXF end-to-end analysis (Category 1) |
 | `POST /api/experiment-draw` | System vs GT comparison (Exp 2.1) |
 | `POST /api/experiment-shacl` | SHACL compliance review (Exp 2.2) |
@@ -400,13 +434,154 @@ All pages accept a **single file input**; none run batch processing. Images (SVG
 | `GET /api/kg-files` | List datasets for the KG browser (system JSON-LD + matching GT) |
 | `GET /api/kg-browser?base=&src=&stages=&refresh=` | Generate/serve the KG browser HTML for a dataset (`src=system`\|`gt`, `stages=1` replays the enrichment pipeline) |
 
+The three single-DXF endpoints accept optional `contourAlgo`, `classifierAlgo`
+and `forceReparse` fields (the same names as the CLI `--contour-algo` /
+`--classifier-algo` arguments); an unknown algorithm name is rejected with HTTP
+400. Responses echo back `contourAlgo` / `classifierAlgo` / `llmEnabled` /
+`llmModel` together with `reused`, which tells the UI whether the shown result
+was re-parsed or reused from the cache.
+
 > Note: `manual.html` is a legacy pure-frontend prototype (canvas graph editor) and retains its built-in zh/en toggle.
 
 ## Key Configuration Files
 
-- [src/config/settings.yaml](src/config/settings.yaml) — Input, output, rule, and prompt path settings
+- [src/config/settings.yaml](src/config/settings.yaml) — Input, output, rule, prompt, and `spatial` algorithm settings
 - [prompt/prompt_config.txt](prompt/prompt_config.txt) — LLM prompt template
 - [rules/](rules/) — SHACL rule files
+
+## Pluggable Spatial Algorithms
+
+Two pipeline tasks are isolated behind abstract interfaces so that new algorithms of
+the same kind can be added without touching the pipeline:
+
+| Task | Interface | Registry | Default |
+| --- | --- | --- | --- |
+| Spatial contour extraction | `ISpatialContourExtractor` | `CONTOUR_EXTRACTORS` | `CDT` |
+| Space type recognition | `ISpaceTypeClassifier` | `SPACE_TYPE_CLASSIFIERS` | `LLMMultiStage` |
+| Text label normalization | `ITextLabelNormalizer` | `TEXT_LABEL_NORMALIZERS` | `LLM` |
+
+All of them live in [src/spatial/](src/spatial/); the pipeline only talks to the
+factory in [src/spatial/factory.py](src/spatial/factory.py) and to the algorithm-neutral
+domain objects in [src/spatial/domain.py](src/spatial/domain.py). JSON-LD details are
+confined to the two adapters, [src/topology/builder.py](src/topology/builder.py) and
+[src/enricher/semantic_enricher.py](src/enricher/semantic_enricher.py).
+
+Everything the spatial pipeline needs sits in that package, so the algorithm-adjacent
+code is no longer scattered over `topology/` and `utils/`:
+
+| Module | Responsibility |
+| --- | --- |
+| [contracts.py](src/spatial/contracts.py) / [domain.py](src/spatial/domain.py) | Interfaces and the plain objects algorithms exchange |
+| [registry.py](src/spatial/registry.py) / [factory.py](src/spatial/factory.py) / [config.py](src/spatial/config.py) | Name resolution, construction, `settings.yaml` parsing |
+| [primitives.py](src/spatial/primitives.py) | Boundary-primitive preparation (`clean_lines`) — the shared input of every contour algorithm |
+| [contours/](src/spatial/contours/) | Contour extraction algorithms (`cdt.py`, `rgp.py`) plus the shared `filters.py` |
+| [classifiers/](src/spatial/classifiers/) | Space type recognition algorithms |
+| [visualization.py](src/spatial/visualization.py) | Algorithm-neutral plot of an extraction result (`plot_floor_plan`) |
+
+[src/topology/builder.py](src/topology/builder.py) is now pure orchestration
+(boundary primitives → extractor → BOT graph), and component aggregation moved out of it
+into [src/topology/components.py](src/topology/components.py).
+
+The old module paths below were removed rather than forwarded, so any historical script
+using them must be pointed at the new location:
+
+| Removed path | Where the code lives now |
+| --- | --- |
+| `src.topology.preprocessing.clean_lines` | [src/spatial/primitives.py](src/spatial/primitives.py) |
+| `src.topology.generate_virtual_wall.FloorPlanMeshBuilderCDT` | dropped — use `CDTContourExtractor` in [src/spatial/contours/cdt.py](src/spatial/contours/cdt.py), or `create_contour_extractor("CDT")` |
+| `src.utils.cdt_viz.plot_floor_plan` | [src/spatial/visualization.py](src/spatial/visualization.py) |
+
+Select an algorithm from the command line (any registered name or alias):
+
+```bash
+# list everything that is registered
+python -m src.experiment.parsing_pipeline --list-algos
+
+# use the LLM-driven classifier (default) or the geometry-only dictionary matcher
+python -m src.main --mode SINGLE --target-file sample.svg --classifier-algo LLMMultiStage
+python -m src.main --mode SINGLE --target-file sample.svg --classifier-algo TextMatching
+
+# use the CDT triangulation extractor (default) or rule-based geometric polygonization
+python -m src.main --mode SINGLE --target-file sample.svg --contour-algo CDT
+python -m src.main --mode SINGLE --target-file sample.svg --contour-algo RGP
+```
+
+Or configure it in the `spatial` section of [src/config/settings.yaml](src/config/settings.yaml):
+
+```yaml
+spatial:
+  contour:
+    algorithm: "CDT"
+    params:                     # parameters shared by every contour algorithm
+      min_area_mm2: 2000000.0
+      # …
+    algorithm_params:           # per-algorithm block, only merged when that algorithm is selected
+      RGP:
+        snap_tol_mm: 10.0
+        max_gap_mm: 3000.0
+  classification:
+    algorithm: "LLMMultiStage"
+    params:
+      match_tolerance_mm: 0.0
+      min_confidence: 0.5
+```
+
+`params` keys must be accepted by the constructor of the *selected* algorithm, otherwise
+creation fails fast with a `TypeError`. Algorithm-specific knobs therefore belong in
+`algorithm_params.<NAME>` (matched case-insensitively, aliases included) — that way you can
+switch between algorithms freely without having to comment parameters in and out.
+
+### Available Contour Extractors
+
+| Name | Aliases | How it works |
+| --- | --- | --- |
+| `CDT` | `CDT_MESH`, `TRIANGLE_CDT` | Constrained Delaunay triangulation of the wall/door-constrained mesh; rooms are grown over the triangle graph and door/window openings are sealed with virtual blocker edges. |
+| `RGP` | `RULE_BASED`, `POLYGONIZE`, `GEOMETRIC_POLYGONIZATION` | Rule-based geometric polygonization — purely combinatorial, no CDT mesh. |
+
+`RGP` ([src/spatial/contours/rgp.py](src/spatial/contours/rgp.py)) consumes the same predicted
+boundary primitives (wall segments + door/window patches) and runs:
+
+1. **Coordinate normalization** — quantize to `coord_precision_mm`.
+2. **Duplicate removal** — drop zero-length/degenerate segments (`dup_tol_mm`).
+3. **Endpoint snapping** — weld endpoints that are within `snap_tol_mm` (with cluster arithmetic means).
+4. **Collinear segment merging** — unify touching/overlapping intervals on one line (`collinear_angle_tol_deg`, `collinear_offset_tol_mm`).
+5. **Short-gap completion** — two routes: bridge a gap between two collinear wall lines whose endpoints keep going away in the bridge direction, and seal door/window openings with an edge parallel to the opening edge (`max_gap_mm`, `gap_angle_tol_deg`).
+6. **Segment intersection and splitting** — insert every crossing point so segments only meet at endpoints.
+7. **Planar graph construction** — build a rotation system (sorted neighbours per node).
+8. **Polygonization** — trace every inner face of the planar embedding.
+9. **Small/slender-region filtering** — drop implausible rooms via the shared `SpaceShapeFilter` (`min_area_mm2`, `erode_mm`, `min_width_mm`, `min_compactness`, `min_solidity`).
+10. **Exterior-face removal** — discard unbounded faces so only real rooms remain.
+
+Both contour algorithms share the room-plausibility defences in
+[src/spatial/contours/filters.py](src/spatial/contours/filters.py), so the same
+`params` block applies to either one.
+
+Trade-off to be aware of: on the drawings tested, RGP's room set is a strict refinement of
+CDT's (it never invents a room outside a CDT room), and it correctly splits several rooms
+that CDT merges through unsealed openings. Because step 9 *filters* rather than *absorbs*,
+the sub-`min_area_mm2` leftovers (wall cavities, stair/duct cells) are reported as no room
+instead of being folded into a neighbour, so the total extracted area is a few percent
+smaller than CDT's.
+
+### Adding a New Algorithm
+
+1. Implement the interface in `src/spatial/contours/` (for contour extraction) or
+   `src/spatial/classifiers/` (for space typing), and decorate the class with the
+   matching registry, e.g. `@CONTOUR_EXTRACTORS.register("MyAlgo", aliases=("MY",))`.
+   Constructor parameters must be keyword arguments; unknown keyword arguments raise
+   `TypeError` at creation time, so typos in `settings.yaml` fail fast. Set a class-level
+   `name` and, for contour extractors, a `visualization_suffix` (e.g. `"myalgo"`) — the
+   pipeline uses it to name its floor-plan plot `output/viz/<drawing>_myalgo.png`.
+2. Import the module from the package `__init__.py` so the registration runs.
+3. Point `spatial.contour.algorithm` / `spatial.classification.algorithm` (or the
+   `--contour-algo` / `--classifier-algo` arguments) at the new name, and put any
+   algorithm-specific parameters under `spatial.contour.algorithm_params.<NAME>`.
+
+Algorithm instances can also be injected directly — `TopologyBuilder(contour_extractor=…)`,
+`GraphEnrichmentPipeline(…, classifier=…)` and `process_single_drawing(…, classifier=…)`
+all accept a pre-built object for callers that manage the lifecycle themselves. The
+historical `FloorPlanMeshBuilderCDT` class and its module (`src/topology/generate_virtual_wall.py`)
+were both removed; use `CDTContourExtractor` itself.
 
 ## Run Modes
 
@@ -421,13 +596,16 @@ The main entry point supports the following modes, configurable via the settings
 - `--target-dir` — SVG input directory name
 - `--target-file` — File name for single-file mode
 - `--output-dir` — Output directory name
-- Environment variables: `CAD_RULE_CHECKER_RUN_MODE`, `CAD_RULE_CHECKER_TARGET_DIR`, `CAD_RULE_CHECKER_TARGET_FILE`, `CAD_RULE_CHECKER_OUTPUT_DIR`
+- `--contour-algo` — Spatial contour extraction algorithm (default from `settings.yaml`)
+- `--classifier-algo` — Space type recognition algorithm (default from `settings.yaml`)
+- `--list-algos` — Print the registered spatial algorithms and exit (`parsing_pipeline` only)
+- Environment variables: `CAD_RULE_CHECKER_RUN_MODE`, `CAD_RULE_CHECKER_TARGET_DIR`, `CAD_RULE_CHECKER_TARGET_FILE`, `CAD_RULE_CHECKER_OUTPUT_DIR`, `CAD_RULE_CHECKER_CONTOUR_ALGO`, `CAD_RULE_CHECKER_CLASSIFIER_ALGO`
 
 ## Output Directory Overview
 
 - `output/jsonld/` — Semantic-enriched JSON-LD output
 - `output/violations/` — SHACL rule checking violation reports
-- `output/viz/` — All visualization images (CDT, SVG instance, experiment, GT previews)
+- `output/viz/` — All visualization images (floor-plan contours `<drawing>_<algorithm>.png` — e.g. `_cdt.png` / `_rgp.png` — plus SVG instance, experiment, and GT previews)
 - `output/gt/` — Ground truth JSON-LD annotations
 - `output/html/` — HTML evaluation reports and compliance review reports
 - `output/processed/` — Intermediate SVGs after svg_modifier processing
@@ -437,6 +615,14 @@ The main entry point supports the following modes, configurable via the settings
 - `src/main.py` contains LLM client initialization code. Replace or refactor it to use a secure API key management approach before deployment.
 - The SHACL-based rule checking will not work without `pyshacl` and `rdflib` installed.
 - This project is currently designed for **experimental** rule checking and result visualization. The pipeline can be extended for production use cases as needed.
+- Without an LLM API key the semantic stage falls back to a built-in sandbox mapping
+  (`次卧`/`主卫`/`餐客厅` plus a fixed stage-3 inference table), which is why the default
+  `LLMMultiStage` classifier recognises very few space types on real drawings.
+- The BOT topology relations (`bot:adjacentZone`, `bot:interfaceOf`, `bot:containsElement`)
+  are built from unordered sets, so their order — and therefore `*_topology.png` — is
+  **not reproducible between runs**. Compare JSON-LD by node content, not by byte.
+- In `LLMMultiStage`, the three `[Stage n]` headers are printed while the classifier runs,
+  so all `[+] …` result lines appear after the last header rather than interleaved.
 
 ## Utility Scripts
 

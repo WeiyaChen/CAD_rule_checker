@@ -47,7 +47,10 @@
     <input type="file" id="dxfFile" accept=".dxf" style="margin-top:8px">
     <button class="btn ghost" id="uploadBtn" onclick="uploadDxf()">Upload Selected DXF</button>
 
-    <h3>② Start Analysis</h3>
+    <h3>② Spatial Algorithms</h3>
+    <div id="algoSlot"></div>
+
+    <h3>③ Start Analysis</h3>
     <button class="btn primary" id="runBtn" onclick="runAnalysis()">Start Analysis</button>
     <p class="hint">Runs automatically: DXF→SVG → extraction → topology → semantic enrichment → visualization</p>
 
@@ -68,9 +71,9 @@
         <div class="zoom-hint">Scroll to zoom · drag to pan · double-click to reset</div>
       </div>
       <div class="card">
-        <h4>③ Space Recognition (CDT)</h4>
-        <img id="previewCdt" class="zoomable hidden" alt="CDT">
-        <p id="noCdt" class="empty">The CDT space-recognition result appears here after running.</p>
+        <h4>③ Space Recognition · <span id="spaceAlgoName">—</span></h4>
+        <img id="previewCdt" class="zoomable hidden" alt="Space contour extraction">
+        <p id="noCdt" class="empty">The space-recognition result appears here after running.</p>
         <div class="zoom-hint">Scroll to zoom · drag to pan · double-click to reset</div>
       </div>
       <div class="card">
@@ -121,23 +124,28 @@
     const btn = document.getElementById('runBtn');
     btn.disabled = true; btn.textContent = 'Analyzing…';
     log('Start analysis: ' + dxfFile);
+    const algo = getSpatialAlgoSelection();
+    log('Contour: ' + algo.contourAlgo + ' · Classifier: ' + algo.classifierAlgo);
     fetch('/api/run-analysis', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dxfFile, outputDir: 'output/jsonld' })
+      body: JSON.stringify(Object.assign({ dxfFile, outputDir: 'output/jsonld' }, algo))
     }).then(r => r.json()).then(d => {
       btn.disabled = false; btn.textContent = 'Start Analysis';
       if (d.stdout) log(d.stdout.slice(0, 3000));
       if (d.stderr) log('[stderr] ' + d.stderr.slice(0, 1500));
-      if (!d.ok) { log('❌ Analysis failed'); return; }
+      if (!d.ok) { log('❌ Analysis failed: ' + (d.error || '')); return; }
       log('✅ Analysis complete: ' + d.base);
+      setSpatialAlgoStatus(d);
+      document.getElementById('spaceAlgoName').textContent = d.contourAlgo || '';
       preview(d.svg, 'previewSvg', 'noSvg');
       preview(d.topologyPng, 'previewTopo', 'noTopo');
       preview(d.instancePng, 'previewInstance', 'noInstance');
-      preview(d.cdtPng, 'previewCdt', 'noCdt');
+      preview(d.contourPng, 'previewCdt', 'noCdt');
     }).catch(e => { btn.disabled = false; btn.textContent = 'Start Analysis'; log('Request failed: ' + e); });
   }
 
   loadDxfs();
+  mountSpatialAlgos('algoSlot', { showForce: false });
 </script>
 </body>
 </html>

@@ -1,18 +1,38 @@
+# src/spatial/primitives.py
+"""边界图元准备：把原始墙体图元整理成轮廓算法的输入。
+
+轮廓提取算法（CDT / RGP）约定的输入是"预测好的边界图元"——一组两点式
+Shapely ``LineString``。本模块只负责把 CAD 图元清洗到这个形态：坐标取整、
+去重、打断交点、缝合共线，与具体算法无关，因此所有轮廓算法共用同一条输入路径。
+
+    from src.spatial.primitives import clean_lines
+
+    boundary_primitives = clean_lines(wall_elements)
+"""
+
+from __future__ import annotations
+
 import numpy as np
 from shapely.geometry import LineString, MultiLineString
-from shapely.ops import unary_union, linemerge
+from shapely.ops import linemerge, unary_union
+
+__all__ = ["clean_lines"]
 
 
 def clean_lines(wall_elements, tolerance=0):
-    """
+    """清洗墙体图元，返回两点式 ``LineString`` 列表（边界图元）。
+
+    流程：坐标取整 → 去除连续重复点 → ``unary_union`` 打断交点并合并重叠 →
+    ``linemerge`` 缝合首尾相接的线 → ``simplify`` 去掉共线中间点 → 拆成两点线段。
+
     Args:
-        wall_elements: 原始数据
-        tolerance: simplify 的容差，0 表示仅移除绝对共线的点。
+        wall_elements: 原始墙体图元列表，每项需含 ``coords`` 字段。
+        tolerance: ``simplify`` 的容差，0 表示仅移除绝对共线的点。
                    如果墙体有微小抖动，可以设为 1 (mm) 或 5 (mm)。
     """
     raw_lines = []
 
-    # 1. 数据预处理 (保持你的取整逻辑，这对于 CAD 图纸去噪很有用)
+    # 1. 数据预处理 (坐标取整对 CAD 图纸去噪很有用)
     for el in wall_elements:
         coords = el.get('coords')
         if coords is None or len(coords) < 2:
@@ -64,18 +84,14 @@ def clean_lines(wall_elements, tolerance=0):
         geoms = [g for g in getattr(merged_geom, 'geoms', []) if isinstance(g, LineString)]
 
     for line in geoms:
-        # 【核心优化】simplify(0) 会自动移除共线的中间点
+        # simplify(0) 会自动移除共线的中间点
         # 例如: A->B->C (共线) 变成 A->C
         #      A->B->C (不共线) 保持 A->B->C
         simplified_line = line.simplify(tolerance, preserve_topology=True)
 
-        # 你的原需求似乎是想要"所有线段都是两点式"或者"最简长线"
-        # 方案 A: 如果你需要保留长墙语义 (推荐)
-        # final_lines.append(simplified_line)
-
-        # 方案 B: 如果你后续算法强制要求所有 LineString 只能有2个点 (原代码逻辑)
+        # 轮廓算法要求所有 LineString 都是两点式，这里把简化后的折线拆开
         coords = list(simplified_line.coords)
         for i in range(len(coords) - 1):
-            final_lines.append(LineString([coords[i], coords[i+1]]))
+            final_lines.append(LineString([coords[i], coords[i + 1]]))
 
     return final_lines

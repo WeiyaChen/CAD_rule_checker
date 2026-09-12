@@ -49,3 +49,40 @@ evaluation:
 # === Prompt 配置 ===
 prompt:
   prompt_config_dir: "prompt/prompt_config.txt"
+
+# === 空间语义算法（空间轮廓提取 + 空间类型识别） ===
+# 两项任务均为可插拔算法，算法名由 registry 注册名决定；
+# 这里未显式列出的参数会回退到 src/spatial/config.py 中的默认值。
+# 也可用环境变量临时覆盖：CAD_RULE_CHECKER_CONTOUR_ALGO / CAD_RULE_CHECKER_CLASSIFIER_ALGO
+spatial:
+  contour:
+    algorithm: "CDT"                # 可选：CDT、RGP（别名：RULE_BASED / POLYGONIZE）
+    params:                         # 所有轮廓算法共用的参数
+      min_area_mm2: 2000000.0       # 防线1：绝对面积下限（mm²）
+      erode_mm: 250.0               # 防线2：形态学负缓冲半径（mm）
+      min_width_mm: 600.0           # 防线3：最小旋转外接矩形短边（mm）
+      min_compactness: 0.08         # 防线4：紧凑度下限
+      min_solidity: 0.25            # 防线4：实心率下限
+      virtual_blocker_dist_tol_mm: 300.0    # 门窗虚拟封口边：端点距离容差（mm）
+      virtual_blocker_max_len_mm: 3500.0    # 门窗虚拟封口边：最大长度（mm）
+      virtual_blocker_angle_tol_deg: 0.0    # 门窗虚拟封口边：平行度容差（度）
+    algorithm_params:               # 按算法名分组的专属参数，只在该算法被选中时生效
+      RGP:                          # 规则化几何多边形化（不依赖 CDT 网格）
+        coord_precision_mm: 1.0     # 步骤1：坐标取整精度（mm）
+        dup_tol_mm: 1.0             # 步骤2：重复端点合并容差（mm）
+        snap_tol_mm: 10.0           # 步骤3：端点吸附容差（mm）
+        collinear_angle_tol_deg: 1.0    # 步骤4：共线判定角度容差（度）
+        collinear_offset_tol_mm: 1.0    # 步骤4：共线判定偏移容差（mm）
+        max_gap_mm: 3000.0          # 步骤5：短缺口补齐的最大长度（mm）
+        gap_angle_tol_deg: 10.0     # 步骤5：补齐方向与墙线平行度容差（度）
+
+  classification:
+    algorithm: "LLMMultiStage"      # 可选：LLMMultiStage、TextMatching
+    params:
+      match_tolerance_mm: 0.0       # 文字锚点允许的落位容差（mm），0 = 严格包含
+      min_confidence: 0.5           # 低于该置信度的预测会被丢弃
+      # text_normalizer: "Dictionary"        # 可选：覆盖算法自身的文本归一化实现
+      # text_normalizer_params: {}           # 传给文本归一化算法的参数
+    # algorithm_params:               # 同上：按算法名分组的分类专属参数
+    #   TextMatching:
+    #     match_tolerance_mm: 50.0

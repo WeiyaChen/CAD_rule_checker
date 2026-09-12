@@ -1,9 +1,6 @@
 import json
 import os
 import networkx as nx
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from shapely import wkt
 from pyvis.network import Network
 
 
@@ -45,19 +42,6 @@ class BotGraphVisualizer:
                 if not isinstance(targets, list): targets = [targets]
                 for t in targets:
                     self.G.add_edge(src, t["@id"], type="interface", color="orange")
-
-    def _parse_wkt(self, wkt_obj):
-        """辅助函数：解析 WKT 数据（兼容字符串或字典格式）"""
-        if isinstance(wkt_obj, dict):
-            raw_wkt = wkt_obj.get("@value", "")
-        else:
-            raw_wkt = str(wkt_obj)
-
-        try:
-            return wkt.loads(raw_wkt)
-        except Exception as e:
-            print(f"⚠️ WKT parse failed: {e}")
-            return None
 
     def save_json(self, filepath):
         folder = os.path.dirname(filepath)

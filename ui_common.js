@@ -114,3 +114,175 @@
   // re-scan periodically so images added after results arrive get zoom too
   setInterval(scan, 1200);
 })();
+
+/* ============================================================
+ * Spatial algorithm selector (空间轮廓提取 / 空间类型识别)
+ *
+ * Usage:
+ *   <div id="algoSlot"></div>
+ *   <script src="ui_common.js"></script>
+ *   <script>
+ *     mountSpatialAlgos('algoSlot');                       // 运行前选择算法
+ *     fetch(url, {body: JSON.stringify({...getSpatialAlgoSelection()})})
+ *       .then(r => r.json()).then(d => setSpatialAlgoStatus(d));
+ *   </script>
+ * ============================================================ */
+(function () {
+  'use strict';
+
+  const STYLE_ID = 'spatial-algo-style';
+  const state = { catalog: null, defaults: null };
+
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = [
+      '.algo-panel { font-family: inherit; font-size: 13px; color: #33475b; }',
+      '.algo-panel .algo-title { font-weight: 600; margin-bottom: 8px; color: #2c3e50; }',
+      '.algo-panel .algo-row { display: block; margin-bottom: 8px; }',
+      '.algo-panel .algo-label { display: block; color: #5a6b80; font-size: 12px; margin-bottom: 3px; }',
+      '.algo-panel select { width: 100%; padding: 5px 6px; font: inherit; font-size: 13px;',
+      '  color: #33475b; background: #fff; border: 1px solid #cdd8e5; border-radius: 6px; }',
+      '.algo-panel .algo-force { display: flex; align-items: center; gap: 6px;',
+      '  color: #5a6b80; font-size: 12px; margin: 10px 0 0; cursor: pointer; }',
+      '.algo-panel .algo-hint { color: #7a8aa0; font-size: 11.5px; line-height: 1.5; margin-top: 8px; }',
+      '.algo-panel .algo-warn { color: #b06a00; font-size: 11.5px; line-height: 1.5; margin-top: 6px; }',
+      '.algo-panel .algo-status { display: none; margin-top: 10px; padding: 7px 9px; border-radius: 6px;',
+      '  background: #eef4fb; border: 1px solid #d6e4f3; color: #33556f; font-size: 11.5px; line-height: 1.5; }',
+      '.algo-panel .algo-status.shown { display: block; }'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
+
+  function optionText(algo) {
+    return algo.name + (algo.default ? '（默认）' : '');
+  }
+
+  function fillSelect(select, task) {
+    select.textContent = '';
+    task.algorithms.forEach(function (algo) {
+      const opt = document.createElement('option');
+      opt.value = algo.id;
+      opt.textContent = optionText(algo);
+      if (algo.summary) opt.title = algo.summary;
+      select.appendChild(opt);
+    });
+    select.value = state.defaults[select.dataset.task] || task.default;
+  }
+
+  window.mountSpatialAlgos = function (containerId, options) {
+    const opts = options || {};
+    const host = document.getElementById(containerId);
+    if (!host) return;
+    host.textContent = 'Loading algorithms…';
+    fetch('/api/spatial-algos')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.ok) throw new Error((data && data.error) || 'failed');
+        state.catalog = data;
+        state.defaults = {
+          contour: data.contour.default,
+          classification: data.classification.default
+        };
+        render(host, data, opts);
+      })
+      .catch(function (e) {
+        host.textContent = 'Algorithm list unavailable: ' + e.message;
+      });
+  };
+
+  function render(host, data, opts) {
+    ensureStyle();
+    host.textContent = '';
+    const panel = document.createElement('div');
+    panel.className = 'algo-panel';
+
+    if (opts.title !== false) {
+      const title = document.createElement('div');
+      title.className = 'algo-title';
+      title.textContent = opts.title || '空间算法 (Spatial Algorithms)';
+      panel.appendChild(title);
+    }
+
+    [['contour', '空间轮廓提取'], ['classification', '空间类型识别']].forEach(function (pair) {
+      const key = pair[0], task = data[key];
+      if (!task || !task.algorithms || !task.algorithms.length) return;
+      const row = document.createElement('label');
+      row.className = 'algo-row';
+      const label = document.createElement('span');
+      label.className = 'algo-label';
+      label.textContent = task.label || pair[1];
+      const select = document.createElement('select');
+      select.className = 'algo-select';
+      select.dataset.task = key;
+      row.append(label, select);
+      panel.appendChild(row);
+      fillSelect(select, task);
+      select.addEventListener('change', function () {
+        state.defaults[key] = select.value;
+      });
+    });
+
+    if (opts.showForce !== false) {
+      const force = document.createElement('label');
+      force.className = 'algo-force';
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.className = 'algo-force-box';
+      const text = document.createElement('span');
+      text.textContent = '忽略缓存，强制重新解析';
+      force.append(box, text);
+      panel.appendChild(force);
+    }
+
+    const llm = data.llm || {};
+    if (!llm.enabled) {
+      const warn = document.createElement('div');
+      warn.className = 'algo-warn';
+      warn.textContent = '⚠ 未检测到 LLM API Key：空间类型识别可能无类别输出（套间从属关系也会退化）。';
+      panel.appendChild(warn);
+    }
+    const hint = document.createElement('div');
+    hint.className = 'algo-hint';
+    hint.textContent = 'LLM: ' + (llm.enabled ? ('已启用 · ' + (llm.model || '')) : '未启用');
+    panel.appendChild(hint);
+
+    const status = document.createElement('div');
+    status.className = 'algo-status';
+    panel.appendChild(status);
+
+    host.appendChild(panel);
+  }
+
+  window.getSpatialAlgoSelection = function () {
+    const pick = function (task, fallback) {
+      const el = document.querySelector('.algo-select[data-task="' + task + '"]');
+      return (el && el.value) || fallback || null;
+    };
+    const box = document.querySelector('.algo-force-box');
+    const defaults = state.defaults || {};
+    return {
+      contourAlgo: pick('contour', defaults.contour),
+      classifierAlgo: pick('classification', defaults.classification),
+      forceReparse: !!(box && box.checked)
+    };
+  };
+
+  window.setSpatialAlgoStatus = function (info) {
+    const el = document.querySelector('.algo-status');
+    if (!el) return;
+    const text = typeof info === 'string' ? info : statusText(info);
+    if (!text) return;
+    el.textContent = text;
+    el.classList.add('shown');
+  };
+
+  function statusText(d) {
+    if (!d || !d.contourAlgo) return '';
+    const bits = ['轮廓 ' + d.contourAlgo, '分类 ' + d.classifierAlgo];
+    if (d.reused !== undefined) bits.push(d.reused ? '复用缓存' : '本次重新解析');
+    bits.push(d.llmEnabled ? ('LLM ' + (d.llmModel || '已启用')) : 'LLM 未启用');
+    return '当前展示结果：' + bits.join(' · ');
+  }
+})();

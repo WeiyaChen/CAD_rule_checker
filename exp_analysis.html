@@ -61,7 +61,10 @@
     <input type="file" id="dxfFile" accept=".dxf" style="margin-top:8px">
     <button class="btn ghost" id="uploadBtn" onclick="uploadDxf()">Upload Selected DXF</button>
 
-    <h3>② Start Comparison</h3>
+    <h3>② Spatial Algorithms</h3>
+    <div id="algoSlot"></div>
+
+    <h3>③ Start Comparison</h3>
     <button class="btn primary" id="runBtn" onclick="runCompare()">Start Comparison</button>
     <p style="font-size:12px;color:#7a8aa0;margin-top:6px">The system parses the selected DXF and automatically matches the corresponding Ground Truth annotation by name.</p>
 
@@ -83,6 +86,13 @@
         <p id="gtTopoEmpty" class="empty">GT topology appears here after running.</p>
         <div class="zoom-hint">Scroll to zoom · drag to pan · double-click to reset</div>
       </div>
+    </div>
+
+    <div class="card summary-card hidden" id="contourCard">
+      <h4>🧩 System Space Contour Extraction · <span id="contourAlgoName">—</span></h4>
+      <img id="sysContour" class="zoomable hidden" alt="System space contour extraction">
+      <p id="sysContourEmpty" class="empty">The extracted space contours appear here after running.</p>
+      <div class="zoom-hint">Scroll to zoom · drag to pan · double-click to reset</div>
     </div>
 
     <div class="card summary-card hidden" id="summaryCard">
@@ -142,20 +152,29 @@
     const btn = document.getElementById('runBtn');
     btn.disabled = true; btn.textContent = 'Comparing…';
     log('Start comparison: ' + dxfFile);
+    const algo = getSpatialAlgoSelection();
+    log('Contour: ' + algo.contourAlgo + ' · Classifier: ' + algo.classifierAlgo
+      + (algo.forceReparse ? ' · force re-parse' : ''));
     fetch('/api/experiment-draw', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dxfFile, outputDir: 'output/jsonld' })
+      body: JSON.stringify(Object.assign({ dxfFile, outputDir: 'output/jsonld' }, algo))
     }).then(r => r.json()).then(d => {
       btn.disabled = false; btn.textContent = 'Start Comparison';
       if (d.stdout) log(d.stdout.slice(0, 2000));
       if (d.stderr) log('[stderr] ' + d.stderr.slice(0, 1000));
-      if (!d.ok) { log('❌ System parsing failed'); return; }
-      log('✅ Parsing complete: ' + d.base);
+      if (!d.ok) { log('❌ System parsing failed: ' + (d.error || '')); return; }
+      log('✅ Parsing complete: ' + d.base + (d.reused ? ' (reused cached result)' : ''));
+      setSpatialAlgoStatus(d);
       const note = document.getElementById('gtNote');
       if (d.hasGt) { note.classList.remove('hidden'); note.textContent = '✅ Ground Truth matched: ' + d.gtJsonld; }
       else { note.classList.remove('hidden'); note.textContent = '⚠️ No matching GT found (nothing under output/gt), only the right-side hint is shown.'; }
       showImg(d.sysTopology, 'sysTopo', 'sysTopoEmpty');
       showImg(d.gtTopology, 'gtTopo', 'gtTopoEmpty');
+      if (d.sysContour) {
+        document.getElementById('contourCard').classList.remove('hidden');
+        document.getElementById('contourAlgoName').textContent = d.contourAlgo || '';
+        showImg(d.sysContour, 'sysContour', 'sysContourEmpty');
+      }
       showDiffSummary(d.sysJsonld, d.gtJsonld);
       loadKGCompare(d.base);
     }).catch(e => { btn.disabled = false; btn.textContent = 'Start Comparison'; log('Request failed: ' + e); });
@@ -265,6 +284,7 @@
     }).catch(e => { log('KG compare failed: ' + e); });
   }
   loadDxfs();
+  mountSpatialAlgos('algoSlot');
 </script>
 </body>
 </html>
